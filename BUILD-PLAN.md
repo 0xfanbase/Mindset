@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.7)
+# MINDSET — Autonomous Build Plan (v1.8)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the four escalation triggers in §11 (plus the
@@ -157,6 +157,36 @@ treatment, muted its chip/link color, and softened its link text from "Read →"
 look →" — framing it as a lighter-touch invitation rather than a third obligation. It was
 already last in render order, so "never above the fold" needed no further change.
 
+**v1.8 changelog (from v1.7, post-launch human feedback, two annotated screenshots):**
+(1) **the yoga figure is replaced with a small glowing bottle of light** — `figure.js` keeps
+its filename, its `<mindset-figure>` tag, and its `color`/`glow`/`animate` attribute API
+(app.js's theme-toggle wiring needed no changes), but the entire pose/kinematics system is
+gone. In its place: a simple glass-bottle silhouette (canvas path, stroked at low opacity)
+containing a soft light that breathes — brightens and dims on one continuous 7-second sine
+cycle, no sudden jumps — plus two or three small embers that drift slowly upward inside the
+glass and fade, on a longer independent loop. Same performance/accessibility contract as
+before (`requestAnimationFrame`, pauses on `visibilitychange`, static mid-breath frame under
+`prefers-reduced-motion`, `devicePixelRatio` capped at 2, offscreen radial-gradient sprite for
+the glow so there is still zero per-frame `shadowBlur`). `figure.js` dropped from ~11.6KB to
+~7.6KB (well under the 12KB budget) now that there is no pose table to carry.
+(2) **header-to-tabs spacing tightened**: shrank `mindset-figure`'s box (84×96 → 56×64) since a
+bottle icon doesn't need the vertical room a standing human figure did, and trimmed
+`header`'s bottom padding and `.tabs`'s top margin — live feedback circled the empty band
+between the header row and the Today/Values labels as wasted space.
+(3) **Today's cards now share the Values tab's exact visual language** — while implementing
+this, found the v1.7-part-1 "card gap widened 16px → 24px" change had never actually taken
+effect: the `gap` was set on `.panel`, but `.panel` only ever has one direct child (`#cards` or
+`#values-list`), so the three Today cards were rendering with **zero space between them**,
+touching edge-to-edge, this whole time — a real, previously-undetected bug (confirmed via a
+`getBoundingClientRect` check: card 1's bottom pixel equaled card 2's top pixel exactly).
+Rather than re-patch the gap in place, unified `.card` with `.value-row`'s existing
+flat/hairline-divided treatment (transparent background, no shadow, no radius, `padding: 15px
+0`, `border-bottom: 1px solid var(--hairline)`, no border on the last child) — this fixes the
+dormant spacing bug and makes the two tabs read as one consistent list style, per the request
+to make them "identical." The Fresh card's separate quiet/bordered `.card-fresh` treatment
+(added in v1.7 part 3) is retired since every card now already uses the quieter flat style by
+default; its softened "Worth a look →" copy is kept. `verify.mjs all` 59/59.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -195,9 +225,9 @@ logged in decisions.md.
 
 A single-page, public, static website hosted on GitHub Pages. It is a personal
 mindset dashboard that refreshes itself every morning at **06:00 Hong Kong time**
-with three short grounding cards, headed by a living "mind" — a small human figure
-moving through a yoga sun salutation, on repeat. Two tabs: **Today** (figure + date + 3
-cards) and **Values** (a quiet list of core qualities). Two themes: a cream/blue default
+with three short grounding cards, headed by a living "mind" — a small bottle of light,
+glowing and dimming on a slow breathing cycle, on repeat. Two tabs: **Today** (figure + date +
+3 cards) and **Values** (a quiet list of core qualities). Two themes: a cream/blue default
 and a soft pink alternative.
 Zero backend. Zero dependencies. Zero personal data (about the owner — see §2.1).
 
@@ -249,7 +279,7 @@ The three daily cards:
 ├── index.html
 ├── styles.css
 ├── app.js                  # UI logic: tabs, theme, date, cards, staleness
-├── figure.js               # canvas yoga-figure animation (the signature element — was drop.js/brain.js)
+├── figure.js               # canvas glowing-bottle animation (the signature element — was drop.js/brain.js)
 ├── lib.mjs                 # SHARED pure functions: HKT date, day number, rotation (imported by browser AND node)
 ├── manifest.webmanifest    # home-screen installability (Appendix C)
 ├── sw.js                   # offline shell, network-first (Appendix C, verbatim)
@@ -286,11 +316,10 @@ The three daily cards:
 
 ### 4.1 Design direction (one sentence)
 **"An instrument panel for the inner life"** — a quiet, warm, paper-like field on
-which exactly one thing is alive: a small human figure, moving slowly and deliberately
-through a yoga sun salutation, on an otherwise still page. Contemplative Stoic calm + the
-precision of an automated system. All boldness is spent on the figure; everything else is
-disciplined and quiet. The whole screen fits without scrolling on a phone (§4.4) —
-editorial, not busy.
+which exactly one thing is alive: a small bottle of light, glowing and dimming slowly and
+deliberately, on an otherwise still page. Contemplative Stoic calm + the precision of an
+automated system. All boldness is spent on the figure; everything else is disciplined and
+quiet. The whole screen fits without scrolling on a phone (§4.4) — editorial, not busy.
 
 ### 4.2 Design tokens (CSS custom properties on `:root` / `[data-theme="blossom"]`)
 
@@ -345,21 +374,20 @@ The design supersedes v1.0's tall hero-canvas mockup with a compact, single-scre
 
 ```
 ┌────────────────────────────────────┐
-│        [ small figure, ~96×112 ]   │  the page's literal top element (v1.4) —
+│         [ small glowing bottle ]   │  the page's literal top element (v1.4) —
 ├────────────────────────────────────┤  safe-area-inset-top padding lives here now
 │ mindset (italic wordmark)  ◐ toggle│  header, ~44px, sits below the figure
 ├────────────────────────────────────┤
-│      MONDAY · 13 JULY 2026         │  mono, letterspaced, uppercase
+│      MONDAY · 13 JULY 2026         │  mono, letterspaced, uppercase (tightened v1.8)
 │   (staleness chip if applicable)   │
 ├────────────────────────────────────┤
 │      Today      Values             │  tabs (role=tablist), underline-active style
 ├────────────────────────────────────┤
-│  ┌──────────────────────────────┐  │
-│  │ ANCHOR (mono chip)           │  │  cards: borderless, 22px radius,
-│  │ card text (Fraunces)         │  │  shadow 0 14px 36px rgba(36,26,32,.07),
-│  │ — after Marcus Aurelius      │  │  20px/22px padding, 16px gaps (loosened
-│  └──────────────────────────────┘  │  in v1.2 — the tighter v1.1 values read
-│  [Shift card] [Fresh card]         │  as cluttered with three stacked cards)
+│  ANCHOR (mono chip)                │  cards: flat, no shadow/radius (v1.8 —
+│  card text (Fraunces)              │  matches the Values tab's row style exactly),
+│  — after Marcus Aurelius           │  15px vertical padding, hairline divider
+│  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈  │  between rows, no border on the last one
+│  [Shift row]  [Fresh row]          │
 ├────────────────────────────────────┤   stacked ≤899px, 3-across ≥900px desktop
 │ refreshes daily · 06:00 HKT        │  footer, margin-top:auto pins it down
 └────────────────────────────────────┘
@@ -378,7 +406,7 @@ since it's no longer adjacent to the notch/status bar).
 
 1. **Theme toggle:** pill button top-right, `aria-pressed`, icons ◐/❀ (calm/blossom), 44×44px, `persists mindset.theme`, default `calm`, no flash-of-wrong-theme (inline script reads localStorage before CSS paint).
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards:** `--surface`, **22px radius, borderless** (no hairline border — an intentional refinement from the design prototype over v1.0's bordered-card spec), shadow `0 14px 36px rgba(36,26,32,0.07)`, 20px/22px padding, 16px gap between stacked cards (loosened in v1.2 — the original 18px/22px padding with an 11px gap read as cluttered with three cards stacked). Header row = mono category chip (ANCHOR / SHIFT / FRESH, no emoji — plain mono text per the prototype). Body in Fraunces. Footer = muted attribution. Fresh card footer = source domain + `Read →` link (`target="_blank" rel="noopener"`); whole Fresh card is the tap target; render the title via `textContent` only (never `innerHTML`) and validate `fresh.url` is `https:` before treating the card as live (§6.3, §7 — untrusted third-party feed content).
+3. **Cards (v1.8 — unified with the Values tab's row style):** flat rows, no background surface, no shadow, no border-radius — `padding: 15px 0`, `border-bottom: 1px solid var(--hairline)`, no border on the last card. This replaces the earlier elevated/shadowed card look (v1.0–v1.7) entirely; live feedback asked for the two tabs to look and feel identical, and implementing it surfaced a real dormant bug (the `.panel` "card gap" from v1.2/v1.7 was set on the wrong element and had rendered as 0px between cards since it was introduced — see the v1.8 changelog). Header row = mono category chip (ANCHOR / SHIFT / FRESH, no emoji — plain mono text per the prototype). Body in Fraunces. Footer = muted attribution. Fresh card footer = source domain + a softened `Worth a look →` link (`target="_blank" rel="noopener"`, v1.7); whole Fresh card is the tap target; render the title via `textContent` only (never `innerHTML`) and validate `fresh.url` is `https:` before treating the card as live (§6.3, §7 — untrusted third-party feed content).
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 06:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 06:00 HKT, every single day.)
    - `daily.json` unreachable, > 48h stale, or fetch fails → page computes cards locally via `lib.mjs` rotation → slate chip `offline rotation`.
@@ -388,59 +416,43 @@ since it's no longer adjacent to the notch/status bar).
 
 ### 4.6 The figure (signature element — `figure.js`, was the water drop in v1.1, "the brain" in v1.0)
 
-v1.2 replaces the water drop with a small human figure moving through a yoga sun salutation
-(Surya Namaskar) on repeat — more obviously alive at a glance than the drop's subtle physics
-(the drop's slow bead-forming phase read, to a live human reviewer, as "not moving" even when
-it technically was), and still one continuous, calm, legible loop:
+v1.2–v1.7 used a small human figure moving through a yoga sun salutation; **v1.8 replaces it
+with a small glowing bottle of light** after live feedback that the pose-based figure's
+movement still didn't hold together as real yoga anatomy. A bottle sidesteps that problem
+category entirely — there is no joint anatomy to get wrong — while keeping the same "exactly
+one calm, alive thing on the page" role:
 
-1. **Form:** a side-profile figure (head circle + a filled shoulder-to-hip torso band +
-   tapered-quad limb segments, soft glow sprite behind it) interpolated smoothly between named
-   pose keyframes in a full loop (**~42s, v1.7** — see "Pace" below): standing prayer
-   (Pranamasana) → arms raised overhead (Urdhva Hastasana) → forward fold (Uttanasana) →
-   lunge, one leg back (Ashwa Sanchalanasana) → plank (Kumbhakasana) → eight-limbed pose
-   (Ashtanga Namaskara) → **cobra (Bhujangasana, replacing up-dog as of v1.7)** → downward dog
-   (Adho Mukha Svanasana) → lunge (return) → forward fold → raised arms → standing (loop
-   restarts) — 12 named poses (8 unique). **Ground-anchored as of v1.7:** every pose is built
-   via inverse kinematics from one shared floor line and one fixed hand-plant spot (unmoving
-   from the fold through down-dog, like hands staying put on a real mat) rather than each pose's
-   hip position being chosen independently — a live "the movement is defying gravity" report
-   traced to exactly that: hands that silently jumped between six different x-positions, a
-   plank whose feet computed above its own hands, and a figure that quietly flipped which way
-   it faced mid-cycle. Fixed bone lengths (neck/torso/arm/leg) unchanged in spirit from v1.6,
-   rescaled slightly to fit the ground-anchored geometry; verified by extracting the shipped
-   pose data back out of `figure.js` and independently re-checking lengths, ground contacts, and
-   arm reachability.
-2. **Rendering:** plain 2D canvas — filled tapered-quad limbs (v1.6, reads as a body rather
-   than a wire skeleton), a filled circle for the head, and the same offscreen-sprite ambient
-   glow technique as v1.1's drop (no per-frame `shadowBlur`) stamped behind the figure each
-   frame. No DOM particles — still simple on purpose, since the pose transitions carry the
-   motion.
-3. **Life:** legible, continuous motion through named poses — not a single physics effect. Slow
-   enough to read as calm, fast enough that a glance clearly shows it moving (this directly
-   addresses the v1.1 "wasn't moving" report).
-3a. **Pace (v1.4, retuned v1.7):** a real sun salutation's movement lasts most of the breath —
-   poses (other than down-dog and standing) aren't really held. Per-pose hold 500ms–5s (longest
-   at down-dog, its traditional five breaths, and the standing poses) followed by a slower,
-   more deliberate eased transition (2.2–3.1s, up from v1.4's 0.9–1.3s) into the next pose —
-   ~42s per full cycle (up from 26.2s). The foot mid-step during the sequence's four stepping
-   transitions gets a small procedural lift so it arcs rather than drags along the floor.
+1. **Form:** a simple glass-bottle silhouette (narrow neck, rounded shoulders, straight sides,
+   rounded base — one canvas path, stroked at low opacity in the current theme color) holding a
+   soft light near its base. No pose system, no joints, no kinematics.
+2. **Rendering:** plain 2D canvas — the bottle outline is a stroked path; the light is the same
+   offscreen-sprite radial-gradient glow technique used since v1.1's drop (no per-frame
+   `shadowBlur`), drawn once as an offscreen sprite and stamped at different sizes for the main
+   glow and for the embers, clipped to the bottle's own outline so nothing draws outside the
+   glass.
+3. **Life — breathing, not posing:** the light brightens and dims on one continuous sine-wave
+   cycle (**7 seconds**, "very slowly" per the request) — no held frames, no sudden jumps, just
+   a smooth in-and-out like a slow breath. Two or three small embers drift upward inside the
+   glass on a longer independent loop (9s), fading in near the base and out near the neck, for
+   a touch of life beyond the single pulsing light.
 4. **Performance:** `requestAnimationFrame`; the same offscreen radial-gradient sprite glow
    technique as before (never per-frame `shadowBlur`); `devicePixelRatio` capped at 2; cancel
    RAF on `visibilitychange` hidden (resume on visible, unless reduced motion); `ResizeObserver`-
-   driven re-setup, debounced. **Robustness fix (the actual root cause of the v1.1 "not moving"
-   report):** the setup routine must not silently give up if the element has zero size at
-   connect-time — retry via `requestAnimationFrame` until a real size is available, rather than
-   relying solely on `ResizeObserver`'s own delayed initial callback to ever recover.
+   driven re-setup, debounced; the setup routine retries via `requestAnimationFrame` if the
+   element has zero size at connect-time rather than silently giving up (unchanged since v1.2 —
+   this was the actual fix for the original "not moving" report and still applies here).
 5. **Reduced motion:** `prefers-reduced-motion: reduce` (checked via `matchMedia`, re-checked
-   live on a `change` listener) → render one static frame (the standing-prayer pose), no RAF
-   loop.
-6. **Themes:** the element takes `color`/`glow` as attributes; `app.js` sets these to the
-   current theme's `--pulse` value on init and again on every theme-toggle event, so the figure
-   is blue in `calm` and rose in `blossom`.
-7. **Budget:** `figure.js` ≤ 12 KB (the reference implementation is ~10 KB as of v1.4).
+   live on a `change` listener) → render one static frame at a calm mid-bright point in the
+   breath cycle, no RAF loop.
+6. **Themes:** the element takes `color`/`glow` as attributes, unchanged from v1.2–v1.7;
+   `app.js` sets these to the current theme's `--pulse` value on init and again on every
+   theme-toggle event, so the light is blue in `calm` and rose in `blossom`. No app.js changes
+   were needed for the v1.8 swap.
+7. **Budget:** `figure.js` ≤ 12 KB (the reference implementation is ~7.6 KB as of v1.8 — smaller
+   than the pose-based v1.7 figure since there is no pose table to carry).
 8. **Not part of the shipped file:** the original Claude Design prototype's `ios-frame.jsx` and
    `support.js` were prototyping scaffolding only for the water-drop era and were never shipped;
-   `figure.js` is an original implementation for v1.2, not ported from any external prototype.
+   `figure.js` is an original implementation, not ported from any external prototype.
 
 ### 4.7 Mobile experience & installability (PRIMARY platform — enforce, don't hope)
 
@@ -449,7 +461,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 **Layout & ergonomics:**
 1. Single column ≤ 899px; content max-width with comfortable side padding (≥ 20px).
 2. `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`; header and footer pad with `env(safe-area-inset-top/bottom/left/right)` so nothing sits under a notch or home indicator.
-3. Page uses `height: 100vh; height: 100svh;` (vh fallback line first) as the layout basis for the no-scroll goal (§4.4/invariant 11) — the figure itself is a small fixed-size inline element (~96×112px, not viewport-relative).
+3. Page uses `height: 100vh; height: 100svh;` (vh fallback line first) as the layout basis for the no-scroll goal (§4.4/invariant 11) — the figure itself is a small fixed-size inline element (~56×64px as of v1.8, not viewport-relative).
 4. All interactive elements: ≥ 44px tap targets, `touch-action: manipulation`, `-webkit-tap-highlight-color: transparent` replaced by a designed `:active` state (scale 0.99 + hairline darken). No information may be hover-only.
 5. `html { -webkit-text-size-adjust: 100%; }`. Card text ≥ 15.5px on mobile (per the actual type scale in §4.3).
 6. No horizontal scroll, ever: no fixed `width` ≥ 400px on any element in `styles.css` (`max-width` is fine — verified by grep, scoped to `styles.css` so it doesn't false-positive on legitimate JS canvas pixel dimensions in `figure.js`).
@@ -750,9 +762,9 @@ Design consequence: the worst possible failure is one morning of yesterday's (or
 
 ### Stage 2 — The figure
 **Objective:** §4.6 exactly.
-**Tasks:** `figure.js` — an original canvas implementation (not sourced from a design prototype; v1.1's `drop.js` was, v1.2's `figure.js` is written directly against §4.6's pose sequence), registered as `<mindset-figure>`; wire `color`/`glow` attributes to the live theme's `--pulse` token on init and on theme-toggle. Build the setup routine to retry via `requestAnimationFrame` if the element has zero size at connect-time (§4.6.4) rather than silently giving up — this is the actual fix for the v1.1 "wasn't moving" report, not just a cosmetic pose swap.
+**Tasks:** `figure.js` — an original canvas implementation (not sourced from a design prototype; v1.1's `drop.js` was, `figure.js` is written directly against §4.6), registered as `<mindset-figure>`; wire `color`/`glow` attributes to the live theme's `--pulse` token on init and on theme-toggle. Build the setup routine to retry via `requestAnimationFrame` if the element has zero size at connect-time (§4.6.4) rather than silently giving up — this is the actual fix for the v1.1 "wasn't moving" report, not just a cosmetic redraw.
 **DoD:** all §4.6 behaviours present · `figure.js` ≤ 12 KB · no `shadowBlur` inside the RAF-driven draw path · setup retries on zero-size rather than bailing.
-**Verify:** `stage2` = `node --check figure.js` + greps: `requestAnimationFrame`, `visibilitychange`, `prefers-reduced-motion`, `devicePixelRatio` + absence of `shadowBlur` anywhere in the file (ban it file-wide — it's not meaningfully scopeable by grep to "just the animate function") + byte-size check. The pause/reduced-motion behaviour should be structured so its branch logic is unit-testable under `node:test` (e.g. a pure function computing which draw mode applies), since a curl-based agent cannot visually confirm canvas behaviour — mark "the figure visibly animates through recognizable poses and feels calm, not busy" as **deferred to §13 human review**, not a Stage 2 machine gate; the audit should say so plainly rather than checking it off unverified.
+**Verify:** `stage2` = `node --check figure.js` + greps: `requestAnimationFrame`, `visibilitychange`, `prefers-reduced-motion`, `devicePixelRatio` + absence of `shadowBlur` anywhere in the file (ban it file-wide — it's not meaningfully scopeable by grep to "just the animate function") + byte-size check. The pause/reduced-motion behaviour should be structured so its branch logic is unit-testable under `node:test` (e.g. a pure function computing which draw mode applies), since a curl-based agent cannot visually confirm canvas behaviour — mark "the light visibly breathes and feels calm, not busy" as **deferred to §13 human review**, not a Stage 2 machine gate; the audit should say so plainly rather than checking it off unverified.
 **Commit:** `stage2: living figure, canvas animation`
 
 ### Stage 3 — Content library & card engine
@@ -825,16 +837,16 @@ trigger is closest, plus the raw error — don't spend cycles deliberating the t
 **Explicitly deferred to §13 human review (mark UNVERIFIED in FINAL-AUDIT, do not check off here):**
 - [ ] Today's HKT date shows; cards populated; no console errors
 - [ ] Theme toggle works both ways and survives reload; no wrong-theme flash
-- [ ] The figure animates through recognizable sun-salutation poses in both themes; pauses when hidden; static under reduced motion; feels calm, not busy
+- [ ] The bottle's light visibly breathes (brightens/dims slowly) in both themes; pauses when hidden; static under reduced motion; feels calm, not busy
 - [ ] Offline rotation demonstrated live on a phone (airplane mode)
 
 ## §13 — Human review checklist (the ONE human step, ~20 min, after completion)
 
-1. Open the Pages URL **on your phone**. Does the figure clearly move through its poses, feeling alive and calm, not busy? Rotate the phone, scroll — nothing clipped, nothing under the notch or home bar, no sideways scroll, the whole thing should fit one screen.
+1. Open the Pages URL **on your phone**. Does the bottle's light clearly, slowly breathe, feeling alive and calm, not busy? Rotate the phone, scroll — nothing clipped, nothing under the notch or home bar, no sideways scroll, the whole thing should fit one screen.
 2. Safari: Share → **Add to Home Screen**. Reopen from the icon — it should launch full-screen like an app, with a proper icon and the chrome matching the theme.
 3. Toggle blossom mode. Would its intended user smile? (Standalone chrome should turn blossom too — except the cold-launch splash screen, which is a known, logged limitation.)
 4. **Airplane mode**, reopen from the icon: the shell loads instantly and the `offline rotation` chip appears with valid cards. Turn network back on, pull to refresh — today returns.
-5. Open the **Values** tab and skim all 5. Toggle OS **Reduce Motion** and confirm the figure renders a static frame.
+5. Open the **Values** tab and skim all 5 — confirm it reads as the same visual style as Today's cards. Toggle OS **Reduce Motion** and confirm the figure renders a static frame.
 6. Read today's three cards aloud. Would you keep any? (Your monthly curation replaces the weakest cards — that's where the library becomes *yours*.)
 7. Skim `audits/CONTENT-REVIEW.md` (~15 min) — delete or reword anything you wouldn't sign, especially any card whose attribution feels like a guess rather than a known idea.
 8. Skim `audits/FINAL-AUDIT.md` "honest notes" + `decisions.md`.

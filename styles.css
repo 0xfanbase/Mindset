@@ -83,7 +83,7 @@ header {
   column-gap: 8px;
   min-height: 44px;
   padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
-  padding-bottom: 6px;
+  padding-bottom: 2px;
   padding-left: max(20px, env(safe-area-inset-left));
   padding-right: max(20px, env(safe-area-inset-right));
 }
@@ -134,8 +134,8 @@ main {
 }
 mindset-figure {
   display: block;
-  width: 84px;
-  height: 96px;
+  width: 56px;
+  height: 64px;
 }
 
 .date-line {
@@ -166,7 +166,7 @@ mindset-figure {
   display: flex;
   gap: 32px;
   justify-content: center;
-  margin-top: 4px;
+  margin-top: 0;
 }
 .tab {
   background: none;
@@ -194,9 +194,6 @@ mindset-figure {
   min-height: 0;
   overflow-y: auto;
   padding: 14px 20px 8px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
 }
 .panel[hidden] { display: none; }
 
@@ -205,27 +202,19 @@ mindset-figure {
   to { opacity: 1; transform: none; }
 }
 
+/* Today's cards share the Values tab's exact row treatment (v1.8) -- flat, no surface,
+   no shadow, divided by a single hairline, so the two tabs read as one consistent list. */
 .card {
-  background: var(--surface);
-  border-radius: 22px;
-  box-shadow: 0 14px 36px var(--shadow);
-  padding: 20px 22px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--hairline);
   animation: cardIn 0.25s ease-out both;
-  transition: transform 0.15s ease;
 }
+.card:last-child { border-bottom: none; }
 @media (hover: hover) {
-  .card:hover { transform: translateY(-2px); }
+  a.card-link:hover { opacity: 0.72; }
 }
+a.card-link { transition: opacity 0.15s ease, transform 0.15s ease; }
 a.card-link:active { transform: scale(0.99); }
-
-/* Fresh is a side door, not a third obligation -- quietest of the three cards,
-   flat instead of elevated, framed as an invitation rather than a command. */
-.card-fresh {
-  background: var(--bg);
-  box-shadow: none;
-  border: 1px solid var(--hairline);
-}
-.card-fresh .card-chip { color: var(--muted); }
 
 .card-chip {
   font-family: "IBM Plex Mono", monospace;
@@ -353,14 +342,19 @@ footer {
   color: var(--muted);
 }
 
-/* Desktop adaptation — min-width only, base CSS above is the mobile layout (invariant 11) */
+/* Desktop adaptation — min-width only, base CSS above is the mobile layout (invariant 11).
+   Targets #cards (the actual parent of the .card elements), not .panel (their grandparent) --
+   the previous version of this rule targeted .panel and never actually applied (v1.8 note). */
 @media (min-width: 900px) {
-  #panel-today {
+  #cards {
+    display: flex;
     flex-direction: row;
     flex-wrap: wrap;
+    gap: 20px;
   }
-  #panel-today .card {
+  #cards .card {
     flex: 1 1 0;
     min-width: 260px;
+    border-bottom: none;
   }
 }
