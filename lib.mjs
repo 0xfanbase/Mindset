@@ -77,7 +77,7 @@ export function staleness(dailyDateHKT, now = new Date()) {
 export function pickToday(cards, now = new Date()) {
   const dayNumber = hktDayNumber(now);
   const anchor = cards.anchors[pickIndex(cards.anchors.length, dayNumber, "anchor")];
-  const shift = cards.shifts[pickIndex(cards.shifts.length, dayNumber, "shift")];
+  const journal = cards.journal[pickIndex(cards.journal.length, dayNumber, "journal")];
   const word = cards.wordOfDay[pickIndex(cards.wordOfDay.length, dayNumber, "word")];
-  return { anchor, shift, word, dayNumber };
+  return { anchor, journal, word, dayNumber };
 }

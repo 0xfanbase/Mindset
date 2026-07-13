@@ -775,209 +775,168 @@
       "attribution": "— after Michelle Obama, from Becoming"
     }
   ],
-  "shifts": [
+  "journal": [
     {
-      "id": "shift-001",
-      "from": "Proving I belong",
-      "to": "Deciding what is worth building"
+      "id": "journal-01",
+      "prompt": "What's one thing you're avoiding right now, and what is it costing you to keep avoiding it?"
     },
     {
-      "id": "shift-002",
-      "from": "Clearing the inbox",
-      "to": "Choosing what earns a reply"
+      "id": "journal-02",
+      "prompt": "Where did you feel most like yourself this week, and what made that moment different?"
     },
     {
-      "id": "shift-003",
-      "from": "Reacting to the day",
-      "to": "Writing the day before it starts"
+      "id": "journal-03",
+      "prompt": "What would you do today if you trusted yourself completely?"
     },
     {
-      "id": "shift-004",
-      "from": "More hours",
-      "to": "Fewer, sharper commitments"
+      "id": "journal-04",
+      "prompt": "Which relationship in your life needs more attention than you've been giving it?"
     },
     {
-      "id": "shift-005",
-      "from": "What could go wrong",
-      "to": "What I would do next"
+      "id": "journal-05",
+      "prompt": "What's a belief about yourself you've outgrown but still act on?"
     },
     {
-      "id": "shift-006",
-      "from": "Being right",
-      "to": "Getting it right"
+      "id": "journal-06",
+      "prompt": "If today were the only chance to say something to someone you love, what would you say?"
     },
     {
-      "id": "shift-007",
-      "from": "Counting outcomes",
-      "to": "Counting reps"
+      "id": "journal-07",
+      "prompt": "What's the smallest true step you could take on the thing you keep postponing?"
     },
     {
-      "id": "shift-008",
-      "from": "Waiting to feel ready",
-      "to": "Starting the smallest true step"
+      "id": "journal-08",
+      "prompt": "What did you learn this month that changed how you see something?"
     },
     {
-      "id": "shift-009",
-      "from": "Managing impressions",
-      "to": "Managing attention"
+      "id": "journal-09",
+      "prompt": "Where in your life are you choosing comfort over growth?"
     },
     {
-      "id": "shift-010",
-      "from": "Someday",
-      "to": "A date on the calendar"
+      "id": "journal-10",
+      "prompt": "What would you forgive yourself for if no one else needed to know?"
     },
     {
-      "id": "shift-011",
-      "from": "Winning the argument",
-      "to": "Understanding the other person"
+      "id": "journal-11",
+      "prompt": "What's one assumption about your future you've never actually questioned?"
     },
     {
-      "id": "shift-012",
-      "from": "Spending what is left",
-      "to": "Saving before you spend"
+      "id": "journal-12",
+      "prompt": "Who in your life deserves a thank you they haven't received yet?"
     },
     {
-      "id": "shift-013",
-      "from": "I cannot do this",
-      "to": "I cannot do this yet"
+      "id": "journal-13",
+      "prompt": "What does your ideal ordinary Tuesday actually look like?"
     },
     {
-      "id": "shift-014",
-      "from": "Wishing the past were different",
-      "to": "Working with what is now"
+      "id": "journal-14",
+      "prompt": "What's something you did today purely because you wanted to, not because you had to?"
     },
     {
-      "id": "shift-015",
-      "from": "Living for the weekend",
-      "to": "Noticing this actual day"
+      "id": "journal-15",
+      "prompt": "Where are you spending energy on something that no longer matters to you?"
     },
     {
-      "id": "shift-016",
-      "from": "Multitasking through the morning",
-      "to": "Single-tasking one block at a time"
+      "id": "journal-16",
+      "prompt": "What would change if you stopped waiting for permission to start?"
     },
     {
-      "id": "shift-017",
-      "from": "Keeping score with people",
-      "to": "Keeping trust with people"
+      "id": "journal-17",
+      "prompt": "What's a fear you've been treating as a fact?"
     },
     {
-      "id": "shift-018",
-      "from": "Chasing a bigger salary",
-      "to": "Lowering your fixed costs"
+      "id": "journal-18",
+      "prompt": "If you described today to your future self, what would you want to be proud of?"
     },
     {
-      "id": "shift-019",
-      "from": "Hiding my mistakes",
-      "to": "Studying my mistakes"
+      "id": "journal-19",
+      "prompt": "What's one habit that quietly shapes more of your life than you realize?"
     },
     {
-      "id": "shift-020",
-      "from": "Craving other people's approval",
-      "to": "Trusting your own judgment"
+      "id": "journal-20",
+      "prompt": "Who taught you something important without knowing they were teaching you?"
     },
     {
-      "id": "shift-021",
-      "from": "Replaying yesterday's conversation",
-      "to": "Attending to this one"
+      "id": "journal-21",
+      "prompt": "What are you tolerating that you have the power to change?"
     },
     {
-      "id": "shift-022",
-      "from": "Checking the phone reflexively",
-      "to": "Checking it on a schedule"
+      "id": "journal-22",
+      "prompt": "When did you last do something difficult and feel glad afterward?"
     },
     {
-      "id": "shift-023",
-      "from": "Assuming they know you appreciate them",
-      "to": "Saying it out loud today"
+      "id": "journal-23",
+      "prompt": "What's the story you tell yourself about why you can't, and is it still true?"
     },
     {
-      "id": "shift-024",
-      "from": "Net income",
-      "to": "Net worth"
+      "id": "journal-24",
+      "prompt": "Where do you feel busy but not actually productive?"
     },
     {
-      "id": "shift-025",
-      "from": "Comparing yourself to others",
-      "to": "Measuring growth against your own past"
+      "id": "journal-25",
+      "prompt": "What would you attempt if failing at it cost you nothing?"
     },
     {
-      "id": "shift-026",
-      "from": "Expecting the day to go as planned",
-      "to": "Adjusting the plan as things change"
+      "id": "journal-26",
+      "prompt": "What's a conversation you've been putting off, and what's really stopping you?"
     },
     {
-      "id": "shift-027",
-      "from": "Eating while scrolling",
-      "to": "Eating while tasting the food"
+      "id": "journal-27",
+      "prompt": "What does enough look like for you, specifically?"
     },
     {
-      "id": "shift-028",
-      "from": "Working from a to-do list",
-      "to": "Working from a time-blocked calendar"
+      "id": "journal-28",
+      "prompt": "What part of your day do you rush through that deserves more attention?"
     },
     {
-      "id": "shift-029",
-      "from": "Fixing what is wrong with someone",
-      "to": "Accepting the person as they are"
+      "id": "journal-29",
+      "prompt": "What's something you used to love doing that quietly disappeared from your life?"
     },
     {
-      "id": "shift-030",
-      "from": "Buying things to look successful",
-      "to": "Buying assets that produce income"
+      "id": "journal-30",
+      "prompt": "Whose opinion of you do you weigh more than it deserves?"
     },
     {
-      "id": "shift-031",
-      "from": "Avoiding the hard problem",
-      "to": "Seeking the right amount of difficulty"
+      "id": "journal-31",
+      "prompt": "What would you do differently this week if you knew it would be remembered?"
     },
     {
-      "id": "shift-032",
-      "from": "Blaming the situation",
-      "to": "Examining your own reaction"
+      "id": "journal-32",
+      "prompt": "What's a small discomfort you've been avoiding that would probably teach you something?"
     },
     {
-      "id": "shift-033",
-      "from": "Rehearsing tomorrow's conversation",
-      "to": "Finishing today's conversation first"
+      "id": "journal-33",
+      "prompt": "Where in your life do you already have enough, but act like you don't?"
     },
     {
-      "id": "shift-034",
-      "from": "Consuming more information",
-      "to": "Producing more work"
+      "id": "journal-34",
+      "prompt": "What did today ask of you that yesterday didn't?"
     },
     {
-      "id": "shift-035",
-      "from": "Assuming you know their reasons",
-      "to": "Asking what actually happened"
+      "id": "journal-35",
+      "prompt": "What's something you're proud of that you've never told anyone?"
     },
     {
-      "id": "shift-036",
-      "from": "Relying on a single paycheck",
-      "to": "Diversifying where income comes from"
+      "id": "journal-36",
+      "prompt": "If your stress had a message for you, what would it be trying to say?"
     },
     {
-      "id": "shift-037",
-      "from": "Avoiding harsh feedback",
-      "to": "Requesting the harshest feedback"
+      "id": "journal-37",
+      "prompt": "What's one thing you can simplify this week without losing anything that matters?"
     },
     {
-      "id": "shift-038",
-      "from": "Resenting the traffic jam",
-      "to": "Using the wait to think"
+      "id": "journal-38",
+      "prompt": "Who do you need to stop comparing yourself to?"
     },
     {
-      "id": "shift-039",
-      "from": "Half-listening while you plan your reply",
-      "to": "Fully listening before you respond"
+      "id": "journal-39",
+      "prompt": "What would it look like to trust the process instead of needing the outcome now?"
     },
     {
-      "id": "shift-040",
-      "from": "Reacting to every request",
-      "to": "Protecting one deep work block"
+      "id": "journal-40",
+      "prompt": "What's the kindest thing you did today, and did you notice it at the time?"
     }
-  ],
-  "wordOfDay": [
+  ],  "wordOfDay": [
     {
       "id": "word-01",
       "word": "Wabi-sabi",

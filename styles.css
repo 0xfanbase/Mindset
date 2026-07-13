@@ -278,26 +278,6 @@ mindset-figure {
   .word-speak:hover { color: var(--ink); }
 }
 
-.shift-from {
-  font-family: "Fraunces", Georgia, serif;
-  font-size: 14.5px;
-  line-height: 1.45;
-  color: var(--muted);
-  margin: 9px 0 0;
-  text-decoration: line-through;
-  text-decoration-color: var(--hairline);
-  text-decoration-thickness: 1px;
-}
-.shift-to {
-  font-family: "Fraunces", Georgia, serif;
-  font-size: 16.5px;
-  line-height: 1.45;
-  font-weight: 500;
-  color: var(--ink);
-  margin: 5px 0 0;
-}
-.shift-to .arrow { color: var(--accent); }
-
 .error-card { text-align: center; }
 .error-label {
   font-family: "IBM Plex Mono", monospace;

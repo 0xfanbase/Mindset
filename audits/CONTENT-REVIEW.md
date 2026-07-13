@@ -277,7 +277,13 @@ territory) in addition to the standard attribution-confidence and closeness-to-s
 - **voices-009** (voices): Answer the message from someone one step behind you, the way an older student once helped you find your footing. That kind of mentoring rarely gets credited, but it compounds for years. — after Michelle Obama, from Becoming
   - ⚑ Reworded from an earlier draft that brushed against Reach Higher (an actual White House initiative). This version grounds the idea in personal mentorship from her own memoir rather than any policy program.
 
-## Shifts
+## Shifts (retired in v1.12, replaced by Journal prompts below)
+
+Kept in full below as the historical record of this pool's authoring/QA work (real editorial
+decisions — duplicate cognitive moves caught and reworded, two near-verbatim-quote risks
+found and fixed) even though the `shifts` data no longer ships in `cards.json`. Live feedback
+called the Shift card "not so helpful"; retired in favor of Journal, a mindful reflection
+prompt — see the new "Journal prompts" section immediately after this one.
 
 - **shift-001**: Proving I belong → Deciding what is worth building
 - **shift-002**: Clearing the inbox → Choosing what earns a reply
@@ -324,6 +330,58 @@ territory) in addition to the standard attribution-confidence and closeness-to-s
 - **shift-038**: Resenting the traffic jam → Using the wait to think
 - **shift-039**: Half-listening while you plan your reply → Fully listening before you respond
 - **shift-040**: Reacting to every request → Protecting one deep work block
+
+## Journal prompts (added v1.12, replaces Shifts above)
+
+Retires the Shift card (a "From X → To Y" reframe, present since v1.0) in favor of a mindful
+reflection prompt, after live feedback that Shift "seems to be not so helpful." Each entry is
+one open-ended question meant to be actually sat with — second person, concrete, no yes/no
+questions. All 40 were pre-validated against `verify.mjs`'s exact word-cap (≤25w, raised from
+Shift's 8w since a real question needs more room)/quote-glyph/platitude rules before writing.
+No independent second-pass QA review was run beyond that mechanical validation — these are
+original questions, not paraphrases of a named thinker's ideas, so there's no attribution-
+confidence or closeness-to-source risk the way anchors carry.
+
+- **journal-01**: What's one thing you're avoiding right now, and what is it costing you to keep avoiding it?
+- **journal-02**: Where did you feel most like yourself this week, and what made that moment different?
+- **journal-03**: What would you do today if you trusted yourself completely?
+- **journal-04**: Which relationship in your life needs more attention than you've been giving it?
+- **journal-05**: What's a belief about yourself you've outgrown but still act on?
+- **journal-06**: If today were the only chance to say something to someone you love, what would you say?
+- **journal-07**: What's the smallest true step you could take on the thing you keep postponing?
+- **journal-08**: What did you learn this month that changed how you see something?
+- **journal-09**: Where in your life are you choosing comfort over growth?
+- **journal-10**: What would you forgive yourself for if no one else needed to know?
+- **journal-11**: What's one assumption about your future you've never actually questioned?
+- **journal-12**: Who in your life deserves a thank you they haven't received yet?
+- **journal-13**: What does your ideal ordinary Tuesday actually look like?
+- **journal-14**: What's something you did today purely because you wanted to, not because you had to?
+- **journal-15**: Where are you spending energy on something that no longer matters to you?
+- **journal-16**: What would change if you stopped waiting for permission to start?
+- **journal-17**: What's a fear you've been treating as a fact?
+- **journal-18**: If you described today to your future self, what would you want to be proud of?
+- **journal-19**: What's one habit that quietly shapes more of your life than you realize?
+- **journal-20**: Who taught you something important without knowing they were teaching you?
+- **journal-21**: What are you tolerating that you have the power to change?
+- **journal-22**: When did you last do something difficult and feel glad afterward?
+- **journal-23**: What's the story you tell yourself about why you can't, and is it still true?
+- **journal-24**: Where do you feel busy but not actually productive?
+- **journal-25**: What would you attempt if failing at it cost you nothing?
+- **journal-26**: What's a conversation you've been putting off, and what's really stopping you?
+- **journal-27**: What does enough look like for you, specifically?
+- **journal-28**: What part of your day do you rush through that deserves more attention?
+- **journal-29**: What's something you used to love doing that quietly disappeared from your life?
+- **journal-30**: Whose opinion of you do you weigh more than it deserves?
+- **journal-31**: What would you do differently this week if you knew it would be remembered?
+- **journal-32**: What's a small discomfort you've been avoiding that would probably teach you something?
+- **journal-33**: Where in your life do you already have enough, but act like you don't?
+- **journal-34**: What did today ask of you that yesterday didn't?
+- **journal-35**: What's something you're proud of that you've never told anyone?
+- **journal-36**: If your stress had a message for you, what would it be trying to say?
+- **journal-37**: What's one thing you can simplify this week without losing anything that matters?
+- **journal-38**: Who do you need to stop comparing yourself to?
+- **journal-39**: What would it look like to trust the process instead of needing the outcome now?
+- **journal-40**: What's the kindest thing you did today, and did you notice it at the time?
 
 ## Word of the Day (added v1.10, replaces the Fresh reserve/offline-fallback pool)
 

@@ -3,9 +3,9 @@
 A personal mindset dashboard. One page, no backend, no dependencies — a small bottle of light
 breathing slowly, the day's date in Hong Kong time, and three short grounding cards
 that refresh themselves every morning at 06:00 HKT: an **Anchor** (a timeless principle),
-a **Shift** (a "from → to" reframe), and a **Word of the Day** (one word worth knowing, its
-origin, and a one-line meaning). A quiet **Values** tab sits alongside it. Two themes —
-`calm` (cream/blue, default) and `blossom` (soft pink).
+a **Journal** prompt (a mindful reflection question), and a **Word of the Day** (one word
+worth knowing, its origin, and a one-line meaning). A quiet **Values** tab sits alongside it.
+Two themes — `calm` (cream/blue, default) and `blossom` (soft pink).
 
 Zero build step, zero runtime dependencies, zero personal data about anyone but public
 thinkers already credited by name. See `BUILD-PLAN.md` for the full specification this
@@ -30,7 +30,7 @@ theme you last used.
 
 ## Ops runbook
 
-**Add or edit cards** — edit `data/cards.json` (anchors/shifts/wordOfDay) or
+**Add or edit cards** — edit `data/cards.json` (anchors/journal/wordOfDay) or
 `data/values.json` directly, commit, push to `main`. No build step. Keep the writing rules
 in `BUILD-PLAN.md` §5.3 in mind: ≤ 40 words, no quotation marks, no banned platitudes,
 person-named attribution only when you're confident the idea is really theirs. Word of the

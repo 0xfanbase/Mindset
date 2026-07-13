@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.11)
+# MINDSET — Autonomous Build Plan (v1.12)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -261,6 +261,26 @@ every `wordOfDay` entry has non-empty `word`/`origin`/`lang`/`meaning` and that 
 like a real BCP-47 tag (59/59, up from 58 — a genuine new requirement, not a re-add of the
 removed `fresh-history.json` check).
 
+**v1.12 changelog (from v1.11, post-launch human feedback):** the Shift card (a "From X → To Y"
+reframe, present since v1.0) is retired and replaced with **Journal** — a mindful reflection
+prompt — after live feedback that Shift "seems to be not so helpful." Same deterministic-
+rotation architecture as before, just a content-type swap: `data/cards.json`'s `shifts` array
+(40 `{ id, from, to }` entries) becomes `journal` (40 `{ id, prompt }` entries, each an
+open-ended question meant to be sat with, e.g. "What's one thing you're avoiding right now,
+and what is it costing you to keep avoiding it?"); `lib.mjs`'s `pickToday` and
+`generate-daily.mjs` both rename their `shift`/`shiftId` variable and salt to `journal`/
+`journalId`; `data/daily.json`'s schema follows suit. `app.js`'s `renderShiftCard` (which built
+a custom strikethrough-`from` / bold-arrow-`to` structure) is replaced by a much simpler
+`renderJournalCard` — just the `JOURNAL` chip plus the prompt in the existing `.card-body`,
+needing zero new CSS; `styles.css`'s now-dead `.shift-from`/`.shift-to`/`.shift-to .arrow`
+rules are removed. `verify.mjs`'s stage3 checks (shape, count, word cap, quote-glyph,
+platitude, offline-fallback simulation) and stage4's `daily.json` schema check are retargeted
+from `shifts`/`shiftId` to `journal`/`journalId`; the 40 new prompts were pre-validated against
+these exact rules (word cap raised to ≤25 words, since a real question needs more room than an
+8-word half-reframe did) before writing. `verify.mjs all` 59/59 (same count — this is a
+retarget, not an add or removal, since Shift already had checks in all the same places
+Journal now does).
+
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
 ```
@@ -306,8 +326,8 @@ Zero backend. Zero dependencies. Zero personal data (about the owner — see §2
 The three daily cards:
 
 1. **Anchor** — a timeless principle (Stoicism, Die With Zero, growth mindset, relationships, wealth principles, focus/energy), written as an original paraphrase with attribution.
-2. **Shift** — a "From X → To Y" reframe.
-3. **Word of the Day** (v1.10, replacing Fresh) — one word worth knowing (often untranslatable — *wabi-sabi*, *ikigai*, *amor fati*) with its origin and a one-line meaning, deterministically rotated the same way as Anchor/Shift.
+2. **Journal** (v1.12, replacing Shift) — a mindful reflection prompt, an open-ended question meant to be actually sat with, not a quick from/to reframe.
+3. **Word of the Day** (v1.10, replacing Fresh) — one word worth knowing (often untranslatable — *wabi-sabi*, *ikigai*, *amor fati*) with its origin and a one-line meaning, deterministically rotated the same way as Anchor/Journal.
 
 ---
 
@@ -359,7 +379,7 @@ The three daily cards:
 │   ├── icons/              # icon-192.png, icon-512.png, apple-touch-icon.png (180)
 │   └── favicon.svg
 ├── data/
-│   ├── cards.json          # anchors[129], shifts[40], wordOfDay[30]
+│   ├── cards.json          # anchors[129], journal[40], wordOfDay[30]
 │   ├── values.json         # 5 values
 │   └── daily.json          # written by the pipeline daily
 ├── scripts/
@@ -434,7 +454,7 @@ fails 4.5:1 (it is close, ~4.3:1 on white, so expect to adjust); log any token a
 
 Self-host both webfonts as woff2 in `assets/fonts/` with `font-display: swap` and their OFL licence files. **Exit ramp:** if woff2 files cannot be fetched within the attempt budget (§9.2), ship the system stack for all roles, log it in `decisions.md`, and continue — fonts are never a blocker.
 
-Type scale (px): 10 (mono meta chips) · 12–13 (mono date line, values essence/behaviour) · 14.5–16.5 (shift text) · 15.5 (anchor/word card text, error state) · 17–18 (values name, wordmark) · 20 (word title) — line-height ~1.45–1.5 body/card text.
+Type scale (px): 10 (mono meta chips) · 12–13 (mono date line, values essence/behaviour) · 15.5 (anchor/journal/word card text, error state) · 17–18 (values name, wordmark) · 20 (word title) — line-height ~1.45–1.5 body/card text.
 
 ### 4.4 Layout — one no-scroll screen (390×844 baseline)
 
@@ -456,7 +476,7 @@ The design supersedes v1.0's tall hero-canvas mockup with a compact, single-scre
 │  card text (Fraunces)              │  matches the Values tab's row style exactly),
 │  — after Marcus Aurelius           │  15px vertical padding, hairline divider
 │  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈  │  between rows, no border on the last one
-│  [Shift row]  [Word row]           │
+│  [Journal row]  [Word row]         │
 ├────────────────────────────────────┤   stacked ≤899px, 3-across ≥900px desktop
 │ refreshes daily · 06:00 HKT        │  footer, margin-top:auto pins it down
 └────────────────────────────────────┘
@@ -475,7 +495,7 @@ since it's no longer adjacent to the notch/status bar).
 
 1. **Theme toggle:** pill button top-right, `aria-pressed`, icons ◐/❀ (calm/blossom), 44×44px, `persists mindset.theme`, default `calm`, no flash-of-wrong-theme (inline script reads localStorage before CSS paint).
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Header row = mono category chip (ANCHOR / SHIFT / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px) inside a `.word-title-row` alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
+3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Header row = mono category chip (ANCHOR / JOURNAL / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px) inside a `.word-title-row` alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 06:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 06:00 HKT, every single day.)
    - `daily.json` unreachable, > 48h stale, or fetch fails → page computes all three cards locally via `lib.mjs` rotation → slate chip `offline rotation`. Since Word of the Day is deterministic (v1.10), this path picks the exact same word as the server would have for that date — unlike the retired Fresh card, there is no divergent "fallback" content.
@@ -549,7 +569,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 ```json
 {
   "anchors": [ { "id": "stoic-001", "category": "stoic", "text": "...", "attribution": "— after Epictetus" } ],
-  "shifts":  [ { "id": "shift-001", "from": "Proving I belong", "to": "Deciding what is worth building" } ],
+  "journal": [ { "id": "journal-01", "prompt": "What's one thing you're avoiding right now, and what is it costing you to keep avoiding it?" } ],
   "wordOfDay": [ { "id": "word-01", "word": "Wabi-sabi", "origin": "Japanese", "lang": "ja-JP", "meaning": "..." } ]
 }
 ```
@@ -566,7 +586,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 | anchors | `focus` (deep work, energy, saying no) | 20 |
 | anchors | `voices` (added v1.3 — Jay Shetty, Joe Biden, Michelle Obama; see §5.3.9) | 9 |
 | **anchors total** | | **129** |
-| shifts | — | **40** |
+| journal | — (replaced `shifts` in v1.12) | **40** |
 | wordOfDay | — (added v1.10, replacing freshReserve) | **30** |
 
 A Claude Design prototype (see changelog) already produced 18 anchors (3 per category), 10
@@ -584,12 +604,12 @@ rather than a short list of what actually matters (§5.3.6).
 2. Original paraphrase only; zero quotation-mark glyphs per invariant 2 (ASCII apostrophes for contractions/possessives are fine); attribution `— after <thinker>` or `— core principle`.
 3. Second person or imperative voice (`You control the response, not the event.`).
 4. **Banned platitudes** (verify.mjs greps, case-insensitive; store the list split/obfuscated in `verify.mjs` so the harness doesn't fail its own repo-wide-adjacent sweep by containing the literal strings): `believe in yourself`, `hustle`, `crush it`, `unlock your potential`, `be your best self`, `good vibes`, `grind`, `10x`, `manifest`.
-5. Shift cards: `from` ≤ 8 words, `to` ≤ 8 words, and the pair must name a real cognitive move, not a mood (`From clearing the inbox → To finishing one thing that matters`).
+5. **Journal prompts (replaced Shift cards in v1.12):** `{ "id", "prompt" }`, `prompt` ≤ 25 words, one open-ended question per entry, second person, no yes/no questions — it should invite a few sentences of actual reflection, not a one-word answer. Concrete and specific beats abstract and general (`What's one thing you're avoiding right now, and what is it costing you to keep avoiding it?`, not `How are you feeling today?`).
 6. Values (`values.json`, exactly 5): `{ "name", "essence" (≤ 14 words), "behaviour" (≤ 16 words, observable — something a camera could see) }`. Generic-safe: no personal references to the owner. (Cut from 10 to 5 in v1.2 per live human feedback — keep the strongest 5, cut the rest rather than let the list grow back; if curating later, replace one of the 5, don't add a 6th.)
 7. **Attribution-confidence rule:** use a person-named attribution (`— after X`) only when you are confident the specific idea is centrally/traditionally X's (e.g. Epictetus/Seneca/Marcus Aurelius for Stoic control-of-response ideas, Bill Perkins for Die With Zero's core thesis, Dweck for growth-mindset framing, Carnegie for the specific relationship tactics from *How to Win Friends*, Housel for invisible-wealth/avoid-ruin framing, Newport for deep-work framing). Otherwise, demote to tradition-level attribution (`— Stoic tradition`, `— growth-mindset research`, `— core principle`) rather than guessing at a specific person. This is a quality/accuracy safeguard, independent of the (resolved) PII question — misattributing an idea to a real, named public figure is a credibility problem even though naming public figures itself is fine.
 8. Write anchors in six batches (one per category, extending each category's 3 seed cards to its full count). After each batch, run the normal mechanical self-review (word caps, quote marks, banned phrases — rules 1–5), **and then** a second, independent review pass per §10 Stage 3's content-QA step, before moving to the next batch.
 9. **`voices` category (added v1.3):** a 7th anchor category, 9 cards (3 each), for named living/recent public figures the owner's household specifically finds inspiring, so their thinking surfaces periodically via the same rotation — not a new subsystem, just more entries in the same `anchors` pool. Extra bar beyond rules 1–8 for this category specifically: (a) any figure who has held significant political office must be scoped strictly to personal-character themes (grief, resilience, self-belief, service) and must never reference their office, party, policies, or elections — attribution is tied to a specific, nonpartisan book/body of work (e.g. `— after X, from <book>`), not their public office; (b) rule 2's "no verbatim quotes" is enforced against the *spirit*, not just quote-mark glyphs — a paraphrase that lands close to the person's one most-famous, most-recognizable line is a violation even with zero quote marks and needs a rewrite, not just a rewording; (c) run the independent second-pass review (rule 8) with an explicit prompt to check attribution-confidence, political neutrality, and closeness-to-source — this category carries materially higher reputational risk per card than the historical-thinker categories.
-10. **`wordOfDay` (replaced `freshReserve` in v1.10, 30 entries):** `{ "id", "word", "origin" (a language/tradition, e.g. "Japanese", "Stoic Greek" — never a person's name, since this pool has no attribution-confidence question the way anchors do), "lang" (added v1.11 — a BCP-47 tag, e.g. "ja-JP", "de-DE", mapped from `origin`, feeding the pronunciation button's `SpeechSynthesisUtterance.lang` per §4.5.4a so the word is spoken in a voice matched to its actual language), "meaning" (≤ 20 words, one sentence, no verbatim dictionary-style copying — write the sense of the word, not a lifted definition) }`. Fully self-authored (no external source to fetch or verify), so it rotates deterministically exactly like anchors/shifts (§6.2) rather than needing the daily pipeline to do any network work for it.
+10. **`wordOfDay` (replaced `freshReserve` in v1.10, 30 entries):** `{ "id", "word", "origin" (a language/tradition, e.g. "Japanese", "Stoic Greek" — never a person's name, since this pool has no attribution-confidence question the way anchors do), "lang" (added v1.11 — a BCP-47 tag, e.g. "ja-JP", "de-DE", mapped from `origin`, feeding the pronunciation button's `SpeechSynthesisUtterance.lang` per §4.5.4a so the word is spoken in a voice matched to its actual language), "meaning" (≤ 20 words, one sentence, no verbatim dictionary-style copying — write the sense of the word, not a lifted definition) }`. Fully self-authored (no external source to fetch or verify), so it rotates deterministically exactly like anchors/journal (§6.2) rather than needing the daily pipeline to do any network work for it.
 
 ---
 
@@ -603,7 +623,7 @@ rather than a short list of what actually matters (§5.3.6).
   "dateHKT": "2026-07-14",
   "generatedAtISO": "2026-07-13T22:00:41Z",
   "anchorId": "wealth-007",
-  "shiftId": "shift-023",
+  "journalId": "journal-23",
   "wordId": "word-16"
 }
 ```
@@ -618,7 +638,7 @@ external source.
 - `hktDayNumber(d)` → `floor(Date.UTC(y, m-1, day) / 86400000)` from the HKT date parts.
 - `hktDateParts(d)` → `{ weekday, day, month, year }` via `Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Hong_Kong', weekday:'long', day:'numeric', month:'long', year:'numeric' })`, for rendering the date line without duplicating formatting logic in `app.js`.
 - `pickIndex(poolSize, dayNumber, salt)` → per-cycle Fisher–Yates permutation seeded with `xmur3(salt + ":" + floor(dayNumber/poolSize))` feeding `mulberry32`; return `order[dayNumber % poolSize]`. **Use the reference implementation in Appendix B verbatim.** Guarantees: no repeats *within* a full cycle (adjacent cycles are independent permutations, so a repeat can occur right at a cycle boundary — roughly a 1-in-poolSize chance — this is expected and not a bug). Fully stateless, identical results in node and browser. Note for future curation (put this in the README runbook, not enforced by code): replace cards 1-for-1; adding or removing cards changes the pool size and reshuffles the whole rotation, which may repeat a recently-seen card once.
-- Salts: `"anchor"`, `"shift"`, `"word"`.
+- Salts: `"anchor"`, `"journal"`, `"word"`.
 
 ### 6.3 Client behaviour (`app.js`)
 
@@ -639,7 +659,7 @@ from `cards.json`'s own `wordOfDay` pool (§5.3.10) — nothing to fetch, parse,
 since there's no external source that can be down, off-theme, or misidentified. All of that
 machinery is retired along with it; the script now only stamps today's three picks:
 
-1. Compute `dateHKT`, `dayNumber` via `lib.mjs`; pick `anchorId`, `shiftId`, `wordId` (all three
+1. Compute `dateHKT`, `dayNumber` via `lib.mjs`; pick `anchorId`, `journalId`, `wordId` (all three
    via the same deterministic `pickIndex` rotation, §6.2 — no fetch, no external dependency).
 2. Write `data/daily.json` (§6.1).
 3. Idempotent and safe to re-run any number of times same-day — the picks are a pure function
@@ -787,7 +807,7 @@ for stage in 0..5:
 | **LOOP-A** daily refresh | Actions cron 05:56 HKT + `workflow_dispatch` | the core auto-run |
 | **LOOP-B** stuck-build killer | `timeout-minutes: 10` + `concurrency.cancel-in-progress` | any hung/overlapping run — killed inside 10 min, never "stuck for hours" |
 | **LOOP-C** dead-man's switch | watchdog 09:00 HKT → checks the *live* site, not just git → GitHub issue (deduped) + email | silent failures LOOP-B can't see (cron never fired, push failed, **or Pages didn't redeploy**) |
-| **LOOP-D** graceful degrade | client staleness chip (boundary-aware) + offline deterministic rotation (anchor/shift/wordOfDay all alike, v1.10) | everything else — the page NEVER shows an empty slot |
+| **LOOP-D** graceful degrade | client staleness chip (boundary-aware) + offline deterministic rotation (anchor/journal/wordOfDay all alike) | everything else — the page NEVER shows an empty slot |
 
 Design consequence: the worst possible failure is one morning of yesterday's (or locally rotated) cards, visibly labelled, followed by self-healing the next cron. No standing agents, no machine that must stay awake.
 
@@ -831,9 +851,9 @@ Design consequence: the worst possible failure is one morning of yesterday's (or
 
 ### Stage 4 — Pipeline & loops
 **Objective:** the machine that runs without anyone.
-**Tasks:** `generate-daily.mjs` (§7) — as of v1.10 a pure, deterministic stamp of `anchorId`/`shiftId`/`wordId` with no network calls (§7's original v1.1-era task list here resolved + verified five RSS/YouTube feeds for the now-retired Fresh card; that entire concern no longer exists, see §7's v1.10 note) — write both workflows from §8 (cron slots, watchdog live-check + dedup), run the generator locally as `NODE_USE_ENV_PROXY=1 node scripts/generate-daily.mjs` to produce a real `daily.json`, commit, push, then dispatch `daily-cards` via the GitHub MCP tools (no `gh` CLI) and poll run status (bounded: 20s × 15) until success; **after the workflow's bot commit lands, `git pull --rebase origin main` before any further local commit** (this is a guaranteed non-fast-forward otherwise); dispatch `watchdog` once against the real deployed `daily.json` and confirm it passes, then run the exact stale-detection test prescribed in §8.2 (temporary branch, not an ad-hoc dry-run flag) and confirm it fails correctly with one new (then closed) issue.
+**Tasks:** `generate-daily.mjs` (§7) — as of v1.10 a pure, deterministic stamp of `anchorId`/`journalId`/`wordId` with no network calls (§7's original v1.1-era task list here resolved + verified five RSS/YouTube feeds for the now-retired Fresh card; that entire concern no longer exists, see §7's v1.10 note) — write both workflows from §8 (cron slots, watchdog live-check + dedup), run the generator locally as `NODE_USE_ENV_PROXY=1 node scripts/generate-daily.mjs` to produce a real `daily.json`, commit, push, then dispatch `daily-cards` via the GitHub MCP tools (no `gh` CLI) and poll run status (bounded: 20s × 15) until success; **after the workflow's bot commit lands, `git pull --rebase origin main` before any further local commit** (this is a guaranteed non-fast-forward otherwise); dispatch `watchdog` once against the real deployed `daily.json` and confirm it passes, then run the exact stale-detection test prescribed in §8.2 (temporary branch, not an ad-hoc dry-run flag) and confirm it fails correctly with one new (then closed) issue.
 **DoD:** real `daily.json` committed by the *workflow* (not only locally); both workflows have at least one green dispatch run against real content; watchdog's stale-detection path proven via the prescribed temporary-branch mechanism (this run is expected-red, and does not count against the "green dispatch" DoD line above); local clone rebased cleanly onto the workflow's commit.
-**Verify:** `stage4` = YAML sanity greps (cron strings, `timeout-minutes`, permissions) + `daily.json` schema check (`anchorId`/`shiftId`/`wordId` all present) + dispatch/poll results via the GitHub MCP tools (no `gh run list` dependency).
+**Verify:** `stage4` = YAML sanity greps (cron strings, `timeout-minutes`, permissions) + `daily.json` schema check (`anchorId`/`journalId`/`wordId` all present) + dispatch/poll results via the GitHub MCP tools (no `gh run list` dependency).
 **Commit:** `stage4: daily pipeline, watchdog, loops live`
 
 ### Stage 5 — QA, polish, acceptance
