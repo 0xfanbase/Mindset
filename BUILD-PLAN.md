@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.13)
+# MINDSET — Autonomous Build Plan (v1.14)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -299,6 +299,65 @@ direction (narrow the pool to timeless principle-level entries; weight rotation 
 recurs more often; rewrite the tactical entries toward observation/being rather than instruction)
 and this remains open, pending their steer.
 
+**v1.14 changelog (from v1.13, post-launch human feedback):** the human picked a direction for
+the Anchor rewrite — "rewrite the tactical ones toward observation/being rather than
+instruction," with calmness/mindfulness/grounding as the throughline — and separately asked to
+expand the pool from 129 to 365 (one per day of the year), sourced from named public figures and
+philosophical traditions, researched deeply rather than guessed at. The entire `anchors` pool was
+replaced (not incrementally edited) under a new 10-category taxonomy designed to give the
+observational voice real breadth: `stoic` (55, Marcus Aurelius/Seneca/Epictetus), `buddhist` (55,
+Thich Nhat Hanh/Jon Kabat-Zinn/the Dalai Lama/Pema Chödrön), `taoist` (25, Lao Tzu/Zhuangzi),
+`impermanence` (35, replacing `diewithzero` — Bill Perkins/memento mori), `attention` (35,
+replacing `focus` — Cal Newport), `relationships` (30, Carnegie), `growth` (30, Dweck/Kristin
+Neff/Brené Brown), `money` (25, replacing `wealth` — Morgan Housel), `voices` (40, expanded from 3
+to 8 named figures — Jay Shetty, Barack Obama, Michelle Obama, Nelson Mandela, Desmond Tutu, Fred
+Rogers, Viktor Frankl, Naval Ravikant), and `grounding` (35, new — universal sensory/body
+observations with no named attribution, zero research risk by design).
+
+Content was produced via 12 parallel research-and-author passes (one or two per category,
+splitting the two largest for quality control), each explicitly researching its source figures'
+actual documented themes/books before writing rather than working from vague memory, and each
+given a hard voice mandate with worked before/after examples: every entry must read as an
+**observation of something already happening** in the reader's mind/body/day (e.g. "notice the
+pull toward the next tab before you follow it"), never an **instruction to perform a task**
+(e.g. "close every tab") — the exact reframe the human asked for. All 365 drafts passed mechanical
+validation cleanly on the first pass (word cap ≤40, zero quotation-mark glyphs, zero banned
+platitudes, zero exact or near-duplicate text across the full 365).
+
+That mechanical cleanliness undersells how much real editorial work followed: four independent,
+fresh-context QA passes (mirroring the authoring split) fact-checked every named attribution
+against real documented sources, checked for paraphrases that track a person's single most famous
+line too closely (verbatim-quote-in-spirit, not just quote-mark glyphs), checked strict political
+neutrality for the `voices` figures who held major public office (Obama, Michelle Obama, Mandela,
+Tutu — personal-character themes only, zero reference to office/party/policy/elections), and
+checked for the exact instruction-vs-observation slip this whole rewrite exists to fix. These
+passes found ~70 genuine issues a mechanical script cannot catch, including: several
+semantically-duplicate entries the token-overlap proxy missed (same cognitive move, different
+words); Stoic/Taoist/Buddhist entries paraphrasing a specific famous line too closely (Marcus
+Aurelius's "born to do the work of a human being," Seneca's "to be everywhere is to be nowhere,"
+Epictetus's own cup-breaking example, Lao Tzu's water-flows-downhill image, Thich Nhat Hanh's
+cloud-in-the-paper interbeing parable); a systemic relapse in `relationships` where ~11 entries
+ended in a "Notice X" command tail — the instruction pattern this rewrite was meant to eliminate,
+caught and rewritten; several `growth` entries written as third-person research reportage ("studies
+found...") instead of a first-person noticed moment; three `voices` political-neutrality issues on
+Obama entries reading as office-adjacent (an adversarial-negotiation framing, "back at the desk,"
+a "season" of public criticism); and — most seriously — one Viktor Frankl entry built on the
+"space between stimulus and response" line, which independent research confirmed is a
+well-documented **misattribution** to Frankl (he never wrote or said it) and was dropped entirely
+rather than softened. A dedicated fix pass (mirroring the same 4-way split) applied every flagged
+correction, re-verified programmatically that all untouched entries stayed byte-identical, and the
+final assembled pool re-passed the full mechanical validation suite (365/365, word caps, zero
+quote glyphs, zero platitudes, zero exact or near-duplicates) before being written to
+`data/cards.json`.
+
+`scripts/verify.mjs`'s `CATEGORY_COUNTS` and total-anchors assertion were retargeted to the new
+taxonomy and count (365, up from 129) — `verify.mjs all` stays 59/59 (a retarget, not an add or
+removal). `data/daily.json` was regenerated via the real `generate-daily.mjs` since the old
+`anchorId` (from the retired category scheme) no longer existed in the new pool. Verified visually
+via Playwright: the Anchor card renders correctly, zero console errors. This is a full content
+replacement, not an incremental edit — see `audits/CONTENT-REVIEW.md` for the complete new pool
+and `audits/decisions.md` for the taxonomy design rationale and full QA findings.
+
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
 ```
@@ -397,7 +456,7 @@ The three daily cards:
 │   ├── icons/              # icon-192.png, icon-512.png, apple-touch-icon.png (180)
 │   └── favicon.svg
 ├── data/
-│   ├── cards.json          # anchors[129], journal[40], wordOfDay[30]
+│   ├── cards.json          # anchors[365], journal[40], wordOfDay[30]
 │   ├── values.json         # 5 values
 │   └── daily.json          # written by the pipeline daily
 ├── scripts/
@@ -596,14 +655,17 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 
 | Pool | Category | Count |
 |---|---|---|
-| anchors | `stoic` | 25 |
-| anchors | `diewithzero` | 20 |
-| anchors | `growth` (Dweck-style growth mindset) | 20 |
-| anchors | `relationships` (Carnegie-style) | 15 |
-| anchors | `wealth` (patience, avoid ruin, invisible wealth, asymmetry) | 20 |
-| anchors | `focus` (deep work, energy, saying no) | 20 |
-| anchors | `voices` (added v1.3 — Jay Shetty, Joe Biden, Michelle Obama; see §5.3.9) | 9 |
-| **anchors total** | | **129** |
+| anchors | `stoic` (Marcus Aurelius, Seneca, Epictetus) | 55 |
+| anchors | `buddhist` (Thich Nhat Hanh, Jon Kabat-Zinn, the Dalai Lama, Pema Chödrön) | 55 |
+| anchors | `taoist` (Lao Tzu, Zhuangzi) | 25 |
+| anchors | `impermanence` (Bill Perkins/Die With Zero, memento mori tradition — replaced `diewithzero` in v1.14) | 35 |
+| anchors | `attention` (Cal Newport — replaced `focus` in v1.14) | 35 |
+| anchors | `relationships` (Carnegie-style) | 30 |
+| anchors | `growth` (Dweck, Kristin Neff, Brené Brown) | 30 |
+| anchors | `money` (Morgan Housel — replaced `wealth` in v1.14) | 25 |
+| anchors | `voices` (Jay Shetty, Barack Obama, Michelle Obama, Nelson Mandela, Desmond Tutu, Fred Rogers, Viktor Frankl, Naval Ravikant; see §5.3.9) | 40 |
+| anchors | `grounding` (added v1.14 — universal sensory/body observations, no named attribution) | 35 |
+| **anchors total** | | **365** |
 | journal | — (replaced `shifts` in v1.12) | **40** |
 | wordOfDay | — (added v1.10, replacing freshReserve) | **30** |
 
