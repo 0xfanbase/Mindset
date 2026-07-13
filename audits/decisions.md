@@ -6,3 +6,13 @@
 - **2026-07-13, Stage 0 — Pages enablement gate:** this environment has no GitHub-MCP tool for reading/enabling Pages settings, and direct GitHub REST/token calls are policy-blocked (the session's own operating rules require MCP tools only, enforced by an auto-mode classifier). Cannot confirm or flip the Pages toggle programmatically. Asked the human to confirm/enable Pages manually (Settings → Pages → Deploy from a branch → `main` / root). Proceeding with the rest of the build in parallel since this is a one-time settings toggle with no reason to expect it can't succeed; live-URL checks in Stage 4/5 will confirm once it's on.
 
 - **2026-07-13, Stage 1 — contrast fix:** darkened blossom `--accent` from the design prototype's `#C94F7C` (~4.30:1 on white, fails AA 4.5:1 for normal-size text) to `#B84870` (~4.99:1 on `--surface`, ~4.61:1 on `--bg`) — invariant 7 requires 4.5:1 for any pair used at normal text size, and `--accent` renders the active-tab underline text, inline links, and the "Read →" label, all body-size.
+
+- **2026-07-13, Stage 4 — feed resolution (5/5 verified):**
+  - Daily Stoic `https://dailystoic.com/feed/` — 200, title "Daily Stoic", 10 items.
+  - Farnam Street `https://fs.blog/feed/` — 200, title "Farnam Street", 20 items.
+  - Huberman Lab `https://feeds.megaphone.fm/hubermanlab` — 200, title "Huberman Lab", 422 items.
+  - The Mindset Mentor (Rob Dial) — resolved via Apple Podcasts Search API (`itunes.apple.com/search?media=podcast&term=...`) to `https://feeds.simplecast.com/rpKQEwel`; verified title "The Mindset Mentor", `itunes:author` "Rob Dial", 1899 items.
+  - Ali Abdaal — resolved via the canonical `<link rel="canonical">` / `og:url` on `youtube.com/@aliabdaal` (NOT the first bare `"channelId"` string match, which pointed to three different, unrelated channel IDs elsewhere in the page — confirms the exact risk the amended plan flagged) to channel ID `UCoOae5nYA7VqaXzerajD0lg`; feed verified, title "Ali Abdaal", `<name>Ali Abdaal</name>`, 15 entries.
+  - All 5/5 sources verified live + identity-checked. No escalation needed (§11.3 only fires at zero verified).
+
+- **2026-07-13, Stage 5 prep — icon pipeline (Linux):** no rsvg-convert/ImageMagick/Inkscape/cairosvg available and npm install is banned, so used the pre-installed headless Chromium binary (`/opt/pw-browsers/chromium-1194/chrome-linux/chrome --headless --screenshot=...`) as the rasterizer — a one-shot CLI invocation, not a dev server. Produced icon-512.png, icon-192.png, apple-touch-icon.png (180px) from favicon.svg (a minimal single-drop mark replacing v1.0's node-network brain mark), ~16KB total, well under the 150KB icon budget.
