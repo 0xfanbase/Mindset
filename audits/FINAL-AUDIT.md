@@ -1,4 +1,4 @@
-# FINAL AUDIT — v1.0
+# FINAL AUDIT — v1.0 (see v1.2 update below)
 
 ## `verify.mjs` integrity (invariant 12 ratchet check)
 
@@ -8,6 +8,13 @@ isn't a regex word boundary) — a false negative that would have failed on genu
 code. Fixed to `/\d+svh/`. This is a bug fix that makes the check work as intended, not a
 relaxation — no check was loosened or removed at any point in this build. No other lines of
 `scripts/verify.mjs` changed after its Stage 0 commit.
+
+**v1.2 update:** two further changes, neither a relaxation: (1) every `drop.js` reference
+renamed to `figure.js` (the signature element was replaced, §4.6) — same checks, same
+strictness, new filename; (2) the values-count assertion changed from `exactly 10` to
+`exactly 5` — this reflects a deliberate, documented product decision (values.json cut from
+10 to 5 per live human feedback, see `decisions.md`), not a softened gate avoiding a failure.
+`verify.mjs all` remains 59/59 green after both changes.
 
 ## Acceptance checklist (BUILD-PLAN.md §12)
 

@@ -1,7 +1,7 @@
 # Mindset
 
-A personal mindset dashboard. One page, no backend, no dependencies — a single calm
-animated water drop, the day's date in Hong Kong time, and three short grounding cards
+A personal mindset dashboard. One page, no backend, no dependencies — a small human figure
+moving through a yoga sun salutation, the day's date in Hong Kong time, and three short grounding cards
 that refresh themselves every morning at 06:00 HKT: an **Anchor** (a timeless principle),
 a **Shift** (a "from → to" reframe), and something **Fresh** (the newest item from a small
 set of public feeds, or a reserve card if none are available). A quiet **Values** tab sits
@@ -47,6 +47,16 @@ briefly repeat a recently-seen card. Fine to do, just expect that one-time rippl
 actually matches who you think it is, not just that *some* feed responded. Two of the
 current five sources were resolved this way (a podcast search API for Rob Dial's show, and
 the canonical channel link for Ali Abdaal's YouTube ID) rather than trusted at face value.
+
+**Keep the Fresh card on-theme** — four of the five sources are single-topic by nature and
+always on-theme. Ali Abdaal's channel is topically broad (productivity, AI tools, book/fiction
+recommendations, business), so the generator rejects candidate titles matching
+`OFF_THEME_PATTERNS` in `scripts/generate-daily.mjs` (AI-tool tactics, app/tech reviews,
+sponsorship language, pure entertainment) and looks further back through that source's recent
+posts rather than dropping it outright. This is a keyword heuristic, not a real relevance
+check — if an off-theme pick still slips through, add a pattern for it; if a broad-topic
+source keeps producing off-theme picks despite the filter, the honest fix is removing it from
+`SOURCES` rather than growing the denylist forever.
 
 **Manually trigger the daily refresh** — GitHub → Actions → `daily-cards` → **Run workflow**
 (branch `main`). Safe to re-run same-day: `generate-daily.mjs` upserts by date, so it won't

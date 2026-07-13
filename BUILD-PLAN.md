@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.1)
+# MINDSET — Autonomous Build Plan (v1.2)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the four escalation triggers in §11 (plus the
@@ -22,6 +22,23 @@ matching a further-along Claude Design prototype (project `84cffca3-021f-4e25-a4
 "Mindset Mobile UI.dc.html") the owner had already built and refined — see §4.6. That prototype
 also supplied real, working `lib.mjs`/rotation code, a compact one-screen layout, and seed
 content in the intended voice; these are folded in throughout §3–§5.
+
+**v1.2 changelog (from v1.1, post-launch human feedback):** (1) **replaces the water-drop
+signature element with a small human figure moving through a yoga sun salutation on repeat**
+— `drop.js`/`<mindset-drop>` becomes `figure.js`/`<mindset-figure>`, see §4.6; (2) fixes a real
+robustness bug in that element's predecessor: the original `_setup()` silently gave up if the
+element had zero size at connect-time, relying only on a delayed `ResizeObserver` callback to
+ever recover — the new implementation retries via `requestAnimationFrame` until it gets a real
+size, so a slow-loading stylesheet can no longer leave the animation stuck on a static first
+frame; (3) **values.json cut from 10 to 5** — ten read as a checklist, not a short list of what
+actually matters; keep the original 5 core values, drop the 5 that were always marked "reserve,
+held back for later curation" (§5.2, §5.3.6); (4) tightens Today-tab spacing (header, card
+padding/gaps, date-line rhythm) that read as cluttered with three stacked cards at the old,
+tighter values (§4.4, §4.5.3); (5) adds a mindset-relevance filter to the daily pipeline (§7) —
+a live pick (an Ali Abdaal video on AI-prompt tactics) was off-theme for a mindset app; the
+generator now rejects off-theme candidate titles against a denylist and looks past the newest
+1-2 posts on a topically-broad source to find one that fits, rather than dropping the source
+entirely or shipping whatever's newest regardless of relevance.
 
 ---
 
@@ -61,9 +78,10 @@ logged in decisions.md.
 
 A single-page, public, static website hosted on GitHub Pages. It is a personal
 mindset dashboard that refreshes itself every morning at **06:00 Hong Kong time**
-with three short grounding cards, headed by a living "mind" — a single calm, animated
-water drop. Two tabs: **Today** (drop + date + 3 cards) and **Values** (a quiet list of
-core qualities). Two themes: a cream/blue default and a soft pink alternative.
+with three short grounding cards, headed by a living "mind" — a small human figure
+moving through a yoga sun salutation, on repeat. Two tabs: **Today** (figure + date + 3
+cards) and **Values** (a quiet list of core qualities). Two themes: a cream/blue default
+and a soft pink alternative.
 Zero backend. Zero dependencies. Zero personal data (about the owner — see §2.1).
 
 The three daily cards:
@@ -97,9 +115,9 @@ The three daily cards:
 3. **Zero runtime dependencies.** Vanilla HTML/CSS/JS. No frameworks, no npm packages, no build step, no bundler, no analytics, no cookies, no third-party scripts or CDNs at runtime. `localStorage` only, keys namespaced `mindset.*`.
 4. **Node ≥ 20 built-ins only** for scripts (global `fetch`, `node:fs`, `node:test` allowed). No `npm install` at any point. When running `generate-daily.mjs` locally in this environment, set `NODE_USE_ENV_PROXY=1` so Node's built-in `fetch` honours the environment's egress proxy (GitHub Actions runners are unaffected and need no flag).
 5. **Static hosting truth:** everything must work on GitHub Pages served from `main` branch root. Include a `.nojekyll` file. All stages commit and push directly to `main` — the owner has authorized this for this repo; there is no feature-branch/PR step in this plan.
-6. **Performance budget:** total page weight ≤ 350 KB excluding fonts; fonts ≤ 300 KB total; JS ≤ 60 KB total; the drop animation must pause when the tab is hidden and must honour `prefers-reduced-motion`.
+6. **Performance budget:** total page weight ≤ 350 KB excluding fonts; fonts ≤ 300 KB total; JS ≤ 60 KB total; the figure animation must pause when the tab is hidden and must honour `prefers-reduced-motion`.
 7. **Accessibility floor:** WCAG AA contrast for all text token pairs (verified numerically in `verify.mjs`, including `(--muted,--bg)` and `(--accent,--bg)` — not just the on-`--surface` pairs — and gated at 4.5:1 for any pair used for normal-size text, 3:1 only where the token is genuinely large-text/UI-component use), visible keyboard focus, `aria` roles on tabs and theme toggle, tap targets ≥ 44px, semantic landmarks (`header`, `main`, `nav`, `footer`).
-8. **Timezone law:** every date shown or computed is **Asia/Hong_Kong**, derived via `Intl.DateTimeFormat` with an explicit `timeZone` — never a bare `new Date().toLocaleDateString()` and never the runner's local time. `app.js`/`drop.js` must not call locale-date APIs without an explicit `timeZone` (Stage 1 verify greps for this).
+8. **Timezone law:** every date shown or computed is **Asia/Hong_Kong**, derived via `Intl.DateTimeFormat` with an explicit `timeZone` — never a bare `new Date().toLocaleDateString()` and never the runner's local time. `app.js`/`figure.js` must not call locale-date APIs without an explicit `timeZone` (Stage 1 verify greps for this).
 9. **Search visibility:** `<meta name="robots" content="noindex">` (public but unlisted — note: this hides the Pages URL from search, but the GitHub repo itself, including `cards.json`, remains a public, indexable, code-searchable text file regardless. Don't rely on "unlisted" as a content-privacy mechanism).
 10. **Git hygiene:** no force-push, no history rewrites of already-pushed commits, no edits outside this repo, no global installs, conventional commit messages per stage as specified. `git pull --rebase origin main` (rebasing your own unpushed local commits onto a workflow's bot commit) is explicitly permitted and required where noted (Stage 4/5) — this is not the kind of history rewrite the ban refers to.
 11. **Mobile-first law:** the phone is the PRIMARY client; desktop is the adaptation. Base CSS **is** the mobile layout; wider layouts are layered on exclusively via `min-width` media queries — **`max-width` media queries are banned** (mechanically verifiable). All URLs — assets, fetches, SW scope, manifest `start_url` — are **relative** (`./…`), never root-absolute. Viewport heights use `svh` (with a `vh` fallback line above it). Safe-area insets are respected. The page must be installable to the home screen (§4.7). The whole layout is a **single no-scroll screen** on a 390×844 viewport (see §4.4) — this is stricter than "mobile-first," it's "mobile-fits."
@@ -114,7 +132,7 @@ The three daily cards:
 ├── index.html
 ├── styles.css
 ├── app.js                  # UI logic: tabs, theme, date, cards, staleness
-├── drop.js                 # canvas water-drop animation (the signature element — was "brain.js" in v1.0)
+├── figure.js               # canvas yoga-figure animation (the signature element — was drop.js/brain.js)
 ├── lib.mjs                 # SHARED pure functions: HKT date, day number, rotation (imported by browser AND node)
 ├── manifest.webmanifest    # home-screen installability (Appendix C)
 ├── sw.js                   # offline shell, network-first (Appendix C, verbatim)
@@ -124,7 +142,7 @@ The three daily cards:
 │   └── favicon.svg
 ├── data/
 │   ├── cards.json          # anchors[120], shifts[40], freshReserve[10]
-│   ├── values.json         # 10 values
+│   ├── values.json         # 5 values
 │   └── daily.json          # written by the pipeline daily
 ├── state/
 │   └── fresh-history.json  # last 7 fresh-source picks, upserted by dateHKT (see §7)
@@ -151,9 +169,9 @@ The three daily cards:
 
 ### 4.1 Design direction (one sentence)
 **"An instrument panel for the inner life"** — a quiet, warm, paper-like field on
-which exactly one thing is alive: a single calm drop of water, forming and falling and
-rippling outward, on an otherwise still page. Contemplative Stoic calm + the precision
-of an automated system. All boldness is spent on the drop; everything else is
+which exactly one thing is alive: a small human figure, moving slowly and deliberately
+through a yoga sun salutation, on an otherwise still page. Contemplative Stoic calm + the
+precision of an automated system. All boldness is spent on the figure; everything else is
 disciplined and quiet. The whole screen fits without scrolling on a phone (§4.4) —
 editorial, not busy.
 
@@ -168,8 +186,8 @@ editorial, not busy.
 | `--ink` | `#1C1B17` | primary text |
 | `--muted` | `#6F6B60` | attribution, meta |
 | `--accent` | `#2B5FD9` | links, active tab, chips |
-| `--pulse` | `#7FB0FF` | drop colour/glow |
-| `--edge` | `rgba(43,95,217,0.16)` | reserved (unused now the brain's edges are gone; keep the token defined for future use, no verify requirement) |
+| `--pulse` | `#7FB0FF` | figure colour/glow |
+| `--edge` | `rgba(43,95,217,0.16)` | reserved (unused since the brain's edges retired; keep the token defined for future use, no verify requirement) |
 | `--hairline` | `rgba(28,27,23,0.10)` | dividers, toggle border (cards are borderless — see §4.5.3) |
 
 **Theme `blossom` (pink):**
@@ -210,9 +228,9 @@ The design supersedes v1.0's tall hero-canvas mockup with a compact, single-scre
 
 ```
 ┌────────────────────────────────────┐
-│ mindset (italic wordmark)  ◐ toggle│  header, ~48px, margin-top for safe-area
+│ mindset (italic wordmark)  ◐ toggle│  header, ~44px, tightened in v1.2
 ├────────────────────────────────────┤
-│         [ small drop, ~160×84 ]    │  centred, inline — not a tall hero
+│        [ small figure, ~96×112 ]   │  centred, inline — not a tall hero
 │      MONDAY · 13 JULY 2026         │  mono, letterspaced, uppercase
 │   (staleness chip if applicable)   │
 ├────────────────────────────────────┤
@@ -221,10 +239,10 @@ The design supersedes v1.0's tall hero-canvas mockup with a compact, single-scre
 │  ┌──────────────────────────────┐  │
 │  │ ANCHOR (mono chip)           │  │  cards: borderless, 22px radius,
 │  │ card text (Fraunces)         │  │  shadow 0 14px 36px rgba(36,26,32,.07),
-│  │ — after Marcus Aurelius      │  │  stacked ≤899px, 3-across ≥900px
-│  └──────────────────────────────┘  │  (desktop: max-width 1080px, adaptation
-│  [Shift card] [Fresh card]         │   of the same one-screen idea, not literally
-├────────────────────────────────────┤   no-scroll on desktop)
+│  │ — after Marcus Aurelius      │  │  20px/22px padding, 16px gaps (loosened
+│  └──────────────────────────────┘  │  in v1.2 — the tighter v1.1 values read
+│  [Shift card] [Fresh card]         │  as cluttered with three stacked cards)
+├────────────────────────────────────┤   stacked ≤899px, 3-across ≥900px desktop
 │ refreshes daily · 06:00 HKT        │  footer, margin-top:auto pins it down
 └────────────────────────────────────┘
 ```
@@ -237,30 +255,56 @@ allow the page itself to scroll rather than clipping content — never clip.
 
 1. **Theme toggle:** pill button top-right, `aria-pressed`, icons ◐/❀ (calm/blossom), 44×44px, `persists mindset.theme`, default `calm`, no flash-of-wrong-theme (inline script reads localStorage before CSS paint).
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards:** `--surface`, **22px radius, borderless** (no hairline border — an intentional refinement from the design prototype over v1.0's bordered-card spec), shadow `0 14px 36px rgba(36,26,32,0.07)`, ~18px/22px padding. Header row = mono category chip (ANCHOR / SHIFT / FRESH, no emoji — plain mono text per the prototype). Body in Fraunces. Footer = muted attribution. Fresh card footer = source domain + `Read →` link (`target="_blank" rel="noopener"`); whole Fresh card is the tap target; render the title via `textContent` only (never `innerHTML`) and validate `fresh.url` is `https:` before treating the card as live (§6.3, §7 — untrusted third-party feed content).
+3. **Cards:** `--surface`, **22px radius, borderless** (no hairline border — an intentional refinement from the design prototype over v1.0's bordered-card spec), shadow `0 14px 36px rgba(36,26,32,0.07)`, 20px/22px padding, 16px gap between stacked cards (loosened in v1.2 — the original 18px/22px padding with an 11px gap read as cluttered with three cards stacked). Header row = mono category chip (ANCHOR / SHIFT / FRESH, no emoji — plain mono text per the prototype). Body in Fraunces. Footer = muted attribution. Fresh card footer = source domain + `Read →` link (`target="_blank" rel="noopener"`); whole Fresh card is the tap target; render the title via `textContent` only (never `innerHTML`) and validate `fresh.url` is `https:` before treating the card as live (§6.3, §7 — untrusted third-party feed content).
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 06:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 06:00 HKT, every single day.)
    - `daily.json` unreachable, > 48h stale, or fetch fails → page computes cards locally via `lib.mjs` rotation → slate chip `offline rotation`.
    - Fresh slot in offline mode → deterministic pick from `freshReserve`.
-5. **Values tab:** the 10 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px). **No numbering** — values are not a sequence.
-6. **Motion:** the drop is the ONLY animated element. Card entrance = one subtle 250ms fade/rise on load, nothing on scroll. Hover lift 2px desktop only.
+5. **Values tab:** the 5 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px). **No numbering** — values are not a sequence. (Cut from 10 to 5 in v1.2 — ten read as a checklist; keep only what actually matters.)
+6. **Motion:** the figure is the ONLY animated element. Card entrance = one subtle 250ms fade/rise on load, nothing on scroll. Hover lift 2px desktop only.
 
-### 4.6 The drop (signature element — `drop.js`, was "the brain" in v1.0)
+### 4.6 The figure (signature element — `figure.js`, was the water drop in v1.1, "the brain" in v1.0)
 
-A further-along Claude Design prototype (see the v1.1 changelog) replaced the particle-brain
-concept with a single calm drop of water — more legible at small size, calmer, and already
-built as a clean, dependency-free custom element (`<mindset-drop>` in the source prototype;
-rename the file to `drop.js` and register it, or inline its logic directly into a `<canvas>` —
-either is fine as long as the behaviour below is preserved exactly):
+v1.2 replaces the water drop with a small human figure moving through a yoga sun salutation
+(Surya Namaskar) on repeat — more obviously alive at a glance than the drop's subtle physics
+(the drop's slow bead-forming phase read, to a live human reviewer, as "not moving" even when
+it technically was), and still one continuous, calm, legible loop:
 
-1. **Form:** one continuous animation cycle (~9.5s), not discrete states: a bead **forms** at a fixed anchor point and **sags** under its own weight (smoothstep growth + a pear-shaped bezier bulge), **detaches and falls** (accelerating, with a trailing satellite droplet and a fresh bead already re-forming above), **impacts** (a brief squash ellipse), then **ripples** outward as 2–3 concentric, decelerating rings before the cycle restarts. Small (~160×84px inline), not a tall hero canvas.
-2. **Rendering:** plain 2D canvas path fills (radial-gradient body shading + a small specular highlight ellipse) — no DOM particles, no edges/nearest-neighbour graph (that was the retired brain concept).
-3. **Life:** slow and deliberate — the whole point is that nothing else on the page moves, so the one thing that does move should read as calm, not busy. No easing shortcuts that make it look mechanical; the reference implementation's smoothstep + eased fall + decelerating-ripple curves are the target feel.
-4. **Performance:** `requestAnimationFrame`; glow rendered by stamping a pre-rendered offscreen radial-gradient sprite (a small solid-colour canvas built once, cached until the colour changes — **never** per-frame `shadowBlur`); `devicePixelRatio` capped at 2; cancel RAF on `visibilitychange` hidden (resume on visible, unless reduced motion); `ResizeObserver`-driven re-setup, debounced.
-5. **Reduced motion:** `prefers-reduced-motion: reduce` (checked via `matchMedia`, re-checked live on a `change` listener) → render one static frame (a settled bead + one soft ripple), no RAF loop.
-6. **Themes:** the element takes `color`/`glow` as attributes; `app.js` sets these to the current theme's `--pulse` value on init and again on every theme-toggle event, so the drop is blue in `calm` and rose in `blossom`. (The source prototype's own demo happened to default to blossom for preview purposes — that is not a spec requirement; production default theme is `calm` per §4.5.1/invariant, full stop.)
-7. **Budget:** `drop.js` ≤ 12 KB (the reference implementation is ~6 KB; keep it lean if adapting further).
-8. **Not part of the shipped file:** the source prototype's `ios-frame.jsx` (a design-canvas phone-frame preview harness) and `support.js` (the design tool's own runtime) are prototyping scaffolding only — do not port them, do not reference them from the real site.
+1. **Form:** a side-profile stick figure (head circle + spine/neck/arm/leg line segments,
+   round line caps, soft glow sprite behind it) interpolated smoothly between named pose
+   keyframes in a full loop (~12s): standing prayer (Pranamasana) → arms raised overhead
+   (Urdhva Hastasana, slight back bend) → forward fold (Uttanasana) → lunge, one leg back
+   (Ashwa Sanchalanasana) → plank (Kumbhakasana) → upward dog (Urdhva Mukha Svanasana) →
+   downward dog (Adho Mukha Svanasana) → lunge (return) → forward fold → raised arms →
+   standing (loop restarts). Poses are defined as named keypoint sets in a normalized 0–100
+   box; each transition eases with a smoothstep, so the motion between recognizable poses is
+   itself the visible "aliveness" — no reliance on a single subtle physical effect the way the
+   drop's slow bead-growth was.
+2. **Rendering:** plain 2D canvas strokes (round caps/joins) for the limbs, a filled circle for
+   the head, and the same offscreen-sprite ambient glow technique as v1.1's drop (no per-frame
+   `shadowBlur`) stamped behind the figure each frame. No DOM particles, no bezier body-fill
+   shading — simpler than the drop's rendering, on purpose, since the pose transitions carry
+   the motion.
+3. **Life:** legible, continuous motion through named poses — not a single physics effect. Slow
+   enough to read as calm, fast enough that a glance clearly shows it moving (this directly
+   addresses the v1.1 "wasn't moving" report).
+4. **Performance:** `requestAnimationFrame`; the same offscreen radial-gradient sprite glow
+   technique as before (never per-frame `shadowBlur`); `devicePixelRatio` capped at 2; cancel
+   RAF on `visibilitychange` hidden (resume on visible, unless reduced motion); `ResizeObserver`-
+   driven re-setup, debounced. **Robustness fix (the actual root cause of the v1.1 "not moving"
+   report):** the setup routine must not silently give up if the element has zero size at
+   connect-time — retry via `requestAnimationFrame` until a real size is available, rather than
+   relying solely on `ResizeObserver`'s own delayed initial callback to ever recover.
+5. **Reduced motion:** `prefers-reduced-motion: reduce` (checked via `matchMedia`, re-checked
+   live on a `change` listener) → render one static frame (the standing-prayer pose), no RAF
+   loop.
+6. **Themes:** the element takes `color`/`glow` as attributes; `app.js` sets these to the
+   current theme's `--pulse` value on init and again on every theme-toggle event, so the figure
+   is blue in `calm` and rose in `blossom`.
+7. **Budget:** `figure.js` ≤ 12 KB (the reference implementation is ~8 KB).
+8. **Not part of the shipped file:** the original Claude Design prototype's `ios-frame.jsx` and
+   `support.js` were prototyping scaffolding only for the water-drop era and were never shipped;
+   `figure.js` is an original implementation for v1.2, not ported from any external prototype.
 
 ### 4.7 Mobile experience & installability (PRIMARY platform — enforce, don't hope)
 
@@ -269,10 +313,10 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 **Layout & ergonomics:**
 1. Single column ≤ 899px; content max-width with comfortable side padding (≥ 20px).
 2. `<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">`; header and footer pad with `env(safe-area-inset-top/bottom/left/right)` so nothing sits under a notch or home indicator.
-3. Page uses `height: 100vh; height: 100svh;` (vh fallback line first) as the layout basis for the no-scroll goal (§4.4/invariant 11) — the drop itself is a small fixed-size inline element (~160×84px, not viewport-relative).
+3. Page uses `height: 100vh; height: 100svh;` (vh fallback line first) as the layout basis for the no-scroll goal (§4.4/invariant 11) — the figure itself is a small fixed-size inline element (~96×112px, not viewport-relative).
 4. All interactive elements: ≥ 44px tap targets, `touch-action: manipulation`, `-webkit-tap-highlight-color: transparent` replaced by a designed `:active` state (scale 0.99 + hairline darken). No information may be hover-only.
 5. `html { -webkit-text-size-adjust: 100%; }`. Card text ≥ 15.5px on mobile (per the actual type scale in §4.3).
-6. No horizontal scroll, ever: no fixed `width` ≥ 400px on any element in `styles.css` (`max-width` is fine — verified by grep, scoped to `styles.css` so it doesn't false-positive on legitimate JS canvas pixel dimensions in `drop.js`).
+6. No horizontal scroll, ever: no fixed `width` ≥ 400px on any element in `styles.css` (`max-width` is fine — verified by grep, scoped to `styles.css` so it doesn't false-positive on legitimate JS canvas pixel dimensions in `figure.js`).
 
 **Installability (home-screen app):**
 7. `manifest.webmanifest` — use the Appendix C JSON verbatim; `display: standalone`, relative `start_url`/`scope`.
@@ -311,8 +355,8 @@ shifts, and 4 freshReserve cards in the intended voice — use these as the seed
 each pool (keep their ids/text/attribution as-is; they've already had one round of human
 review during that design session) and author the remaining cards per category to reach the
 exact counts above, matching voice and format exactly. That prototype's `values.json` content
-(5 core values + 5 "reserve" values) is **already exactly 10** — use all 10 directly, light
-touch-up only if needed for consistency.
+was 5 core values + 5 "reserve" values (10 total); **v1.2 ships the 5 core values only** —
+ten read as a checklist rather than a short list of what actually matters (§5.3.6).
 
 ### 5.3 Writing rules (enforced)
 
@@ -321,7 +365,7 @@ touch-up only if needed for consistency.
 3. Second person or imperative voice (`You control the response, not the event.`).
 4. **Banned platitudes** (verify.mjs greps, case-insensitive; store the list split/obfuscated in `verify.mjs` so the harness doesn't fail its own repo-wide-adjacent sweep by containing the literal strings): `believe in yourself`, `hustle`, `crush it`, `unlock your potential`, `be your best self`, `good vibes`, `grind`, `10x`, `manifest`.
 5. Shift cards: `from` ≤ 8 words, `to` ≤ 8 words, and the pair must name a real cognitive move, not a mood (`From clearing the inbox → To finishing one thing that matters`).
-6. Values (`values.json`, exactly 10): `{ "name", "essence" (≤ 14 words), "behaviour" (≤ 16 words, observable — something a camera could see) }`. Generic-safe: no personal references to the owner.
+6. Values (`values.json`, exactly 5): `{ "name", "essence" (≤ 14 words), "behaviour" (≤ 16 words, observable — something a camera could see) }`. Generic-safe: no personal references to the owner. (Cut from 10 to 5 in v1.2 per live human feedback — keep the strongest 5, cut the rest rather than let the list grow back; if curating later, replace one of the 5, don't add a 6th.)
 7. **Attribution-confidence rule:** use a person-named attribution (`— after X`) only when you are confident the specific idea is centrally/traditionally X's (e.g. Epictetus/Seneca/Marcus Aurelius for Stoic control-of-response ideas, Bill Perkins for Die With Zero's core thesis, Dweck for growth-mindset framing, Carnegie for the specific relationship tactics from *How to Win Friends*, Housel for invisible-wealth/avoid-ruin framing, Newport for deep-work framing). Otherwise, demote to tradition-level attribution (`— Stoic tradition`, `— growth-mindset research`, `— core principle`) rather than guessing at a specific person. This is a quality/accuracy safeguard, independent of the (resolved) PII question — misattributing an idea to a real, named public figure is a credibility problem even though naming public figures itself is fine.
 8. Write anchors in six batches (one per category, extending each category's 3 seed cards to its full count). After each batch, run the normal mechanical self-review (word caps, quote marks, banned phrases — rules 1–5), **and then** a second, independent review pass per §10 Stage 3's content-QA step, before moving to the next batch.
 
@@ -363,8 +407,8 @@ touch-up only if needed for consistency.
 ## §7 — Daily pipeline (`scripts/generate-daily.mjs`)
 
 1. Compute `dateHKT`, `dayNumber` via `lib.mjs`; pick `anchorId`, `shiftId`.
-2. Fetch each feed in §7.1 with an 8-second `AbortController` timeout; tolerate any failure (skip source, log to stdout). Parse minimally with regex for the first `<item>`/`<entry>`: `title`, `link`/`href`, `pubDate`/`published`. Decode HTML entities and strip CDATA wrappers when extracting `title`. No XML libraries.
-3. Candidate items: published within 14 days. Prefer a source NOT in `state/fresh-history.json` (last 3 entries); among preferred, pick newest. All feeds failed → `fresh: null`.
+2. Fetch each feed in §7.1 with an 8-second `AbortController` timeout; tolerate any failure (skip source, log to stdout). Parse minimally with regex for up to 5 `<item>`/`<entry>` blocks per feed (not just the first — see step 3), in feed order: `title`, `link`/`href`, `pubDate`/`published`. Decode HTML entities and strip CDATA wrappers when extracting `title`. No XML libraries.
+3. Candidate items: published within 14 days, **and on-theme** (§7.2). Walk each source's parsed items newest-first and take the first one that passes both filters — this matters for topically-broad sources (Ali Abdaal's channel spans productivity, AI tools, book/fiction recommendations, etc.): don't drop the whole source just because its single newest post happens to be off-theme when an on-theme one from a few days earlier is available. Prefer a source NOT in `state/fresh-history.json` (last 3 entries); among preferred, pick newest. All feeds failed or none produced an on-theme candidate → `fresh: null`.
 4. Write `data/daily.json`; **upsert** (not append) the `state/fresh-history.json` entry keyed by `dateHKT` (cap 7 distinct dates) — this makes same-day re-runs (which Stage 4 performs: once locally, then once via the dispatched workflow) genuinely idempotent instead of duplicating history or flipping the Fresh pick.
 5. Idempotent and safe to re-run; exit 0 even when `fresh` is null (a missing fresh card must never fail the build). When run locally in this environment, invoke as `NODE_USE_ENV_PROXY=1 node scripts/generate-daily.mjs` (§2.4).
 
@@ -381,6 +425,28 @@ touch-up only if needed for consistency.
 **Liveness is not enough for the two discovered sources.** For Rob Dial and Ali Abdaal specifically, also check the feed's `<title>`/author (`itunes:author`, atom `<author><name>`) case-insensitively matches an expected string (`"Mindset Mentor"`/`"Rob Dial"`; `"Ali Abdaal"`) before counting the source as verified — a live-but-wrong feed (a similarly-named show, a mirror, a decoy channel) must not silently pass. Verify each source by actually running it through `generate-daily.mjs`'s own parse path (not curl alone) so a feed that returns 200 but breaks the regex parser (CDATA, HTML entities, an atom `<link href=...>` instead of element text) is caught here, not in production. A source that fails the identity check is **dropped and not counted** toward the verification threshold below — it is a failure, not a pass.
 
 Resolution budget per source: ≤ 4 attempts. Escalate via §11 trigger 3 only if **zero** sources verify (`fresh: null` is a fully supported, non-blocking outcome per LOOP-D — halting a multi-hour unattended run over the optional Fresh card is disproportionate; document in the final summary how many of the five verified either way).
+
+### 7.2 Mindset-relevance filter (v1.2)
+
+Four of the five sources are single-topic by nature (Stoicism, mental models, neuroscience/
+self-improvement, mindset — every post they publish is on-theme by construction). Ali Abdaal's
+channel is not: it spans productivity, book/fiction recommendations, AI-tool tutorials, and
+business content, only some of which fits a mindset app. Liveness and identity (§7.1) don't
+catch this — a live, correctly-identified feed can still publish an off-theme item.
+
+Maintain a denylist of regex patterns for off-theme signals in `generate-daily.mjs`
+(`OFF_THEME_PATTERNS`) — AI-tool/prompt tactics, app/tech/gadget reviews, sponsorship/
+marketing language, pure-entertainment recommendations (fan fiction, etc.) — and reject any
+candidate item whose title matches. This is a heuristic, not a semantic classifier: it catches
+the specific failure modes observed in practice (extend the list as new ones show up; this is
+meant to be a living list, not a one-time fix) but cannot guarantee every accepted item is
+genuinely mindset-relevant for a topically-broad source. If Ali Abdaal (or any future broad-
+topic source) keeps producing off-theme picks despite the filter, the honest fix is removing
+it from `SOURCES` rather than expanding the denylist indefinitely — document that tradeoff in
+the README if it comes to that.
+
+A rejected item does not disqualify the source for the day — walk further back through that
+source's recent items (§7 step 3) before giving up on it entirely.
 
 ---
 
@@ -541,19 +607,19 @@ Design consequence: the worst possible failure is one morning of yesterday's (or
 **Objective:** the complete non-animated page with placeholder cards, matching the one-screen layout in §4.4.
 **Tasks:** `index.html` (semantic landmarks, viewport meta **with `viewport-fit=cover`**, robots noindex, inline pre-paint theme snippet), `styles.css` written **mobile-first per invariant 11** (all §4.2 tokens, both themes, §4.4 one-screen layout, §4.5 components incl. staleness chip styles and borderless-card styling, safe-area insets, `svh` sizing, `touch-action`, `text-size-adjust`, designed `:active` states), theme toggle (`mindset.theme`), HKT date line via `lib.mjs`'s `hktDateParts`, tabs with `role="tablist"` + keyboard support (arrow-key switching, matching the design prototype), footer. All local URLs relative. Fetch fonts per §4.3 (with exit ramp). Write `lib.mjs` — adapt from the Claude Design project's `mindset-lib.js` (Appendix B verbatim + the `hktDateParts` helper), no separate implementation needed.
 **DoD:** both themes render · date correct in HKT · tabs keyboard-navigable · contrast pairs pass numerically (per the §4.2/§2.7 4.5:1 gate, including the blossom accent check) · fonts loaded or fallback decision logged · zero `max-width` media queries · zero root-absolute local URLs · safe-area + `svh` present · layout fits one screen at 390×844.
-**Verify:** `stage1` = greps for viewport-fit/robots/aria/roles/localStorage key/`env(safe-area-inset`/`svh`/`text-size-adjust`/`touch-action` + **absence** greps (`@media` with `max-width`; `href="/`, `src="/`, `fetch("/`, `url(/`, `import("/`, `register("/`, manifest `src` for local paths; fixed `width` ≥ 400px, scoped to `styles.css` only) + absence-grep for locale-date calls without an explicit `timeZone:` in `app.js`/`drop.js` + `node --check` on all JS + **numeric WCAG contrast computation** on §4.2 pairs at the corrected thresholds + `lib.mjs` unit tests via `node:test` (HKT date fn against 3 known instants incl. one that crosses midnight UTC-vs-HKT; `pickIndex` full-cycle uniqueness for pool sizes 120/40/10; a non-negative-dayNumber guard).
+**Verify:** `stage1` = greps for viewport-fit/robots/aria/roles/localStorage key/`env(safe-area-inset`/`svh`/`text-size-adjust`/`touch-action` + **absence** greps (`@media` with `max-width`; `href="/`, `src="/`, `fetch("/`, `url(/`, `import("/`, `register("/`, manifest `src` for local paths; fixed `width` ≥ 400px, scoped to `styles.css` only) + absence-grep for locale-date calls without an explicit `timeZone:` in `app.js`/`figure.js` + `node --check` on all JS + **numeric WCAG contrast computation** on §4.2 pairs at the corrected thresholds + `lib.mjs` unit tests via `node:test` (HKT date fn against 3 known instants incl. one that crosses midnight UTC-vs-HKT; `pickIndex` full-cycle uniqueness for pool sizes 120/40/10; a non-negative-dayNumber guard).
 **Commit:** `stage1: shell, tokens, themes, HKT date, tabs`
 
-### Stage 2 — The drop
+### Stage 2 — The figure
 **Objective:** §4.6 exactly.
-**Tasks:** `drop.js`, adapted from the Claude Design project's `mindset-drop.js` (pulled via `DesignSync`) — rename, wire `color`/`glow` attributes to the live theme's `--pulse` token on init and on theme-toggle. Adaptive/no adaptive node count needed (it's a single drop, not a particle field) — keep the reference animation curve as-is unless it needs a size tweak for the ~160×84px inline placement.
-**DoD:** all §4.6 behaviours present · `drop.js` ≤ 12 KB · no `shadowBlur` inside the RAF-driven draw path.
-**Verify:** `stage2` = `node --check drop.js` + greps: `requestAnimationFrame`, `visibilitychange`, `prefers-reduced-motion`, `devicePixelRatio` + absence of `shadowBlur` anywhere in the file (ban it file-wide — it's not meaningfully scopeable by grep to "just the animate function") + byte-size check. The pause/reduced-motion behaviour should be structured so its branch logic is unit-testable under `node:test` (e.g. a pure function computing which draw mode applies), since a curl-based agent cannot visually confirm canvas behaviour — mark "the drop visibly animates and feels calm, not busy" as **deferred to §13 human review**, not a Stage 2 machine gate; the audit should say so plainly rather than checking it off unverified.
-**Commit:** `stage2: living drop, canvas animation`
+**Tasks:** `figure.js` — an original canvas implementation (not sourced from a design prototype; v1.1's `drop.js` was, v1.2's `figure.js` is written directly against §4.6's pose sequence), registered as `<mindset-figure>`; wire `color`/`glow` attributes to the live theme's `--pulse` token on init and on theme-toggle. Build the setup routine to retry via `requestAnimationFrame` if the element has zero size at connect-time (§4.6.4) rather than silently giving up — this is the actual fix for the v1.1 "wasn't moving" report, not just a cosmetic pose swap.
+**DoD:** all §4.6 behaviours present · `figure.js` ≤ 12 KB · no `shadowBlur` inside the RAF-driven draw path · setup retries on zero-size rather than bailing.
+**Verify:** `stage2` = `node --check figure.js` + greps: `requestAnimationFrame`, `visibilitychange`, `prefers-reduced-motion`, `devicePixelRatio` + absence of `shadowBlur` anywhere in the file (ban it file-wide — it's not meaningfully scopeable by grep to "just the animate function") + byte-size check. The pause/reduced-motion behaviour should be structured so its branch logic is unit-testable under `node:test` (e.g. a pure function computing which draw mode applies), since a curl-based agent cannot visually confirm canvas behaviour — mark "the figure visibly animates through recognizable poses and feels calm, not busy" as **deferred to §13 human review**, not a Stage 2 machine gate; the audit should say so plainly rather than checking it off unverified.
+**Commit:** `stage2: living figure, canvas animation`
 
 ### Stage 3 — Content library & card engine
 **Objective:** real cards, real values, full offline resilience, genuine content QA.
-**Tasks:** extend the Claude Design project's seed content (`mindset-data.js`'s 18 anchors / 10 shifts / 4 freshReserve / 10 values, pulled via `DesignSync`) to the full §5.2 counts, six batches (one per anchor category, building on each category's 3 existing seed cards). After each batch's mechanical self-review (rules 1–5), run an **independent second pass** targeting what a script can't catch: attribution confidence (§5.3.7), closeness-to-source (quotation-in-substance risk), near-duplication against cards written so far (a cheap token-overlap check is fine as a proxy). Emit `audits/CONTENT-REVIEW.md`: all cards grouped by attribution, with any flags from either review pass noted inline. Wire card rendering in `app.js` (data from `cards.json`/`values.json`, staleness logic + offline rotation + reserve fallback + calm error state, all as pure functions in `lib.mjs` per §6.3.4 where the logic itself lives, called from `app.js`'s DOM code).
+**Tasks:** extend the Claude Design project's seed content (`mindset-data.js`'s 18 anchors / 10 shifts / 4 freshReserve, pulled via `DesignSync`; its 10 values were cut to the 5 core ones in v1.2, §5.3.6) to the full §5.2 counts, six batches (one per anchor category, building on each category's 3 existing seed cards). After each batch's mechanical self-review (rules 1–5), run an **independent second pass** targeting what a script can't catch: attribution confidence (§5.3.7), closeness-to-source (quotation-in-substance risk), near-duplication against cards written so far (a cheap token-overlap check is fine as a proxy). Emit `audits/CONTENT-REVIEW.md`: all cards grouped by attribution, with any flags from either review pass noted inline. Wire card rendering in `app.js` (data from `cards.json`/`values.json`, staleness logic + offline rotation + reserve fallback + calm error state, all as pure functions in `lib.mjs` per §6.3.4 where the logic itself lives, called from `app.js`'s DOM code).
 **DoD:** counts exact · schema valid · zero quotation-mark glyphs in bodies (apostrophes in contractions fine) · no banned platitudes · unique ids · word caps respected · offline rotation proven · `CONTENT-REVIEW.md` written and skimmed-clean (no unresolved flags, or flags explicitly accepted with a one-line reason).
 **Verify:** `stage3` = full JSON schema/count/word-cap/platitude/quote-mark validation (quote-mark sweep scoped to `cards.json`/`values.json` string fields, not the whole repo — see Appendix A) + a `node:test` that renders three simulated dates through the rotation (via `lib.mjs`'s pure functions) and asserts distinct, in-range picks + a simulated stale-`daily.json` test asserting the fallback path selects valid ids + a near-duplicate proxy check (normalized-token overlap) flagged, not necessarily hard-failed, so a human can judge borderline cases.
 **Commit:** `stage3: card library, values, offline resilience, content review`
@@ -567,7 +633,7 @@ Design consequence: the worst possible failure is one morning of yesterday's (or
 
 ### Stage 5 — QA, polish, acceptance
 **Objective:** launch-grade.
-**Tasks:** favicon.svg (a minimal single-drop or abstract mark — consistent with the water-drop motif, not the retired brain/node-network mark), icon pipeline per §4.7.10 (Linux rasterizer first), `manifest.webmanifest` + `sw.js` (Appendix C.2 **as amended** — the `res.ok` fix) + registration + theme-color sync, OG title/description meta, README (what/why/ops runbook: add cards, edit values, change feeds, manual dispatch, what the chips mean, how to Add to Home Screen on iOS/Android, platform caveats §8, the rotation's 1-for-1 replacement note from §6.2), byte-budget check, run `verify.mjs all`, confirm Pages 200 for `index.html`, `data/daily.json`, `manifest.webmanifest` AND `sw.js`, write `audits/FINAL-AUDIT.md` (including the §2 invariant-12 `verify.mjs` diff-vs-Stage-0 summary, and an honest "known imperfections" section — e.g. the blossom cold-launch splash-color mismatch from §4.7.8, any font/icon exit ramps taken), tag `v1.0`.
+**Tasks:** favicon.svg (a minimal abstract mark — the specific motif can lag the current signature element; a single-drop mark from v1.1 is an acceptable placeholder until refreshed, not worth blocking on), icon pipeline per §4.7.10 (Linux rasterizer first), `manifest.webmanifest` + `sw.js` (Appendix C.2 **as amended** — the `res.ok` fix) + registration + theme-color sync, OG title/description meta, README (what/why/ops runbook: add cards, edit values, change feeds, manual dispatch, what the chips mean, how to Add to Home Screen on iOS/Android, platform caveats §8, the rotation's 1-for-1 replacement note from §6.2), byte-budget check, run `verify.mjs all`, confirm Pages 200 for `index.html`, `data/daily.json`, `manifest.webmanifest` AND `sw.js`, write `audits/FINAL-AUDIT.md` (including the §2 invariant-12 `verify.mjs` diff-vs-Stage-0 summary, and an honest "known imperfections" section — e.g. the blossom cold-launch splash-color mismatch from §4.7.8, any font/icon exit ramps taken), tag `v1.0`.
 **DoD:** the §12 acceptance checklist — every machine-verifiable line green, every explicitly-human-deferred line clearly marked as such (not silently checked off).
 **Verify:** `stage5` = budgets + curl 200s (four paths, live) + manifest JSON validation (required fields, relative `start_url`/`scope`) + `sw.js` byte-identity against Appendix C.2 **modulo the `ASSETS` array literal** (so extending it with fonts/favicon/manifest at this stage doesn't fail the gate) + a live-200 check on every entry in the extended `ASSETS` list + registration line present + `all` green.
 **Commit:** `stage5: v1.0 launch` (+ tag `v1.0`)
@@ -621,16 +687,16 @@ trigger is closest, plus the raw error — don't spend cycles deliberating the t
 **Explicitly deferred to §13 human review (mark UNVERIFIED in FINAL-AUDIT, do not check off here):**
 - [ ] Today's HKT date shows; cards populated; no console errors
 - [ ] Theme toggle works both ways and survives reload; no wrong-theme flash
-- [ ] The drop animates in both themes; pauses when hidden; static under reduced motion; feels calm, not busy
+- [ ] The figure animates through recognizable sun-salutation poses in both themes; pauses when hidden; static under reduced motion; feels calm, not busy
 - [ ] Offline rotation demonstrated live on a phone (airplane mode)
 
 ## §13 — Human review checklist (the ONE human step, ~20 min, after completion)
 
-1. Open the Pages URL **on your phone**. Does the drop feel alive and calm, not busy? Rotate the phone, scroll — nothing clipped, nothing under the notch or home bar, no sideways scroll, the whole thing should fit one screen.
+1. Open the Pages URL **on your phone**. Does the figure clearly move through its poses, feeling alive and calm, not busy? Rotate the phone, scroll — nothing clipped, nothing under the notch or home bar, no sideways scroll, the whole thing should fit one screen.
 2. Safari: Share → **Add to Home Screen**. Reopen from the icon — it should launch full-screen like an app, with a proper icon and the chrome matching the theme.
 3. Toggle blossom mode. Would its intended user smile? (Standalone chrome should turn blossom too — except the cold-launch splash screen, which is a known, logged limitation.)
 4. **Airplane mode**, reopen from the icon: the shell loads instantly and the `offline rotation` chip appears with valid cards. Turn network back on, pull to refresh — today returns.
-5. Open the **Values** tab and skim all 10. Toggle OS **Reduce Motion** and confirm the drop renders a static frame.
+5. Open the **Values** tab and skim all 5. Toggle OS **Reduce Motion** and confirm the figure renders a static frame.
 6. Read today's three cards aloud. Would you keep any? (Your monthly curation replaces the weakest cards — that's where the library becomes *yours*.)
 7. Skim `audits/CONTENT-REVIEW.md` (~15 min) — delete or reword anything you wouldn't sign, especially any card whose attribution feels like a guess rather than a known idea.
 8. Skim `audits/FINAL-AUDIT.md` "honest notes" + `decisions.md`.
@@ -747,9 +813,9 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v1";
+const CACHE = "mindset-v2";
 const ASSETS = [
-  "./", "./index.html", "./styles.css", "./app.js", "./drop.js", "./lib.mjs",
+  "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
 ];
 
@@ -783,7 +849,7 @@ self.addEventListener("fetch", (e) => {
 });
 ```
 
-Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned).
+Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name).
 
 ### C.3 Registration (last lines of `app.js`)
 

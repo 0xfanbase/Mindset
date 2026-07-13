@@ -12,6 +12,22 @@ const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 // Resolved and identity-verified in Stage 4 (see audits/decisions.md) — Rob Dial's feed via
 // the Apple Podcasts Search API, Ali Abdaal's channel ID via the canonical <link>/og:url on
 // the handle page (not the first bare "channelId" string match, which pointed elsewhere).
+// Off-theme signal: several of the feed sources (Ali Abdaal's channel in particular) cover a
+// broad mix of topics, not all of them mindset-relevant (e.g. tactical AI-tool tips). Reject
+// candidate titles matching these patterns rather than trust every item a source publishes.
+// Extend this list as new off-theme patterns show up in practice.
+const OFF_THEME_PATTERNS = [
+  /\bai prompts?\b/i, /\bchatgpt\b/i, /\bprompt engineering\b/i, /\bmidjourney\b/i,
+  /\bapp review\b/i, /\biphone\b/i, /\bmacbook\b/i, /\bgadget/i, /\bnotion template\b/i,
+  /\bbrowser extension\b/i, /\bsoftware update\b/i,
+  /\bsponsor(ed|ship)?\b/i, /\bdiscount code\b/i, /\baffiliate\b/i, /\bgiveaway\b/i, /\bpromo code\b/i,
+  /\bunboxing\b/i, /\bhaul\b/i, /\bvlog\b/i,
+  /\bfan ?fic(tion)?\b/i, /\bharry potter\b/i,
+];
+function isOnTheme(title) {
+  return !OFF_THEME_PATTERNS.some((p) => p.test(title));
+}
+
 const SOURCES = [
   { source: "Daily Stoic", url: "https://dailystoic.com/feed/" },
   { source: "Farnam Street", url: "https://fs.blog/feed/" },
@@ -49,36 +65,41 @@ function decodeEntities(s) {
     .trim();
 }
 
-// Minimal regex parse of the first <item> (RSS) or <entry> (Atom) — no XML libraries
-// (invariant 4). Only accepts https:// links, per the fresh-card safety requirement (§6.1).
-function parseFirstItem(xml) {
-  const block = (xml.match(/<item\b[\s\S]*?<\/item>/i) || xml.match(/<entry\b[\s\S]*?<\/entry>/i) || [])[0];
-  if (!block) return null;
+// Minimal regex parse of up to `limit` <item> (RSS) or <entry> (Atom) blocks, in feed order
+// (newest-first for both formats) — no XML libraries (invariant 4). Only accepts https://
+// links, per the fresh-card safety requirement (§6.1). Parsing several items (not just the
+// first) lets the topic filter below skip an off-theme newest post without dropping the whole
+// source for the day.
+function parseItems(xml, limit = 5) {
+  const blocks = (xml.match(/<item\b[\s\S]*?<\/item>/gi) || xml.match(/<entry\b[\s\S]*?<\/entry>/gi) || []).slice(0, limit);
+  const items = [];
+  for (const block of blocks) {
+    const titleMatch = block.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
+    if (!titleMatch) continue;
+    const title = decodeEntities(titleMatch[1]);
+    if (!title) continue;
 
-  const titleMatch = block.match(/<title[^>]*>([\s\S]*?)<\/title>/i);
-  if (!titleMatch) return null;
-  const title = decodeEntities(titleMatch[1]);
-  if (!title) return null;
+    let link = null;
+    const linkTextMatch = block.match(/<link[^>]*>([\s\S]*?)<\/link>/i);
+    if (linkTextMatch && /^https:\/\//.test(linkTextMatch[1].trim())) {
+      link = linkTextMatch[1].trim();
+    } else {
+      const linkHrefMatch = block.match(/<link\b[^>]*\bhref=["'](https:\/\/[^"']+)["'][^>]*\/?>/i);
+      if (linkHrefMatch) link = linkHrefMatch[1];
+    }
+    if (!link) continue;
 
-  let link = null;
-  const linkTextMatch = block.match(/<link[^>]*>([\s\S]*?)<\/link>/i);
-  if (linkTextMatch && /^https:\/\//.test(linkTextMatch[1].trim())) {
-    link = linkTextMatch[1].trim();
-  } else {
-    const linkHrefMatch = block.match(/<link\b[^>]*\bhref=["'](https:\/\/[^"']+)["'][^>]*\/?>/i);
-    if (linkHrefMatch) link = linkHrefMatch[1];
+    const dateMatch =
+      block.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i) ||
+      block.match(/<published[^>]*>([\s\S]*?)<\/published>/i) ||
+      block.match(/<updated[^>]*>([\s\S]*?)<\/updated>/i);
+    if (!dateMatch) continue;
+    const publishedDate = new Date(dateMatch[1].trim());
+    if (Number.isNaN(publishedDate.getTime())) continue;
+
+    items.push({ title, url: link, publishedISO: publishedDate.toISOString() });
   }
-  if (!link) return null;
-
-  const dateMatch =
-    block.match(/<pubDate[^>]*>([\s\S]*?)<\/pubDate>/i) ||
-    block.match(/<published[^>]*>([\s\S]*?)<\/published>/i) ||
-    block.match(/<updated[^>]*>([\s\S]*?)<\/updated>/i);
-  if (!dateMatch) return null;
-  const publishedDate = new Date(dateMatch[1].trim());
-  if (Number.isNaN(publishedDate.getTime())) return null;
-
-  return { title, url: link, publishedISO: publishedDate.toISOString() };
+  return items;
 }
 
 async function main() {
@@ -105,15 +126,27 @@ async function main() {
   for (const { source, url } of SOURCES) {
     try {
       const xml = await fetchWithTimeout(url, 8000);
-      const item = parseFirstItem(xml);
-      if (!item) { console.log(`[generate-daily] ${source}: no parseable item, skipping`); continue; }
-      const ageMs = now.getTime() - new Date(item.publishedISO).getTime();
-      if (ageMs > 14 * 24 * 3600 * 1000 || ageMs < -3600 * 1000) {
-        console.log(`[generate-daily] ${source}: item outside 14-day window (${item.publishedISO}), skipping`);
-        continue;
+      const items = parseItems(xml);
+      if (!items.length) { console.log(`[generate-daily] ${source}: no parseable items, skipping`); continue; }
+
+      let picked = null;
+      for (const item of items) {
+        const ageMs = now.getTime() - new Date(item.publishedISO).getTime();
+        if (ageMs > 14 * 24 * 3600 * 1000 || ageMs < -3600 * 1000) {
+          console.log(`[generate-daily] ${source}: "${item.title}" outside 14-day window, skipping`);
+          continue;
+        }
+        if (!isOnTheme(item.title)) {
+          console.log(`[generate-daily] ${source}: "${item.title}" filtered as off-theme, skipping`);
+          continue;
+        }
+        picked = item;
+        break; // items are newest-first; take the first that passes both filters
       }
-      candidates.push({ source, ...item, preferred: !recentSources.has(source) });
-      console.log(`[generate-daily] ${source}: candidate "${item.title}" (${item.publishedISO})`);
+      if (!picked) { console.log(`[generate-daily] ${source}: no on-theme candidate within window, skipping`); continue; }
+
+      candidates.push({ source, ...picked, preferred: !recentSources.has(source) });
+      console.log(`[generate-daily] ${source}: candidate "${picked.title}" (${picked.publishedISO})`);
     } catch (e) {
       console.log(`[generate-daily] ${source}: fetch/parse failed — ${e.message}`);
     }

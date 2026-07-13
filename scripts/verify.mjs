@@ -205,7 +205,7 @@ function stage1() {
   });
   check("stage1", "no bare locale-date calls without timeZone (app.js)", () => {
     const offenders = exists("app.js") ? localeDateWithoutTZ(appjs()) : [];
-    if (exists("drop.js")) offenders.push(...localeDateWithoutTZ(read("drop.js")));
+    if (exists("figure.js")) offenders.push(...localeDateWithoutTZ(read("figure.js")));
     assert.equal(offenders.length, 0, offenders.join(" | "));
   });
 
@@ -277,10 +277,10 @@ function stage1() {
 // ---------- Stage 2 ----------
 
 function stage2() {
-  check("stage2", "drop.js exists", () => assert.ok(exists("drop.js"), "missing"));
-  const src = () => read("drop.js");
-  check("stage2", "node --check drop.js", () => {
-    require("node:child_process").execFileSync(process.execPath, ["--check", abs("drop.js")], { stdio: "pipe" });
+  check("stage2", "figure.js exists", () => assert.ok(exists("figure.js"), "missing"));
+  const src = () => read("figure.js");
+  check("stage2", "node --check figure.js", () => {
+    require("node:child_process").execFileSync(process.execPath, ["--check", abs("figure.js")], { stdio: "pipe" });
   });
   for (const [name, re] of [
     ["requestAnimationFrame present", /requestAnimationFrame/],
@@ -288,11 +288,11 @@ function stage2() {
     ["prefers-reduced-motion present", /prefers-reduced-motion/],
     ["devicePixelRatio present", /devicePixelRatio/],
   ]) {
-    check("stage2", `drop.js: ${name}`, () => assert.match(src(), re));
+    check("stage2", `figure.js: ${name}`, () => assert.match(src(), re));
   }
-  check("stage2", "drop.js: no shadowBlur anywhere", () => assert.doesNotMatch(src(), /shadowBlur/));
-  check("stage2", "drop.js budget <= 12KB", () => {
-    const bytes = sizeOf("drop.js");
+  check("stage2", "figure.js: no shadowBlur anywhere", () => assert.doesNotMatch(src(), /shadowBlur/));
+  check("stage2", "figure.js budget <= 12KB", () => {
+    const bytes = sizeOf("figure.js");
     assert.ok(bytes <= 12 * 1024, `${bytes} bytes > 12KB`);
   });
 }
@@ -306,10 +306,10 @@ function stage3() {
     const d = readJSON("data/cards.json");
     assert.ok(Array.isArray(d.anchors) && Array.isArray(d.shifts) && Array.isArray(d.freshReserve));
   });
-  check("stage3", "data/values.json valid JSON, exactly 10 values", () => {
+  check("stage3", "data/values.json valid JSON, exactly 5 values", () => {
     const v = readJSON("data/values.json");
     assert.ok(Array.isArray(v));
-    assert.equal(v.length, 10, `expected 10 values, got ${v.length}`);
+    assert.equal(v.length, 5, `expected 5 values, got ${v.length}`);
   });
 
   check("stage3", "anchor category counts exact (120 total)", () => {
@@ -465,7 +465,7 @@ function stage5() {
     assert.match(read("app.js"), /serviceWorker\.register\(["']\.\/sw\.js["']\)/);
   });
   check("stage5", "byte budgets: JS <= 60KB, icons <= 150KB, fonts <= 300KB", () => {
-    const jsFiles = ["app.js", "drop.js", "lib.mjs", "sw.js"].filter(exists);
+    const jsFiles = ["app.js", "figure.js", "lib.mjs", "sw.js"].filter(exists);
     const jsTotal = jsFiles.reduce((sum, f) => sum + sizeOf(f), 0);
     assert.ok(jsTotal <= 60 * 1024, `JS total ${jsTotal} bytes > 60KB (${jsFiles.join(",")})`);
     const iconsDir = abs("assets/icons");
@@ -480,7 +480,7 @@ function stage5() {
     }
   });
   check("stage5", "page weight (index.html+styles.css+data jsons) <= 350KB excl. fonts", () => {
-    const files = ["index.html", "styles.css", "app.js", "drop.js", "lib.mjs", "manifest.webmanifest", "sw.js",
+    const files = ["index.html", "styles.css", "app.js", "figure.js", "lib.mjs", "manifest.webmanifest", "sw.js",
       "data/cards.json", "data/values.json", "data/daily.json"].filter(exists);
     const total = files.reduce((sum, f) => sum + sizeOf(f), 0);
     assert.ok(total <= 350 * 1024, `total ${total} bytes > 350KB (${files.join(",")})`);

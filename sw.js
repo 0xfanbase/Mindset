@@ -1,6 +1,6 @@
-const CACHE = "mindset-v1";
+const CACHE = "mindset-v2";
 const ASSETS = [
-  "./", "./index.html", "./styles.css", "./app.js", "./drop.js", "./lib.mjs",
+  "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
   "./manifest.webmanifest", "./assets/favicon.svg",
   "./assets/fonts/fraunces-normal.woff2", "./assets/fonts/fraunces-italic.woff2",
