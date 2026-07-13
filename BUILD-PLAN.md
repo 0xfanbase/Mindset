@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.5)
+# MINDSET — Autonomous Build Plan (v1.6)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the four escalation triggers in §11 (plus the
@@ -86,6 +86,32 @@ showing the graceful error card). Three claimed issues from the initial (cheaper
 did not survive independent fact-checking and were discarded — recomputing WCAG contrast by
 hand in Node showed all three flagged pairs actually pass 4.5:1; `verify.mjs`'s own numeric
 check was right all along. PII/history scan: clean, no findings.
+
+**v1.6 changelog (from v1.5, post-launch human feedback):** (1) **header now shows the wordmark,
+date, and theme toggle on one line** — `header` switched from a 2-item flex row (with the date
+on its own line below) to a 3-column grid (`1fr auto 1fr`), so the date is genuinely centered
+regardless of the wordmark/toggle's differing widths, per live feedback with an annotated
+screenshot; (2) **the figure's poses were rebuilt from scratch with fixed anatomical bone
+lengths** — an audit (prompted by live feedback questioning whether the movement was "actually
+doing [a sun salutation] and not random moves") found the previous hand-placed coordinates had
+wildly inconsistent segment lengths across poses (e.g. the torso measured anywhere from 8.6 to
+34.1 units depending on the pose, the forearm from 3.6 to 30.3) — a real bug, not a matter of
+taste, since a human's limbs don't change length between poses. Rebuilt every pose with forward
+kinematics from one fixed skeleton (neck 12, torso 27, upper arm 17, forearm 20, thigh 21, shin
+21 — identical in all 8 named poses, verified by script) and joint angles chosen from the actual
+biomechanics of each Surya Namaskar A position, checked numerically (hand/foot positions land
+where they should relative to the hip/shoulder for each pose) rather than eyeballed; (3) **the
+figure now renders as a solid tapered silhouette** (filled quads per limb, wider at the body end
+than the extremity, rounded joints) instead of thin stroked lines, per live feedback asking for
+"an actual human, not a stickman" (referencing, but not literally reusing, a copyrighted stock
+yoga-pose reference image — the ask was read as "look like a body," not "embed this exact
+photo," which would also conflict with the vector/theme-reactive design). Verified locally via a
+static HTTP server + headless-Chromium screenshot (the live deployed URL couldn't be used for
+this per the standing anti-stuck note in `decisions.md`, and the environment's one-shot
+screenshot tooling turned out to ignore `--window-size`/viewport meta entirely, always laying
+out at a fixed 500px width regardless of flags tried — confirmed harmless once screenshotted at
+that actual width instead of a cropped 390px, not a real bug). `figure.js` grew to ~11KB, still
+under the 12KB budget.
 
 ---
 

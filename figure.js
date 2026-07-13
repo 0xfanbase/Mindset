@@ -16,16 +16,21 @@
   // Poses in a normalized 100x100 box (x: 0 back, 100 front-facing-right; y: 0 top, 100 ground).
   // front/back leg pairs let side-view poses (lunge/plank/dog) show both legs distinctly;
   // standing poses use the same point for both so the legs simply overlap (feet together).
-  const STANDING = { head: [50, 14], sh: [50, 27], hip: [50, 55], el: [53, 37], ha: [51, 40], kf: [50, 72], ff: [50, 88], kb: [50, 72], fb: [50, 88] };
-  const RAISED = { head: [54, 9], sh: [51, 25], hip: [49, 54], el: [58, 13], ha: [62, 3], kf: [50, 72], ff: [50, 88], kb: [50, 72], fb: [50, 88] };
-  const FOLD = { head: [62, 62], sh: [55, 48], hip: [50, 55], el: [63, 74], ha: [65, 88], kf: [50, 72], ff: [50, 88], kb: [50, 72], fb: [50, 88] };
-  const LUNGE = { head: [59, 38], sh: [53, 44], hip: [48, 60], el: [58, 58], ha: [62, 88], kf: [35, 70], ff: [26, 88], kb: [65, 78], fb: [85, 90] };
-  const PLANK = { head: [18, 52], sh: [26, 55], hip: [55, 58], el: [26, 70], ha: [28, 88], kf: [80, 60], ff: [95, 64], kb: [80, 60], fb: [95, 64] };
+  //
+  // Built with fixed bone lengths (neck 12, torso 27, upper arm 17, forearm 20, thigh 21,
+  // shin 21 — same in every pose) and a chosen joint angle per pose, not hand-placed absolute
+  // points, so the figure can't stretch or shrink a limb between poses (verified by script:
+  // every segment measures identically in all 8 poses before rounding).
+  const STANDING = { head: [50, 17], sh: [50, 29], hip: [50, 56], el: [57.2, 44.4], ha: [62.4, 25.1], kf: [51.8, 76.9], ff: [50, 97.8], kb: [51.8, 76.9], fb: [50, 97.8] };
+  const RAISED = { head: [43.5, 16.5], sh: [46.6, 28.1], hip: [49, 55], el: [48.1, 11.2], ha: [53.3, -8.2], kf: [50.8, 75.9], ff: [49, 96.8], kb: [50.8, 75.9], fb: [49, 96.8] };
+  const FOLD = { head: [85.4, 67.1], sh: [74.1, 63], hip: [48, 56], el: [78.5, 79.4], ha: [80.2, 99.3], kf: [49.8, 76.9], ff: [48, 97.8], kb: [49.8, 76.9], fb: [48, 97.8] };
+  const LUNGE = { head: [65.7, 28.1], sh: [57.2, 36.6], hip: [48, 62], el: [64.4, 52], ha: [75.9, 68.4], kf: [68.3, 67.4], ff: [64.6, 88.1], kb: [28.3, 69.2], fb: [7.6, 72.8] };
+  const PLANK = { head: [17.1, 47.2], sh: [28.4, 51.3], hip: [55, 56], el: [32.8, 67.7], ha: [36.3, 87.4], kf: [76, 56], ff: [96.9, 54.2], kb: [76, 56], fb: [96.9, 54.2] };
   // Ashtanga Namaskara — chest and chin lower toward the floor while the hips stay raised,
   // elbows bent and tucked close to the ribs (the bridge between plank and up-dog).
-  const EIGHTLIMB = { head: [18, 72], sh: [26, 74], hip: [52, 52], el: [22, 80], ha: [28, 88], kf: [80, 60], ff: [95, 64], kb: [80, 60], fb: [95, 64] };
-  const UPDOG = { head: [25, 35], sh: [35, 45], hip: [55, 72], el: [35, 63], ha: [38, 88], kf: [78, 70], ff: [95, 78], kb: [78, 70], fb: [95, 78] };
-  const DOWNDOG = { head: [28, 60], sh: [35, 55], hip: [55, 30], el: [38, 72], ha: [40, 88], kf: [75, 55], ff: [92, 88], kb: [75, 55], fb: [92, 88] };
+  const EIGHTLIMB = { head: [15.8, 64.3], sh: [27.6, 62.2], hip: [53, 53], el: [19.1, 77], ha: [24.3, 96.3], kf: [74, 53], ff: [94.9, 51.2], kb: [74, 53], fb: [94.9, 51.2] };
+  const UPDOG = { head: [31.3, 42.2], sh: [40.5, 49.9], hip: [56, 72], el: [44.9, 66.3], ha: [48.4, 86], kf: [35.3, 75.6], ff: [17.1, 86.1], kb: [35.3, 75.6], fb: [17.1, 86.1] };
+  const DOWNDOG = { head: [93, 42.1], sh: [82.1, 37], hip: [56, 30], el: [87.9, 53], ha: [93.1, 72.3], kf: [39.9, 43.5], ff: [26.4, 59.6], kb: [39.9, 43.5], fb: [26.4, 59.6] };
 
   // One full sun-salutation cycle: standing -> raised -> fold -> lunge -> plank ->
   // eight-limbed -> up-dog -> down-dog -> lunge -> fold -> raised -> standing (loop).
@@ -148,38 +153,46 @@
       ctx.globalAlpha = 1;
       ctx.drawImage(this._spriteC, hip[0] - gs / 2, hip[1] - gs / 2, gs, gs);
 
-      const fill = "rgba(" + r + "," + g + "," + b + ",0.9)";
-      ctx.strokeStyle = fill;
-      ctx.fillStyle = fill;
-      ctx.lineWidth = Math.max(2, 4 * s);
-      ctx.lineCap = "round";
-      ctx.lineJoin = "round";
+      ctx.fillStyle = "rgba(" + r + "," + g + "," + b + ",0.92)";
 
-      const seg = (a, b2) => {
+      // Every limb is a filled tapered quad (wider at the body end, narrower at the
+      // extremity) plus a round joint cap at each end — a solid silhouette, not a wire
+      // stick figure. One fill per segment, so this stays cheap to draw every frame.
+      const quad = (a, b2, w1, w2) => {
         const p1 = this._pt(pose, a), p2 = this._pt(pose, b2);
-        ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
+        const dxL = p2[0] - p1[0], dyL = p2[1] - p1[1];
+        const l = Math.hypot(dxL, dyL) || 1;
+        const nx = (-dyL / l), ny = (dxL / l);
+        const r1 = Math.max(1.4, w1 * s / 2), r2 = Math.max(1.2, w2 * s / 2);
+        ctx.beginPath();
+        ctx.moveTo(p1[0] + nx * r1, p1[1] + ny * r1);
+        ctx.lineTo(p2[0] + nx * r2, p2[1] + ny * r2);
+        ctx.lineTo(p2[0] - nx * r2, p2[1] - ny * r2);
+        ctx.lineTo(p1[0] - nx * r1, p1[1] - ny * r1);
+        ctx.closePath();
+        ctx.fill();
+        ctx.beginPath(); ctx.arc(p2[0], p2[1], r2, 0, 6.2832); ctx.fill();
+      };
+      const joint = (a, w) => {
+        const p = this._pt(pose, a);
+        ctx.beginPath(); ctx.arc(p[0], p[1], Math.max(1.4, w * s / 2), 0, 6.2832); ctx.fill();
       };
 
-      // torso as a filled band (shoulder-to-hip), not a thin wire, so it reads as a body
-      const sh = this._pt(pose, "sh");
-      const dx = hip[0] - sh[0], dy = hip[1] - sh[1];
-      const len = Math.hypot(dx, dy) || 1;
-      const nx = (-dy / len) * 5.5 * s, ny = (dx / len) * 5.5 * s;
-      ctx.beginPath();
-      ctx.moveTo(sh[0] + nx, sh[1] + ny);
-      ctx.lineTo(hip[0] + nx, hip[1] + ny);
-      ctx.lineTo(hip[0] - nx, hip[1] - ny);
-      ctx.lineTo(sh[0] - nx, sh[1] - ny);
-      ctx.closePath();
-      ctx.fill();
+      quad("hip", "kb", 8.5, 7);        // back thigh (behind the torso/front leg)
+      quad("kb", "fb", 7, 5.5);         // back shin
+      quad("hip", "kf", 8.5, 7);        // front thigh
+      quad("kf", "ff", 7, 5.5);         // front shin
 
-      seg("head", "sh");              // neck
-      seg("sh", "el"); seg("el", "ha"); // arm
-      seg("hip", "kf"); seg("kf", "ff"); // front leg
-      seg("hip", "kb"); seg("kb", "fb"); // back leg
+      // torso as a filled tapered band (hip wider than shoulder), the figure's core mass
+      quad("sh", "hip", 5.5, 7);
+      joint("hip", 7); joint("sh", 5.5);
+
+      quad("sh", "el", 6.5, 5.5);       // upper arm
+      quad("el", "ha", 5.5, 4.5);       // forearm
+      quad("head", "sh", 5, 5.5);       // neck
 
       const headPt = this._pt(pose, "head");
-      ctx.beginPath(); ctx.arc(headPt[0], headPt[1], Math.max(3, 6.5 * s), 0, 6.2832); ctx.fill();
+      ctx.beginPath(); ctx.arc(headPt[0], headPt[1], Math.max(3, 7.5 * s), 0, 6.2832); ctx.fill();
     }
     _step(now) {
       if (!this._running) return;
