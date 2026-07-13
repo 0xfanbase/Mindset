@@ -12,3 +12,4 @@
 [03:45 UTC] stage4: found + fixed same-day idempotency bug (recent-source window included today's own entry), verified stable across 3 re-runs
 [03:44 UTC] stage4: dispatched daily-cards via GitHub MCP tools, success, real bot commit, rebased local onto it
 [03:45 UTC] stage4: dispatched watchdog against fresh file, correctly detected Pages is not live (real, not simulated), filed issue #1
+[11:55 HKT] stage5: manifest.webmanifest, sw.js (res.ok fix, extended ASSETS), PWA meta, README written; verify.mjs all 59/59 — pass; v1.0 tag held pending Pages enablement
