@@ -123,18 +123,18 @@ function domainOf(url, fallback) {
 // Untrusted third-party content (RSS title/link) — textContent only, https-only URL,
 // per BUILD-PLAN §4.5.3 / §6.1.
 function renderFreshCard(fresh) {
-  return el("a", { class: "card card-link", href: fresh.url, target: "_blank", rel: "noopener" }, [
+  return el("a", { class: "card card-fresh card-link", href: fresh.url, target: "_blank", rel: "noopener" }, [
     el("div", { class: "card-chip", text: "FRESH" }),
     el("p", { class: "card-body", text: fresh.title }),
     el("div", { class: "fresh-footer" }, [
       el("span", { class: "fresh-domain", text: domainOf(fresh.url, fresh.source) }),
-      el("span", { class: "fresh-read", text: "Read →" }),
+      el("span", { class: "fresh-read", text: "Worth a look →" }),
     ]),
   ]);
 }
 
 function renderReserveCard(reserve) {
-  return el("article", { class: "card" }, [
+  return el("article", { class: "card card-fresh" }, [
     el("div", { class: "card-chip", text: "FRESH" }),
     el("p", { class: "card-body", text: reserve.text }),
     el("div", { class: "fresh-footer" }, [

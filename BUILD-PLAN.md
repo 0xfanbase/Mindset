@@ -143,7 +143,19 @@ movement lasts most of the breath, poses (other than down-dog and standing) aren
 New model: 2.2–3.1s transitions, 0.5–0.7s settles, down-dog held 5s (its traditional five
 breaths), full cycle ~42s (up from 26s). (5) added a small procedural lift to whichever foot is
 mid-step during the sequence's four stepping transitions, so it arcs rather than drags along the
-floor. `figure.js` ~11.6KB, still under the 12KB budget. `verify.mjs all` 59/59.
+floor. `figure.js` ~11.6KB, still under the 12KB budget. `verify.mjs all` 59/59. (6) **Fable-led
+holistic content/tone audit**, requested alongside the animation rebuild, against a subtler bar
+than the mechanical checks alone can catch: whether a card's payoff is a state of being (the
+app's purpose) or an output dressed in calm vocabulary. Five items reworded as a result —
+`focus-001`, `rel-001`, `wealth-001`, `wealth-008` (`data/cards.json`), `shift-002`'s `to` side,
+and Ownership's `behaviour` (`data/values.json`) — see `audits/decisions.md`/`CONTENT-REVIEW.md`
+for full before/after reasoning per item; all pre-validated against `verify.mjs`'s exact
+word-cap/quote-glyph/platitude rules before writing. (7) **Fresh card visually demoted**: gave it
+(and its offline Reserve-shelf fallback) a flat, bordered, shadow-free `.card-fresh` treatment
+against the page background instead of the Anchor/Shift cards' elevated white/shadowed
+treatment, muted its chip/link color, and softened its link text from "Read →" to "Worth a
+look →" — framing it as a lighter-touch invitation rather than a third obligation. It was
+already last in render order, so "never above the fold" needed no further change.
 
 ---
 

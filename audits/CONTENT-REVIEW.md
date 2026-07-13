@@ -15,6 +15,15 @@ asked for content inspired by Jay Shetty, Joe Biden, and Michelle Obama. Same in
 process, with an extra bar given two of the three are former holders of political office — see
 the dedicated section below, inserted after the `core principle` group.
 
+**v1.7 addendum:** a Fable-led holistic audit (requested alongside the same round's animation
+rebuild) re-read a real content sample against a subtler bar than the mechanical checks below can
+catch: whether a card's payoff is a state of being (what this app is for) or an output dressed in
+calm vocabulary (a KPI in disguise). Five items were reworded as a result — `focus-001`,
+`rel-001`, `wealth-001`, `wealth-008`, and `shift-002` — each flagged inline below at its entry;
+full before/after reasoning is in `audits/decisions.md`'s "v1.7 (part 3 of 3)" entry. Every other
+card was left as previously reviewed; a full re-audit of all 129 anchors against this subtler bar
+was not performed, only the items Fable named or that directly matched its named pattern.
+
 ## Anchors, grouped by attribution
 
 ### — after Bill Perkins
@@ -53,7 +62,8 @@ the dedicated section below, inserted after the `core principle` group.
 
 ### — after Cal Newport
 
-- **focus-001** (focus): Depth is rare, so depth is valuable. Guard three uninterrupted hours the way you guard revenue.
+- **focus-001** (focus): Depth is rare, so depth is valuable. Protect three uninterrupted hours the way you protect sleep -- non-negotiable, not optional.
+  - ⚑ v1.7 Fable audit: original ("guard...the way you guard revenue") reframed depth as a revenue-protection tactic — payoff-is-an-output framing, not payoff-is-a-state-of-being. Reworded to anchor the comparison to something restorative. See `audits/decisions.md`.
 - **focus-004** (focus): Switching tasks does not end the last one. A residue of attention lingers, dragging down whatever you turn to next.
   - ⚑ No change. Attention-residue topic is explicitly authorized for the Cal Newport attribution per instructions; word count, voice, and phrasing all check out.
 - **focus-005** (focus): Answer email and admin in set blocks, not all day long. Batched, shallow work stops leaking into the hours meant for depth.
@@ -79,7 +89,8 @@ the dedicated section below, inserted after the `core principle` group.
 
 ### — after Dale Carnegie
 
-- **rel-001** (relationships): Ask about their work before mentioning yours. Interest given first returns multiplied.
+- **rel-001** (relationships): Ask about their work before mentioning yours. Genuine curiosity about someone else is rare enough that people remember who offered it.
+  - ⚑ v1.7 Fable audit: original ("interest given first returns multiplied") framed curiosity as an investment with a return — relationships-as-ROI framing. Reworded to state the human payoff directly instead of a multiplier. See `audits/decisions.md`.
 - **rel-002** (relationships): Remember the small thing they told you last time. It says: you exist to me.
 - **rel-003** (relationships): Hand your best idea away and help them build it. Ownership persuades where argument cannot.
 - **rel-004** (relationships): Turn a correction into a question: what do you think happened here? People fix what they discover themselves faster than what they are told.
@@ -135,12 +146,14 @@ the dedicated section below, inserted after the `core principle` group.
 
 ### — after Morgan Housel
 
-- **wealth-001** (wealth): Getting wealthy rewards risk. Staying wealthy rewards paranoia. Know which game today is.
+- **wealth-001** (wealth): Getting wealthy rewards risk. Staying wealthy rewards caution. Know which game today calls for.
+  - ⚑ v1.7 Fable audit: "paranoia" is a clinical/anxious word for what Housel's own framing calls caution. Reworded "paranoia" → "caution"; attribution unchanged, thesis is centrally Housel's. See `audits/decisions.md`.
 - **wealth-002** (wealth): Real wealth is the upgrade not bought and the hours not owed. Invisible, by design.
 - **wealth-004** (wealth): Give compounding decades to work with, not headlines to chase. The wealth that looks sudden was two quiet decades in the making.
 - **wealth-005** (wealth): Plan for a range of outcomes, not one forecast. Room for error is what lets you survive being wrong.
 - **wealth-007** (wealth): Decide what enough looks like before the market decides it for you. Without a number, more always wins.
-- **wealth-008** (wealth): Your savings rate matters more than your salary. Someone who saves a third of little outbuilds someone who saves nothing of a lot.
+- **wealth-008** (wealth): What you choose not to spend says more about your priorities than what you earn ever will.
+  - ⚑ v1.7 Fable audit: original ("outbuilds") framed savings rate as a numerical outbuilding contest — payoff-is-an-output framing. Reworded to a values-revealing frame instead of a competition frame. Attribution unchanged. See `audits/decisions.md`.
 - **wealth-010** (wealth): Buying things to prove you have arrived quietly taxes the wealth that arriving was supposed to build.
 - **wealth-012** (wealth): Give luck and risk their due. Every fortune and every collapse had a silent partner you did not choose.
 - **wealth-013** (wealth): The money moves that look reckless to you make perfect sense to someone whose worst financial memory differs from yours.
@@ -262,7 +275,8 @@ territory) in addition to the standard attribution-confidence and closeness-to-s
 ## Shifts
 
 - **shift-001**: Proving I belong → Deciding what is worth building
-- **shift-002**: Clearing the inbox → Finishing one thing that matters
+- **shift-002**: Clearing the inbox → Choosing what earns a reply
+  - ⚑ v1.7 Fable audit: original resolution ("Finishing one thing that matters") nearly duplicated shift-001's resolution in spirit. Reworded to keep the inbox-clearing frame while naming a judgment being exercised, not a productivity outcome. See `audits/decisions.md`.
 - **shift-003**: Reacting to the day → Writing the day before it starts
 - **shift-004**: More hours → Fewer, sharper commitments
 - **shift-005**: What could go wrong → What I would do next
