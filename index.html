@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Mindset</title>
+<meta name="theme-color" content="#FAF9F5">
+<script>
+(function () {
+  try {
+    var t = localStorage.getItem("mindset.theme");
+    if (t === "calm" || t === "blossom") document.documentElement.setAttribute("data-theme", t);
+  } catch (e) {}
+})();
+</script>
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<header>
+  <div class="wordmark">mindset</div>
+  <button id="theme-toggle" class="theme-toggle" aria-pressed="false" aria-label="Switch theme" title="Switch theme">&#9680;</button>
+</header>
+<main>
+  <div class="drop-wrap">
+    <mindset-drop id="drop" aria-hidden="true"></mindset-drop>
+  </div>
+  <div id="date-line" class="date-line"></div>
+  <div id="staleness-chip" class="chip" hidden></div>
+  <nav class="tabs" role="tablist" aria-label="Sections">
+    <button type="button" role="tab" id="tab-today" aria-selected="true" aria-controls="panel-today" class="tab">Today</button>
+    <button type="button" role="tab" id="tab-values" aria-selected="false" aria-controls="panel-values" class="tab">Values</button>
+  </nav>
+  <div role="tabpanel" id="panel-today" aria-labelledby="tab-today" class="panel">
+    <div id="cards"></div>
+  </div>
+  <div role="tabpanel" id="panel-values" aria-labelledby="tab-values" class="panel" hidden>
+    <div id="values-list"></div>
+  </div>
+</main>
+<footer>
+  <div>refreshes daily &middot; 06:00 HKT</div>
+</footer>
+<script type="module" src="./drop.js"></script>
+<script type="module" src="./app.js"></script>
+</body>
+</html>
