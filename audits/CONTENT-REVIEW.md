@@ -10,6 +10,11 @@ passed unchanged.
 Human: skim this before the v1.0 tag (§13.7) — delete or reword anything you would not sign,
 especially anything whose attribution feels like a guess rather than a known idea.
 
+**v1.3 addendum:** 9 more anchors were added (the `voices` category, §5.3.9) after live feedback
+asked for content inspired by Jay Shetty, Joe Biden, and Michelle Obama. Same independent-review
+process, with an extra bar given two of the three are former holders of political office — see
+the dedicated section below, inserted after the `core principle` group.
+
 ## Anchors, grouped by attribution
 
 ### — after Bill Perkins
@@ -227,6 +232,32 @@ especially anything whose attribution feels like a guess rather than a known ide
   - ⚑ No change. Sleep-protection card is unique in the set; no quote-closeness, banned-phrase, or word-cap issues.
 - **focus-020** (focus): Close every tab and app you are not using right now. An open one keeps a hook in your attention even when idle.
   - ⚑ No change. Open-tabs/apps-as-attention-hook mechanism is distinct enough from focus-004's task-switching-residue mechanism (background presence of unused, idle apps vs. residue from an active task switch).
+
+### New in v1.3 — `voices` category (§5.3.9)
+
+Extra review bar for this category: Joe Biden and Michelle Obama are former holders of
+significant political office, so every card was checked for political neutrality (no reference
+to office, party, policy, or elections — strictly personal-character/resilience/grief/self-belief
+territory) in addition to the standard attribution-confidence and closeness-to-source checks.
+
+- **voices-001** (voices): Ask what you want, not what looks impressive to people you will forget by next year. Write the answer down before you check anyone else's opinion. — after Jay Shetty, from Think Like a Monk
+  - ⚑ No change. Validation-vs-values framing is a genuine, recurring Shetty theme; not close to a specific verbatim line.
+- **voices-002** (voices): Treat your attention like a muscle, not a mood. Ten quiet minutes before the phone touches your hand trains it the same way a rep trains a shoulder. — after Jay Shetty, from Think Like a Monk
+  - ⚑ No change. Attention-as-trainable-skill is a central, recurring theme of his work.
+- **voices-003** (voices): When your own thoughts loop without end, redirect them toward one specific person you can help today. Service interrupts rumination faster than self-analysis does. — after Jay Shetty, from Think Like a Monk
+  - ⚑ No change. Service (seva) as an antidote to rumination is arguably his most authentic, monastery-rooted idea; strong attribution fit.
+- **voices-004** (voices): Grief does not resolve on a schedule. Get up anyway, on the day you do not feel ready — the getting up is the discipline, not proof that you are healed. — after Joe Biden, from Promise Me, Dad
+  - ⚑ No change. Stays a paraphrase of the broader grief-and-perseverance theme rather than his one widely-quoted specific line; respectful, strictly non-political.
+- **voices-005** (voices): Turn one hard hour into something someone else can use — a call, a story, your time. You will know you are further along when helping stops feeling like performance. — after Joe Biden, from Promise Me, Dad
+  - ⚑ No change. Turning pain into helping others is a well-documented, frequently repeated theme of his; non-political, tasteful.
+- **voices-006** (voices): Go back to the same desk, the same calls, the same ordinary Tuesday, days after the worst week of your life. Do it again the next day. That return is what resilience actually looks like. — after Joe Biden, from Promise Me, Dad
+  - ⚑ Independent review flagged the original draft as a generic resilience platitude with a name attached, not something distinctly traceable to him, and too third-person/declarative for the second-person/imperative house voice. Rewritten to ground it in his documented, fast return to an ordinary work routine after tragedy, in imperative voice.
+- **voices-007** (voices): Describe the part where you struggled and adjusted, not just the outcome. People trust an account with friction in it far more than a polished highlight reel. — after Michelle Obama, from Becoming
+  - ⚑ Reworded from an earlier draft that sat too close to the Obama Foundation/Becoming tagline "Your story is your power." This version keeps the underlying idea (authenticity over a curated image, a genuinely central Becoming theme) in clearly distinct wording.
+- **voices-008** (voices): Prepare harder than the room expects, then walk in anyway when your right to be there is questioned. Competence answers doubt better than arguing with it does. — after Michelle Obama, from Becoming
+  - ⚑ No change. Reflects a well-documented, central Becoming theme (being doubted in rooms she'd earned a place in); stays generic ("the room") rather than naming any office, so it clears the political-neutrality bar.
+- **voices-009** (voices): Answer the message from someone one step behind you, the way an older student once helped you find your footing. That kind of mentoring rarely gets credited, but it compounds for years. — after Michelle Obama, from Becoming
+  - ⚑ Reworded from an earlier draft that brushed against Reach Higher (an actual White House initiative). This version grounds the idea in personal mentorship from her own memoir rather than any policy program.
 
 ## Shifts
 
