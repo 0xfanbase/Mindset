@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.6)
+# MINDSET — Autonomous Build Plan (v1.7)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the four escalation triggers in §11 (plus the
@@ -112,6 +112,38 @@ screenshot tooling turned out to ignore `--window-size`/viewport meta entirely, 
 out at a fixed 500px width regardless of flags tried — confirmed harmless once screenshotted at
 that actual width instead of a cropped 390px, not a real bug). `figure.js` grew to ~11KB, still
 under the 12KB budget.
+
+**v1.7 changelog (from v1.6, post-launch human feedback, two annotated screenshots plus a
+request to rebuild the animation):** (1) **header restructured again to fill both top
+corners** — the figure sat alone in an otherwise-empty top strip while the wordmark/date/toggle
+occupied a separate row below it; moved the figure into the same row as a `.brand` block
+(wordmark + a smaller date line stacked left-aligned beneath it) on the left and the theme
+toggle on the right, all one 3-column grid, so nothing sits in empty corners and the whole row
+reads as the true top of the page; (2) **card gap widened 16px → 24px** for visibly distinct
+cards, per an annotation marking where the stacked cards read as touching; (3) **the animation
+was rebuilt from the ground up**, using Fable to research real Surya Namaskar A mechanics after
+live feedback that the movement was "defying gravity." Fable's diagnosis, confirmed by reading
+the actual pose data: the figure silently flipped which direction it faced twice per cycle, its
+planted hand "teleported" between six different x-positions across poses where a real hand stays
+on the mat, plank's feet computed 33 units above its hands, and down-dog's hip apex was
+geometrically taller than the arm+leg reach could support. Root cause: each pose's hip position
+had been chosen independently "for nice composition" rather than derived from a shared ground
+reference. Rebuilt all 8 poses via inverse kinematics from one fixed floor line (y=92) and one
+fixed hand-plant spot (x=84, unmoving from the forward fold through down-dog, matching how a
+real practitioner's hands stay put on the mat) — every grounded foot/hand is now actually AT the
+floor in every pose it should be, with a single consistent facing direction throughout, verified
+by extracting the shipped pose data back out of `figure.js` and independently re-checking bone
+lengths, ground-contact positions, and arm reachability against the target hand position for
+every pose (a real bug was caught and fixed this way: a target that was geometrically unreachable
+given the fixed arm length, for the lunge pose, before the final version). Replaced up-dog with
+cobra (simpler, calmer, and up-dog's old geometry didn't hold together) per Fable's
+recommendation. (4) **timing rebalanced**: the old model held each pose 0.6–1.9s with short
+~1s snaps between; Fable's research says a real vinyasa-paced salutation is the opposite —
+movement lasts most of the breath, poses (other than down-dog and standing) aren't really held.
+New model: 2.2–3.1s transitions, 0.5–0.7s settles, down-dog held 5s (its traditional five
+breaths), full cycle ~42s (up from 26s). (5) added a small procedural lift to whichever foot is
+mid-step during the sequence's four stepping transitions, so it arcs rather than drags along the
+floor. `figure.js` ~11.6KB, still under the 12KB budget. `verify.mjs all` 59/59.
 
 ---
 
@@ -350,30 +382,36 @@ v1.2 replaces the water drop with a small human figure moving through a yoga sun
 it technically was), and still one continuous, calm, legible loop:
 
 1. **Form:** a side-profile figure (head circle + a filled shoulder-to-hip torso band +
-   neck/arm/leg line segments, round line caps, soft glow sprite behind it) interpolated
-   smoothly between named pose keyframes in a full loop (**26.2s, v1.4** — see "Pace" below):
-   standing prayer (Pranamasana) → arms raised overhead (Urdhva Hastasana, slight back bend) →
-   forward fold (Uttanasana) → lunge, one leg back (Ashwa Sanchalanasana) → plank
-   (Kumbhakasana) → **eight-limbed pose (Ashtanga Namaskara, added v1.4)** → upward dog
-   (Urdhva Mukha Svanasana) → downward dog (Adho Mukha Svanasana) → lunge (return) → forward
-   fold → raised arms → standing (loop restarts) — 12 named poses. Poses are defined as named
-   keypoint sets in a normalized 0–100 box; each transition eases with a smoothstep, so the
-   motion between recognizable poses is itself the visible "aliveness" — no reliance on a
-   single subtle physical effect the way the drop's slow bead-growth was.
-2. **Rendering:** plain 2D canvas — a filled torso band between shoulder and hip (v1.4, so the
-   figure reads as a body rather than a wire skeleton), stroked limb segments (round caps/joins),
-   a filled circle for the head, and the same offscreen-sprite ambient glow technique as v1.1's
-   drop (no per-frame `shadowBlur`) stamped behind the figure each frame. No DOM particles, no
-   bezier body-fill shading beyond the torso band — still simple on purpose, since the pose
-   transitions carry the motion.
+   tapered-quad limb segments, soft glow sprite behind it) interpolated smoothly between named
+   pose keyframes in a full loop (**~42s, v1.7** — see "Pace" below): standing prayer
+   (Pranamasana) → arms raised overhead (Urdhva Hastasana) → forward fold (Uttanasana) →
+   lunge, one leg back (Ashwa Sanchalanasana) → plank (Kumbhakasana) → eight-limbed pose
+   (Ashtanga Namaskara) → **cobra (Bhujangasana, replacing up-dog as of v1.7)** → downward dog
+   (Adho Mukha Svanasana) → lunge (return) → forward fold → raised arms → standing (loop
+   restarts) — 12 named poses (8 unique). **Ground-anchored as of v1.7:** every pose is built
+   via inverse kinematics from one shared floor line and one fixed hand-plant spot (unmoving
+   from the fold through down-dog, like hands staying put on a real mat) rather than each pose's
+   hip position being chosen independently — a live "the movement is defying gravity" report
+   traced to exactly that: hands that silently jumped between six different x-positions, a
+   plank whose feet computed above its own hands, and a figure that quietly flipped which way
+   it faced mid-cycle. Fixed bone lengths (neck/torso/arm/leg) unchanged in spirit from v1.6,
+   rescaled slightly to fit the ground-anchored geometry; verified by extracting the shipped
+   pose data back out of `figure.js` and independently re-checking lengths, ground contacts, and
+   arm reachability.
+2. **Rendering:** plain 2D canvas — filled tapered-quad limbs (v1.6, reads as a body rather
+   than a wire skeleton), a filled circle for the head, and the same offscreen-sprite ambient
+   glow technique as v1.1's drop (no per-frame `shadowBlur`) stamped behind the figure each
+   frame. No DOM particles — still simple on purpose, since the pose transitions carry the
+   motion.
 3. **Life:** legible, continuous motion through named poses — not a single physics effect. Slow
    enough to read as calm, fast enough that a glance clearly shows it moving (this directly
    addresses the v1.1 "wasn't moving" report).
-3a. **Pace (v1.4):** live feedback asked for slower, more realistic movement — a real sun
-   salutation holds each pose for a breath rather than drifting at constant speed. Replaced the
-   even 12s loop with a per-pose hold (600ms–1.9s, longest at down-dog and the standing poses,
-   shortest at the brief eight-limbed bridge) followed by its own eased transition (0.9–1.3s) into
-   the next pose — 26.2s per full cycle.
+3a. **Pace (v1.4, retuned v1.7):** a real sun salutation's movement lasts most of the breath —
+   poses (other than down-dog and standing) aren't really held. Per-pose hold 500ms–5s (longest
+   at down-dog, its traditional five breaths, and the standing poses) followed by a slower,
+   more deliberate eased transition (2.2–3.1s, up from v1.4's 0.9–1.3s) into the next pose —
+   ~42s per full cycle (up from 26.2s). The foot mid-step during the sequence's four stepping
+   transitions gets a small procedural lift so it arcs rather than drags along the floor.
 4. **Performance:** `requestAnimationFrame`; the same offscreen radial-gradient sprite glow
    technique as before (never per-frame `shadowBlur`); `devicePixelRatio` capped at 2; cancel
    RAF on `visibilitychange` hidden (resume on visible, unless reduced motion); `ResizeObserver`-
