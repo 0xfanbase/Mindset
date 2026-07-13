@@ -162,7 +162,7 @@ function stage1() {
   });
   check("stage1", "safe-area insets present", () => assert.match(css(), /env\(safe-area-inset/));
   check("stage1", "svh sizing present (with vh fallback line above)", () => {
-    assert.match(css(), /\bsvh\b/);
+    assert.match(css(), /\d+svh/);
     assert.match(css(), /:\s*100vh/); // fallback line
   });
   check("stage1", "text-size-adjust present", () => assert.match(css(), /-webkit-text-size-adjust/));

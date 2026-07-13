@@ -4,3 +4,4 @@
 [10:48 HKT] stage0: pages check — no GitHub-MCP Pages tool available and direct REST/gh are policy-blocked in this environment; flagged to human, proceeding with rest of Stage 0 in parallel (see decisions.md)
 [10:48 HKT] stage0: scaffold — created assets/{fonts,icons}, data/, state/, scripts/, .github/workflows/, audits/, .nojekyll
 [10:48 HKT] stage0: CLAUDE.md written (condensed invariants)
+[11:20 HKT] stage1: shell/tokens/themes/date/tabs written, verify.mjs stage1 22/22 — pass
