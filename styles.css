@@ -247,13 +247,16 @@ mindset-figure {
 .word-title-row {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 4px;
   margin-top: 8px;
 }
 .word-title {
   font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
   font-size: 20px;
   color: var(--ink);
+  text-align: center;
 }
 .word-speak {
   display: inline-flex;

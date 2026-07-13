@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.12)
+# MINDSET — Autonomous Build Plan (v1.13)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -281,6 +281,24 @@ these exact rules (word cap raised to ≤25 words, since a real question needs m
 retarget, not an add or removal, since Shift already had checks in all the same places
 Journal now does).
 
+**v1.13 changelog (from v1.12, post-launch human feedback):** the Word of the Day headline
+(`.word-title-row`/`.word-title`) is centered and set in italics — live feedback that the word
+"sitting on the left" didn't read as the deliberate headline it's meant to be. `.word-title-row`
+gains `justify-content: center`; `.word-title` gains `font-style: italic` and `text-align:
+center`. Purely cosmetic — no markup, schema, or rotation-logic change; `verify.mjs all` stays
+59/59. Confirmed via a 10-consecutive-HKT-date dry run of `lib.mjs`'s real `pickIndex`/
+`hktDayNumber` against `data/cards.json` that the word does change every day (Gemütlichkeit →
+Dharma → Mono no aware → Ren → Tsundoku → Ataraxia → Ubuntu → Ikigai → Saudade → Amor fati across
+ten consecutive dates, no repeats). Separately, live feedback questioned whether the **Anchor**
+card actually functions as a mindful anchor — this was discussed at length (the 7-category pool
+spans incompatible registers from Stoic principle to tactical relationship/productivity advice,
+much of the pool reads as instruction rather than something to return to and sit with, and a
+~4.3-month rotation cycle is too long for any single idea to recur often enough to feel
+"anchoring") but **no Anchor content or logic changed in v1.13** — the user was asked to pick a
+direction (narrow the pool to timeless principle-level entries; weight rotation so a core subset
+recurs more often; rewrite the tactical entries toward observation/being rather than instruction)
+and this remains open, pending their steer.
+
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
 ```
@@ -495,7 +513,7 @@ since it's no longer adjacent to the notch/status bar).
 
 1. **Theme toggle:** pill button top-right, `aria-pressed`, icons ◐/❀ (calm/blossom), 44×44px, `persists mindset.theme`, default `calm`, no flash-of-wrong-theme (inline script reads localStorage before CSS paint).
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Header row = mono category chip (ANCHOR / JOURNAL / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px) inside a `.word-title-row` alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
+3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Header row = mono category chip (ANCHOR / JOURNAL / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px, italic and centered per v1.13 — live feedback that it "sitting on the left" undersold it as a headline) inside a `.word-title-row` (also centered, v1.13) alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 06:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 06:00 HKT, every single day.)
    - `daily.json` unreachable, > 48h stale, or fetch fails → page computes all three cards locally via `lib.mjs` rotation → slate chip `offline rotation`. Since Word of the Day is deterministic (v1.10), this path picks the exact same word as the server would have for that date — unlike the retired Fresh card, there is no divergent "fallback" content.
