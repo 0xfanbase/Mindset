@@ -101,14 +101,10 @@ function renderAnchorCard(anchor) {
   ]);
 }
 
-function renderShiftCard(shift) {
-  const to = el("p", { class: "shift-to" });
-  to.appendChild(el("span", { class: "arrow", text: "→ " }));
-  to.appendChild(document.createTextNode(shift.to));
+function renderJournalCard(journal) {
   return el("article", { class: "card" }, [
-    el("div", { class: "card-chip", text: "SHIFT" }),
-    el("p", { class: "shift-from", text: shift.from }),
-    to,
+    el("div", { class: "card-chip", text: "JOURNAL" }),
+    el("p", { class: "card-body", text: journal.prompt }),
   ]);
 }
 
@@ -181,13 +177,13 @@ function renderToday(cardsData, dailyData) {
 
   if (mode === "fresh" || mode === "yesterday") {
     const anchor = cardsData.anchors.find((a) => a.id === dailyData.anchorId);
-    const shift = cardsData.shifts.find((s) => s.id === dailyData.shiftId);
+    const journal = cardsData.journal.find((j) => j.id === dailyData.journalId);
     const word = cardsData.wordOfDay.find((w) => w.id === dailyData.wordId);
-    if (!anchor || !shift || !word) { paintCards([renderErrorCard()]); return; }
-    paintCards([renderAnchorCard(anchor), renderShiftCard(shift), renderWordCard(word)]);
+    if (!anchor || !journal || !word) { paintCards([renderErrorCard()]); return; }
+    paintCards([renderAnchorCard(anchor), renderJournalCard(journal), renderWordCard(word)]);
   } else {
-    const { anchor, shift, word } = pickToday(cardsData, new Date());
-    paintCards([renderAnchorCard(anchor), renderShiftCard(shift), renderWordCard(word)]);
+    const { anchor, journal, word } = pickToday(cardsData, new Date());
+    paintCards([renderAnchorCard(anchor), renderJournalCard(journal), renderWordCard(word)]);
   }
 }
 

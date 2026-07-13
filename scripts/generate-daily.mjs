@@ -8,6 +8,8 @@
 // anchor/shift. There is no longer anything to fetch over the network; this script just
 // stamps today's three picks and a generatedAtISO timestamp, which the client compares
 // against to detect a stale/un-deployed daily.json (the staleness chip, §4.5.4).
+// v1.12: the second card (Shift, a from->to reframe) was replaced with a mindful Journal
+// prompt, same deterministic pool-rotation approach.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -22,7 +24,7 @@ function main() {
 
   const cards = JSON.parse(fs.readFileSync(path.join(ROOT, "data/cards.json"), "utf8"));
   const anchor = cards.anchors[pickIndex(cards.anchors.length, dayNumber, "anchor")];
-  const shift = cards.shifts[pickIndex(cards.shifts.length, dayNumber, "shift")];
+  const journal = cards.journal[pickIndex(cards.journal.length, dayNumber, "journal")];
   const word = cards.wordOfDay[pickIndex(cards.wordOfDay.length, dayNumber, "word")];
 
   const daily = {
@@ -30,7 +32,7 @@ function main() {
     dateHKT,
     generatedAtISO: now.toISOString(),
     anchorId: anchor.id,
-    shiftId: shift.id,
+    journalId: journal.id,
     wordId: word.id,
   };
   fs.writeFileSync(path.join(ROOT, "data/daily.json"), JSON.stringify(daily, null, 2) + "\n");
