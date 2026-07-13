@@ -14,3 +14,5 @@
 [03:45 UTC] stage4: dispatched watchdog against fresh file, correctly detected Pages is not live (real, not simulated), filed issue #1
 [11:55 HKT] stage5: manifest.webmanifest, sw.js (res.ok fix, extended ASSETS), PWA meta, README written; verify.mjs all 59/59 — pass; v1.0 tag held pending Pages enablement
 [12:16 HKT] stage5: GitHub Pages enabled by owner (has_pages: true confirmed via API), but no page_build event/deploy has fired yet -- no push has landed since enabling. Pushing this heartbeat to trigger the first build.
+[12:29 HKT] stage5: root-caused persistent 404 -- Pages source is "GitHub Actions" not "Deploy from a branch"; added pages-deploy.yml, ran successfully, site confirmed live (4/4 paths 200)
+[12:30 HKT] stage5: watchdog re-dispatched, passes clean; closed issue #1; FINAL-AUDIT.md and stage-5-audit.md updated to reflect resolution
