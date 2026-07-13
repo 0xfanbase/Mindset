@@ -155,7 +155,7 @@ function paintCards(nodes) {
   const host = document.getElementById("cards");
   host.textContent = "";
   nodes.forEach((n, i) => {
-    n.style.animationDelay = `${i * 0.06}s`;
+    n.style.animationDelay = `${i * 0.09}s`;
     host.appendChild(n);
   });
 }
@@ -163,13 +163,15 @@ function paintCards(nodes) {
 function renderValues(values) {
   const host = document.getElementById("values-list");
   host.textContent = "";
-  for (const v of values) {
-    host.appendChild(el("div", { class: "value-row" }, [
+  values.forEach((v, i) => {
+    const row = el("div", { class: "value-row" }, [
       el("div", { class: "value-name", text: v.name }),
       el("div", { class: "value-essence", text: v.essence }),
       el("div", { class: "value-behaviour", text: v.behaviour }),
-    ]));
-  }
+    ]);
+    row.style.animationDelay = `${i * 0.06}s`;
+    host.appendChild(row);
+  });
 }
 
 async function fetchJSON(path) {
