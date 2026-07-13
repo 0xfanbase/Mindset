@@ -1,7 +1,7 @@
 # Mindset
 
-A personal mindset dashboard. One page, no backend, no dependencies — a small human figure
-moving through a yoga sun salutation, the day's date in Hong Kong time, and three short grounding cards
+A personal mindset dashboard. One page, no backend, no dependencies — a small bottle of light
+breathing slowly, the day's date in Hong Kong time, and three short grounding cards
 that refresh themselves every morning at 06:00 HKT: an **Anchor** (a timeless principle),
 a **Shift** (a "from → to" reframe), and something **Fresh** (the newest item from a small
 set of public feeds, or a reserve card if none are available). A quiet **Values** tab sits
