@@ -1,0 +1,33 @@
+name: watchdog
+on:
+  schedule:
+    - cron: "0 1 * * *"   # 09:00 HKT — a wider ~3h buffer after the 05:56/06:00 HKT daily
+                          # run than a top-of-hour slot would give, so a merely-delayed
+                          # (not dead) daily run doesn't trigger a false alarm
+  workflow_dispatch: {}
+permissions:
+  contents: read
+  issues: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: fail loudly if stale
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          today=$(TZ=Asia/Hong_Kong date +%F)
+          live=$(curl -s -m 15 "https://${{ github.repository_owner }}.github.io/Mindset/data/daily.json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).dateHKT" 2>/dev/null || echo "unreadable")
+          filedate=$(node -p "JSON.parse(require('fs').readFileSync('data/daily.json','utf8')).dateHKT")
+          if [ "$today" != "$filedate" ] || [ "$today" != "$live" ]; then
+            already_open=$(gh issue list --search "Mindset daily build stale in:title" --state open --json number --jq 'length')
+            if [ "$already_open" = "0" ]; then
+              gh issue create \
+                --title "⚠️ Mindset daily build stale ($today)" \
+                --body "Checkout dateHKT=$filedate, live Pages dateHKT=$live, expected $today. Check the daily-cards workflow run logs and confirm Pages actually redeployed the latest commit." \
+                || true
+            fi
+            exit 1
+          fi
