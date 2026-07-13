@@ -198,22 +198,34 @@ mindset-figure {
 .panel[hidden] { display: none; }
 
 @keyframes cardIn {
-  from { opacity: 0; transform: translateY(8px); }
+  from { opacity: 0; transform: translateY(14px) scale(0.97); }
   to { opacity: 1; transform: none; }
 }
+@media (prefers-reduced-motion: reduce) {
+  .card, .value-row { animation: none; }
+}
 
-/* Today's cards share the Values tab's exact row treatment (v1.8) -- flat, no surface,
-   no shadow, divided by a single hairline, so the two tabs read as one consistent list. */
+/* Today's three items read as actual cards (v1.9) -- a surface, a shadow, room to
+   breathe -- distinct from the Values tab's quieter flat list, since Today is meant to be
+   read and learned from, not just glanced at as a reference. */
+#cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
 .card {
-  padding: 15px 0;
-  border-bottom: 1px solid var(--hairline);
-  animation: cardIn 0.25s ease-out both;
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: 0 10px 28px var(--shadow);
+  padding: 18px 20px;
+  animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
-.card:last-child { border-bottom: none; }
 @media (hover: hover) {
-  a.card-link:hover { opacity: 0.72; }
+  .card:hover { transform: translateY(-2px); }
+  a.card-link:hover { box-shadow: 0 14px 32px var(--shadow); }
 }
-a.card-link { transition: opacity 0.15s ease, transform 0.15s ease; }
+.card { transition: transform 0.15s ease; }
+a.card-link { transition: box-shadow 0.15s ease, transform 0.15s ease; }
 a.card-link:active { transform: scale(0.99); }
 
 .card-chip {
@@ -306,6 +318,7 @@ a.card-link {
 .value-row {
   padding: 15px 0;
   border-bottom: 1px solid var(--hairline);
+  animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 .value-row:last-child { border-bottom: none; }
 .value-name {
@@ -342,12 +355,9 @@ footer {
   color: var(--muted);
 }
 
-/* Desktop adaptation — min-width only, base CSS above is the mobile layout (invariant 11).
-   Targets #cards (the actual parent of the .card elements), not .panel (their grandparent) --
-   the previous version of this rule targeted .panel and never actually applied (v1.8 note). */
+/* Desktop adaptation — min-width only, base CSS above is the mobile layout (invariant 11). */
 @media (min-width: 900px) {
   #cards {
-    display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     gap: 20px;
@@ -355,6 +365,5 @@ footer {
   #cards .card {
     flex: 1 1 0;
     min-width: 260px;
-    border-bottom: none;
   }
 }

@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.8)
+# MINDSET — Autonomous Build Plan (v1.9)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the four escalation triggers in §11 (plus the
@@ -186,6 +186,28 @@ dormant spacing bug and makes the two tabs read as one consistent list style, pe
 to make them "identical." The Fresh card's separate quiet/bordered `.card-fresh` treatment
 (added in v1.7 part 3) is retired since every card now already uses the quieter flat style by
 default; its softened "Worth a look →" copy is kept. `verify.mjs all` 59/59.
+
+**v1.9 changelog (from v1.8, post-launch human feedback):** (1) **a real, visible entrance
+animation** — live feedback asked for "a small animation when I open up the page ... opening
+up of the cards"; the existing `cardIn` keyframe was a 250ms fade/8px-rise that read as barely
+there. Redesigned it as a 500ms fade + 14px rise + scale-from-0.97 with an eased
+(`cubic-bezier(0.16,1,0.3,1)`) easing curve, and increased the per-card stagger from 60ms to
+90ms so Today's three cards visibly cascade in one after another rather than arriving together;
+extended the same entrance animation to the Values tab's rows (60ms stagger) for consistency.
+Added a `prefers-reduced-motion` guard so the animation is fully suppressed (content appears
+instantly) for anyone with that OS setting, matching the care already taken with the figure.
+(2) **Today's cards reverted to being actual cards, deliberately un-unified from Values** —
+further live feedback ("I want to see actual cards so that it feels easy to read ... to be
+mindful and to learn something new or as a reminder") walked back v1.8's flattening
+specifically for Today: restored `--surface` background, 20px radius, and a soft shadow
+(`0 10px 28px var(--shadow)`), with real spacing between cards via `#cards { display:flex;
+flex-direction:column; gap:14px }` — applying the gap to `#cards` (the actual parent of the
+`.card` elements) rather than repeating the v1.8-diagnosed `.panel`-gap mistake. The Values
+tab's flat/hairline row style is intentionally kept as-is: Today is meant to be read and
+learned from, Values is a quieter reference list, so the two tabs are now deliberately
+different rather than identical, superseding v1.8's "identical" framing. The desktop 3-across
+media query updated to match (gap-based row layout, no leftover `border-bottom` override).
+`verify.mjs all` 59/59.
 
 ---
 
@@ -406,13 +428,13 @@ since it's no longer adjacent to the notch/status bar).
 
 1. **Theme toggle:** pill button top-right, `aria-pressed`, icons ◐/❀ (calm/blossom), 44×44px, `persists mindset.theme`, default `calm`, no flash-of-wrong-theme (inline script reads localStorage before CSS paint).
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards (v1.8 — unified with the Values tab's row style):** flat rows, no background surface, no shadow, no border-radius — `padding: 15px 0`, `border-bottom: 1px solid var(--hairline)`, no border on the last card. This replaces the earlier elevated/shadowed card look (v1.0–v1.7) entirely; live feedback asked for the two tabs to look and feel identical, and implementing it surfaced a real dormant bug (the `.panel` "card gap" from v1.2/v1.7 was set on the wrong element and had rendered as 0px between cards since it was introduced — see the v1.8 changelog). Header row = mono category chip (ANCHOR / SHIFT / FRESH, no emoji — plain mono text per the prototype). Body in Fraunces. Footer = muted attribution. Fresh card footer = source domain + a softened `Worth a look →` link (`target="_blank" rel="noopener"`, v1.7); whole Fresh card is the tap target; render the title via `textContent` only (never `innerHTML`) and validate `fresh.url` is `https:` before treating the card as live (§6.3, §7 — untrusted third-party feed content).
+3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Header row = mono category chip (ANCHOR / SHIFT / FRESH, no emoji — plain mono text per the prototype). Body in Fraunces. Footer = muted attribution. Fresh card footer = source domain + a softened `Worth a look →` link (`target="_blank" rel="noopener"`, v1.7); whole Fresh card is the tap target; render the title via `textContent` only (never `innerHTML`) and validate `fresh.url` is `https:` before treating the card as live (§6.3, §7 — untrusted third-party feed content).
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 06:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 06:00 HKT, every single day.)
    - `daily.json` unreachable, > 48h stale, or fetch fails → page computes cards locally via `lib.mjs` rotation → slate chip `offline rotation`.
    - Fresh slot in offline mode → deterministic pick from `freshReserve`.
 5. **Values tab:** the 5 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px). **No numbering** — values are not a sequence. (Cut from 10 to 5 in v1.2 — ten read as a checklist; keep only what actually matters.)
-6. **Motion:** the figure is the ONLY animated element. Card entrance = one subtle 250ms fade/rise on load, nothing on scroll. Hover lift 2px desktop only.
+6. **Motion:** the figure is the primary animated element. Card/value-row entrance (v1.9, more noticeable per live feedback: "a small animation when I open up the page ... opening up of the cards") = a 500ms fade/rise/scale-in, staggered per item (90ms between Today's cards, 60ms between Values rows) so they visibly cascade in one after another rather than popping in together; nothing on scroll; respects `prefers-reduced-motion` (animation suppressed, content appears instantly). Hover lift 2px desktop only.
 
 ### 4.6 The figure (signature element — `figure.js`, was the water drop in v1.1, "the brain" in v1.0)
 
