@@ -160,6 +160,7 @@ mindset-figure {
 }
 .chip.amber { background: rgba(180, 120, 26, 0.10); color: #8A5A00; border-color: rgba(180, 120, 26, 0.35); }
 .chip.slate { background: rgba(90, 100, 112, 0.10); color: #4A5462; border-color: rgba(90, 100, 112, 0.35); }
+.chip[hidden] { display: none; }
 
 .tabs {
   display: flex;
@@ -243,11 +244,38 @@ mindset-figure {
   font-size: 12.5px;
   color: var(--muted);
 }
+.word-title-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+}
 .word-title {
   font-family: "Fraunces", Georgia, serif;
   font-size: 20px;
   color: var(--ink);
-  margin-top: 8px;
+}
+.word-speak {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+  border-radius: 999px;
+}
+.word-speak:active { transform: scale(0.9); }
+.word-speak:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) {
+  .word-speak:hover { color: var(--ink); }
 }
 
 .shift-from {
