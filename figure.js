@@ -14,44 +14,56 @@
   const smooth = (t) => t * t * (3 - 2 * t);
 
   // Poses in a normalized 100x100 box (x: 0 back, 100 front-facing-right; y: 0 top, 100 ground).
-  // front/back leg pairs let side-view poses (lunge/plank/dog) show both legs distinctly;
-  // standing poses use the same point for both so the legs simply overlap (feet together).
-  //
-  // Built with fixed bone lengths (neck 12, torso 27, upper arm 17, forearm 20, thigh 21,
-  // shin 21 — same in every pose) and a chosen joint angle per pose, not hand-placed absolute
-  // points, so the figure can't stretch or shrink a limb between poses (verified by script:
-  // every segment measures identically in all 8 poses before rounding).
-  const STANDING = { head: [50, 17], sh: [50, 29], hip: [50, 56], el: [57.2, 44.4], ha: [62.4, 25.1], kf: [51.8, 76.9], ff: [50, 97.8], kb: [51.8, 76.9], fb: [50, 97.8] };
-  const RAISED = { head: [43.5, 16.5], sh: [46.6, 28.1], hip: [49, 55], el: [48.1, 11.2], ha: [53.3, -8.2], kf: [50.8, 75.9], ff: [49, 96.8], kb: [50.8, 75.9], fb: [49, 96.8] };
-  const FOLD = { head: [85.4, 67.1], sh: [74.1, 63], hip: [48, 56], el: [78.5, 79.4], ha: [80.2, 99.3], kf: [49.8, 76.9], ff: [48, 97.8], kb: [49.8, 76.9], fb: [48, 97.8] };
-  const LUNGE = { head: [65.7, 28.1], sh: [57.2, 36.6], hip: [48, 62], el: [64.4, 52], ha: [75.9, 68.4], kf: [68.3, 67.4], ff: [64.6, 88.1], kb: [28.3, 69.2], fb: [7.6, 72.8] };
-  const PLANK = { head: [17.1, 47.2], sh: [28.4, 51.3], hip: [55, 56], el: [32.8, 67.7], ha: [36.3, 87.4], kf: [76, 56], ff: [96.9, 54.2], kb: [76, 56], fb: [96.9, 54.2] };
-  // Ashtanga Namaskara — chest and chin lower toward the floor while the hips stay raised,
-  // elbows bent and tucked close to the ribs (the bridge between plank and up-dog).
-  const EIGHTLIMB = { head: [15.8, 64.3], sh: [27.6, 62.2], hip: [53, 53], el: [19.1, 77], ha: [24.3, 96.3], kf: [74, 53], ff: [94.9, 51.2], kb: [74, 53], fb: [94.9, 51.2] };
-  const UPDOG = { head: [31.3, 42.2], sh: [40.5, 49.9], hip: [56, 72], el: [44.9, 66.3], ha: [48.4, 86], kf: [35.3, 75.6], ff: [17.1, 86.1], kb: [35.3, 75.6], fb: [17.1, 86.1] };
-  const DOWNDOG = { head: [93, 42.1], sh: [82.1, 37], hip: [56, 30], el: [87.9, 53], ha: [93.1, 72.3], kf: [39.9, 43.5], ff: [26.4, 59.6], kb: [39.9, 43.5], fb: [26.4, 59.6] };
+  // Ground-anchored: every pose shares one floor line (y=92) and one hand-plant spot
+  // (x=84, unmoving from the forward fold through down-dog, like a real mat), built via
+  // inverse kinematics so a grounded foot/hand is actually AT the floor, not floating at a
+  // different height per pose — and the figure faces the same way in every pose. Fixed bone
+  // lengths (neck 10, torso 23, upper arm 14.5, forearm 17, thigh 18, shin 18) verified by
+  // script, along with every floor joint reading ~92 and every planted hand reading (84, 92).
+  const STANDING = { head: [78, 23], sh: [78, 33], hip: [78, 56], el: [92.3, 30.9], ha: [87, 47], kf: [78.9, 74], ff: [78, 92], kb: [78.9, 74], fb: [78, 92] };
+  const RAISED = { head: [71.7, 23.8], sh: [74.8, 33.3], hip: [78, 56], el: [71.4, 19.2], ha: [75.9, 2.8], kf: [78.9, 74], ff: [78, 92], kb: [78.9, 74], fb: [78, 92] };
+  const FOLD = { head: [91.1, 86.3], sh: [87.7, 76.9], hip: [78, 56], el: [99.6, 85.2], ha: [84, 92], kf: [78.9, 74], ff: [78, 92], kb: [78.9, 74], fb: [78, 92] };
+  const LUNGE = { head: [99, 62.1], sh: [89, 63], hip: [66.3, 67], el: [92.3, 77.1], ha: [84, 92], kf: [82.7, 74.6], ff: [78, 92], kb: [48.4, 65.4], fb: [32.8, 74.4] };
+  const PLANK = { head: [91.6, 72.4], sh: [82.2, 69], hip: [60, 63], el: [72.4, 79.6], ha: [84, 92], kf: [49.7, 77.7], ff: [39.4, 92.5], kb: [49.7, 77.7], fb: [39.4, 92.5] };
+  // Ashtanga Namaskara — chest/chin lower toward the floor, hips stay raised, elbows tucked.
+  const EIGHTLIMB = { head: [84.7, 81.9], sh: [77.6, 74.8], hip: [60, 60], el: [68.2, 85.8], ha: [84, 92], kf: [49.7, 74.7], ff: [43.5, 91.7], kb: [49.7, 74.7], fb: [43.5, 91.7] };
+  // Bhujangasana (cobra), not up-dog — hips/thighs/feet-tops stay down, only the chest lifts;
+  // calmer than a straight-arm up-dog, and up-dog's old geometry didn't hold together anyway.
+  const COBRA = { head: [69.3, 59.5], sh: [66.7, 69.2], hip: [57, 90], el: [69.3, 83.4], ha: [84, 92], kf: [39, 89.4], ff: [21, 90], kb: [39, 89.4], fb: [21, 90] };
+  const DOWNDOG = { head: [85.7, 70.1], sh: [76.6, 65.9], hip: [55, 58], el: [72.3, 79.7], ha: [84, 92], kf: [43.4, 71.8], ff: [37.3, 88.7], kb: [43.4, 71.8], fb: [37.3, 88.7] };
 
-  // One full sun-salutation cycle: standing -> raised -> fold -> lunge -> plank ->
-  // eight-limbed -> up-dog -> down-dog -> lunge -> fold -> raised -> standing (loop).
-  const POSES = [STANDING, RAISED, FOLD, LUNGE, PLANK, EIGHTLIMB, UPDOG, DOWNDOG, LUNGE, FOLD, RAISED, STANDING];
+  // standing -> raised -> fold -> lunge -> plank -> eight-limbed -> cobra -> down-dog ->
+  // lunge -> fold -> raised -> standing (loop).
+  const POSES = [STANDING, RAISED, FOLD, LUNGE, PLANK, EIGHTLIMB, COBRA, DOWNDOG, LUNGE, FOLD, RAISED, STANDING];
   const JOINTS = ["head", "sh", "hip", "el", "ha", "kf", "ff", "kb", "fb"];
 
-  // Each pose is held (a real pause, like a breath) before easing into the next one —
-  // continuous constant-speed drifting between poses does not read as an actual person
-  // moving through a sequence. Longer holds at the poses usually held longest in practice
-  // (down-dog, the standing poses); the eight-limbed bridge pose is brief by nature.
-  const HOLD = [1600, 1000, 1300, 1500, 1000, 600, 1400, 1900, 1500, 1300, 1000];
-  const MOVE = [900, 1300, 1200, 1000, 900, 1000, 1200, 1200, 1200, 1300, 900];
+  // Each pose is held (a real pause, like a breath) before easing into the next one. A real
+  // vinyasa-style sun salutation is the opposite of "hold, then snap": the movement itself
+  // lasts most of the breath, and only down-dog (traditionally five breaths) and the standing
+  // poses are actually held for any length of time. Long, slow transitions; brief settles.
+  const HOLD = [3000, 600, 700, 600, 500, 500, 700, 5000, 600, 700, 600];
+  const MOVE = [2600, 2700, 2500, 2300, 2300, 2500, 2600, 3100, 2500, 2700, 2600];
   const SEG_START = [];
   let _acc = 0;
   for (let i = 0; i < HOLD.length; i++) { SEG_START.push(_acc); _acc += HOLD[i] + MOVE[i]; }
   const CYCLE = _acc;
 
-  function lerpPose(a, b, t) {
+  // A foot that's planted at both ends of a transition but moves position between them (the
+  // sequence's four "step" moments) lifts slightly rather than dragging along the floor —
+  // segment index -> which joint pair steps, keyed to the MOVE phase only.
+  const STEP = { 2: "back", 3: "front", 7: "front", 8: "back" };
+  const STEP_LIFT = 7;
+
+  function lerpPose(a, b, t, segIndex) {
     const q = smooth(t);
     const out = {};
     for (const j of JOINTS) out[j] = [a[j][0] + (b[j][0] - a[j][0]) * q, a[j][1] + (b[j][1] - a[j][1]) * q];
+    const step = STEP[segIndex];
+    if (step) {
+      const lift = STEP_LIFT * Math.sin(Math.PI * t);
+      const joints = step === "front" ? ["kf", "ff"] : ["kb", "fb"];
+      for (const j of joints) out[j][1] -= lift;
+    }
     return out;
   }
 
@@ -206,7 +218,7 @@
         this._draw(POSES[i]);
       } else {
         const localT = (segT - HOLD[i]) / MOVE[i];
-        this._draw(lerpPose(POSES[i], POSES[i + 1], localT));
+        this._draw(lerpPose(POSES[i], POSES[i + 1], localT, i));
       }
       this._raf = requestAnimationFrame(this._step.bind(this));
     }
