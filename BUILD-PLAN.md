@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.2)
+# MINDSET — Autonomous Build Plan (v1.3)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the four escalation triggers in §11 (plus the
@@ -39,6 +39,17 @@ a live pick (an Ali Abdaal video on AI-prompt tactics) was off-theme for a minds
 generator now rejects off-theme candidate titles against a denylist and looks past the newest
 1-2 posts on a topically-broad source to find one that fits, rather than dropping the source
 entirely or shipping whatever's newest regardless of relevance.
+
+**v1.3 changelog (from v1.2, post-launch human feedback):** (1) re-investigated a repeat "the
+animation is still not moving" report; found no code defect (live-deployed `figure.js` is
+byte-identical to the v1.2 fix, `sw.js` is network-first so stale caching is an unlikely cause) —
+logged as an anti-stuck pivot in `decisions.md` after four browser-automation diagnostic attempts
+failed on environment/tooling grounds, with the most likely remaining explanation being the
+viewer's own OS-level reduce-motion setting (by design, per invariant 7); (2) **adds a `voices`
+anchor category (9 cards)** for named public figures the owner's household finds personally
+inspiring (Jay Shetty, Joe Biden, Michelle Obama) — new §5.2 row, new §5.3.9 rule (extra bar for
+this category: nonpartisan scope for anyone who has held political office, stricter
+closeness-to-source check, mandatory independent QA pass), anchors total 120 → 129.
 
 ---
 
@@ -141,7 +152,7 @@ The three daily cards:
 │   ├── icons/              # icon-192.png, icon-512.png, apple-touch-icon.png (180)
 │   └── favicon.svg
 ├── data/
-│   ├── cards.json          # anchors[120], shifts[40], freshReserve[10]
+│   ├── cards.json          # anchors[129], shifts[40], freshReserve[10]
 │   ├── values.json         # 5 values
 │   └── daily.json          # written by the pipeline daily
 ├── state/
@@ -346,7 +357,8 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 | anchors | `relationships` (Carnegie-style) | 15 |
 | anchors | `wealth` (patience, avoid ruin, invisible wealth, asymmetry) | 20 |
 | anchors | `focus` (deep work, energy, saying no) | 20 |
-| **anchors total** | | **120** |
+| anchors | `voices` (added v1.3 — Jay Shetty, Joe Biden, Michelle Obama; see §5.3.9) | 9 |
+| **anchors total** | | **129** |
 | shifts | — | **40** |
 | freshReserve | — | **10** |
 
@@ -368,6 +380,7 @@ ten read as a checklist rather than a short list of what actually matters (§5.3
 6. Values (`values.json`, exactly 5): `{ "name", "essence" (≤ 14 words), "behaviour" (≤ 16 words, observable — something a camera could see) }`. Generic-safe: no personal references to the owner. (Cut from 10 to 5 in v1.2 per live human feedback — keep the strongest 5, cut the rest rather than let the list grow back; if curating later, replace one of the 5, don't add a 6th.)
 7. **Attribution-confidence rule:** use a person-named attribution (`— after X`) only when you are confident the specific idea is centrally/traditionally X's (e.g. Epictetus/Seneca/Marcus Aurelius for Stoic control-of-response ideas, Bill Perkins for Die With Zero's core thesis, Dweck for growth-mindset framing, Carnegie for the specific relationship tactics from *How to Win Friends*, Housel for invisible-wealth/avoid-ruin framing, Newport for deep-work framing). Otherwise, demote to tradition-level attribution (`— Stoic tradition`, `— growth-mindset research`, `— core principle`) rather than guessing at a specific person. This is a quality/accuracy safeguard, independent of the (resolved) PII question — misattributing an idea to a real, named public figure is a credibility problem even though naming public figures itself is fine.
 8. Write anchors in six batches (one per category, extending each category's 3 seed cards to its full count). After each batch, run the normal mechanical self-review (word caps, quote marks, banned phrases — rules 1–5), **and then** a second, independent review pass per §10 Stage 3's content-QA step, before moving to the next batch.
+9. **`voices` category (added v1.3):** a 7th anchor category, 9 cards (3 each), for named living/recent public figures the owner's household specifically finds inspiring, so their thinking surfaces periodically via the same rotation — not a new subsystem, just more entries in the same `anchors` pool. Extra bar beyond rules 1–8 for this category specifically: (a) any figure who has held significant political office must be scoped strictly to personal-character themes (grief, resilience, self-belief, service) and must never reference their office, party, policies, or elections — attribution is tied to a specific, nonpartisan book/body of work (e.g. `— after X, from <book>`), not their public office; (b) rule 2's "no verbatim quotes" is enforced against the *spirit*, not just quote-mark glyphs — a paraphrase that lands close to the person's one most-famous, most-recognizable line is a violation even with zero quote marks and needs a rewrite, not just a rewording; (c) run the independent second-pass review (rule 8) with an explicit prompt to check attribution-confidence, political neutrality, and closeness-to-source — this category carries materially higher reputational risk per card than the historical-thinker categories.
 
 ---
 

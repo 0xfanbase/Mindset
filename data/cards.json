@@ -719,6 +719,60 @@
       "category": "focus",
       "text": "Close every tab and app you are not using right now. An open one keeps a hook in your attention even when idle.",
       "attribution": "— core principle"
+    },
+    {
+      "id": "voices-001",
+      "category": "voices",
+      "text": "Ask what you want, not what looks impressive to people you will forget by next year. Write the answer down before you check anyone else's opinion.",
+      "attribution": "— after Jay Shetty, from Think Like a Monk"
+    },
+    {
+      "id": "voices-002",
+      "category": "voices",
+      "text": "Treat your attention like a muscle, not a mood. Ten quiet minutes before the phone touches your hand trains it the same way a rep trains a shoulder.",
+      "attribution": "— after Jay Shetty, from Think Like a Monk"
+    },
+    {
+      "id": "voices-003",
+      "category": "voices",
+      "text": "When your own thoughts loop without end, redirect them toward one specific person you can help today. Service interrupts rumination faster than self-analysis does.",
+      "attribution": "— after Jay Shetty, from Think Like a Monk"
+    },
+    {
+      "id": "voices-004",
+      "category": "voices",
+      "text": "Grief does not resolve on a schedule. Get up anyway, on the day you do not feel ready — the getting up is the discipline, not proof that you are healed.",
+      "attribution": "— after Joe Biden, from Promise Me, Dad"
+    },
+    {
+      "id": "voices-005",
+      "category": "voices",
+      "text": "Turn one hard hour into something someone else can use — a call, a story, your time. You will know you are further along when helping stops feeling like performance.",
+      "attribution": "— after Joe Biden, from Promise Me, Dad"
+    },
+    {
+      "id": "voices-006",
+      "category": "voices",
+      "text": "Go back to the same desk, the same calls, the same ordinary Tuesday, days after the worst week of your life. Do it again the next day. That return is what resilience actually looks like.",
+      "attribution": "— after Joe Biden, from Promise Me, Dad"
+    },
+    {
+      "id": "voices-007",
+      "category": "voices",
+      "text": "Describe the part where you struggled and adjusted, not just the outcome. People trust an account with friction in it far more than a polished highlight reel.",
+      "attribution": "— after Michelle Obama, from Becoming"
+    },
+    {
+      "id": "voices-008",
+      "category": "voices",
+      "text": "Prepare harder than the room expects, then walk in anyway when your right to be there is questioned. Competence answers doubt better than arguing with it does.",
+      "attribution": "— after Michelle Obama, from Becoming"
+    },
+    {
+      "id": "voices-009",
+      "category": "voices",
+      "text": "Answer the message from someone one step behind you, the way an older student once helped you find your footing. That kind of mentoring rarely gets credited, but it compounds for years.",
+      "attribution": "— after Michelle Obama, from Becoming"
     }
   ],
   "shifts": [

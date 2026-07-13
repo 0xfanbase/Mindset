@@ -1,4 +1,4 @@
-# FINAL AUDIT — v1.0 (see v1.2 update below)
+# FINAL AUDIT — v1.0 (see v1.2/v1.3 updates below)
 
 ## `verify.mjs` integrity (invariant 12 ratchet check)
 
@@ -15,6 +15,12 @@ strictness, new filename; (2) the values-count assertion changed from `exactly 1
 `exactly 5` — this reflects a deliberate, documented product decision (values.json cut from
 10 to 5 per live human feedback, see `decisions.md`), not a softened gate avoiding a failure.
 `verify.mjs all` remains 59/59 green after both changes.
+
+**v1.3 update:** one further change, not a relaxation: `CATEGORY_COUNTS` gained a `voices: 9`
+entry and the anchor-total assertion changed from `exactly 120` to `exactly 129` — this is a
+documented content addition (a new `voices` anchor category, see `decisions.md`), a stricter/more
+specific check than before (one more required category, one higher required total), not a
+loosened gate. `verify.mjs all` remains 59/59 green after this change.
 
 ## Acceptance checklist (BUILD-PLAN.md §12)
 

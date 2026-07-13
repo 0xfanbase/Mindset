@@ -299,7 +299,7 @@ function stage2() {
 
 // ---------- Stage 3 ----------
 
-const CATEGORY_COUNTS = { stoic: 25, diewithzero: 20, growth: 20, relationships: 15, wealth: 20, focus: 20 };
+const CATEGORY_COUNTS = { stoic: 25, diewithzero: 20, growth: 20, relationships: 15, wealth: 20, focus: 20, voices: 9 };
 
 function stage3() {
   check("stage3", "data/cards.json valid JSON with required shape", () => {
@@ -312,7 +312,7 @@ function stage3() {
     assert.equal(v.length, 5, `expected 5 values, got ${v.length}`);
   });
 
-  check("stage3", "anchor category counts exact (120 total)", () => {
+  check("stage3", "anchor category counts exact (129 total)", () => {
     const d = readJSON("data/cards.json");
     const counts = {};
     for (const a of d.anchors) counts[a.category] = (counts[a.category] || 0) + 1;
@@ -320,7 +320,7 @@ function stage3() {
     for (const [cat, want] of Object.entries(CATEGORY_COUNTS)) {
       if (counts[cat] !== want) problems.push(`${cat}: got ${counts[cat] || 0}, want ${want}`);
     }
-    assert.equal(d.anchors.length, 120, `total anchors = ${d.anchors.length}`);
+    assert.equal(d.anchors.length, 129, `total anchors = ${d.anchors.length}`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
   check("stage3", "shifts = 40, freshReserve = 10", () => {
