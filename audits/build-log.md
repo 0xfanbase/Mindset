@@ -5,3 +5,4 @@
 [10:48 HKT] stage0: scaffold — created assets/{fonts,icons}, data/, state/, scripts/, .github/workflows/, audits/, .nojekyll
 [10:48 HKT] stage0: CLAUDE.md written (condensed invariants)
 [11:20 HKT] stage1: shell/tokens/themes/date/tabs written, verify.mjs stage1 22/22 — pass
+[11:32 HKT] stage2: drop.js ported from design project, verify.mjs stage2 8/8 — pass
