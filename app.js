@@ -22,10 +22,10 @@ function currentTheme() {
 function applyThemeSideEffects(theme) {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (meta) meta.setAttribute("content", BG[theme]);
-  const drop = document.getElementById("drop");
-  if (drop) {
-    drop.setAttribute("color", PULSE[theme]);
-    drop.setAttribute("glow", PULSE[theme]);
+  const figure = document.getElementById("figure");
+  if (figure) {
+    figure.setAttribute("color", PULSE[theme]);
+    figure.setAttribute("glow", PULSE[theme]);
   }
 }
 

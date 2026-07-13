@@ -290,13 +290,15 @@ especially anything whose attribution feels like a guess rather than a known ide
 
 ## Values
 
+Cut from 10 to 5 in v1.2 per live human feedback (ten read as a checklist, not a short list of
+what actually matters). The 5 shipped values:
+
 - **Consistency**: Show up on the scheduled day, especially the unremarkable ones. — *The habit happens on its calendar day, inspired or not.*
 - **Ownership**: If it lands on you, it is yours to move. — *Sends the follow up unprompted; no one has to chase.*
 - **Patience**: Let compounding do the heavy lifting. — *Holds the position through the boring middle without checking hourly.*
 - **Focus**: One thing, protected, finished. — *Phone sits in another room during the deep work block.*
 - **Presence**: Be where your feet are. — *Puts the phone face down and asks the second question.*
-- **Courage under visibility**: Do the uncomfortable right thing while being watched. — *Raises the dissenting point in the meeting, not after it.*
-- **Temperance**: Enough is a decision, not an amount. — *Stops at the planned limit — plate, spend, screen — without renegotiating.*
-- **Honesty with self**: Name the real reason, not the flattering one. — *Writes the actual cause in the journal, even when it stings.*
-- **Long-game relationships**: Invest in people with no invoice attached. — *Sends the check-in message when there is nothing to ask for.*
-- **Health as the base asset**: The body funds every other ambition. — *Trains today, sleeps tonight, books the checkup before it is urgent.*
+
+Cut (were always marked "reserve, held back for later curation" in the source content — not a
+new deletion, just never promoted): Courage under visibility, Temperance, Honesty with self,
+Long-game relationships, Health as the base asset.

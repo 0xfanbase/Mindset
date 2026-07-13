@@ -16,3 +16,4 @@
 [12:16 HKT] stage5: GitHub Pages enabled by owner (has_pages: true confirmed via API), but no page_build event/deploy has fired yet -- no push has landed since enabling. Pushing this heartbeat to trigger the first build.
 [12:29 HKT] stage5: root-caused persistent 404 -- Pages source is "GitHub Actions" not "Deploy from a branch"; added pages-deploy.yml, ran successfully, site confirmed live (4/4 paths 200)
 [12:30 HKT] stage5: watchdog re-dispatched, passes clean; closed issue #1; FINAL-AUDIT.md and stage-5-audit.md updated to reflect resolution
+[12:55 HKT] v1.2: replaced drop.js with figure.js (yoga sun salutation), fixed the startup-race bug behind "wasn't moving", loosened Today-tab card spacing, cut values.json 10->5, added mindset-relevance filter to generate-daily.mjs, bumped sw.js cache version -- verify.mjs all 59/59
