@@ -70,8 +70,7 @@ body {
 
 button, a { -webkit-tap-highlight-color: transparent; }
 .theme-toggle:focus-visible,
-.tab:focus-visible,
-a.card-link:focus-visible {
+.tab:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -222,11 +221,8 @@ mindset-figure {
 }
 @media (hover: hover) {
   .card:hover { transform: translateY(-2px); }
-  a.card-link:hover { box-shadow: 0 14px 32px var(--shadow); }
 }
 .card { transition: transform 0.15s ease; }
-a.card-link { transition: box-shadow 0.15s ease, transform 0.15s ease; }
-a.card-link:active { transform: scale(0.99); }
 
 .card-chip {
   font-family: "IBM Plex Mono", monospace;
@@ -246,6 +242,12 @@ a.card-link:active { transform: scale(0.99); }
   font-style: italic;
   font-size: 12.5px;
   color: var(--muted);
+}
+.word-title {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 20px;
+  color: var(--ink);
+  margin-top: 8px;
 }
 
 .shift-from {
@@ -267,36 +269,6 @@ a.card-link:active { transform: scale(0.99); }
   margin: 5px 0 0;
 }
 .shift-to .arrow { color: var(--accent); }
-
-a.card-link {
-  display: block;
-  text-decoration: none;
-  color: inherit;
-}
-.fresh-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: baseline;
-  margin-top: 9px;
-}
-.fresh-domain {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-}
-.fresh-read {
-  font-family: "Fraunces", Georgia, serif;
-  font-style: italic;
-  font-size: 13px;
-  color: var(--muted);
-}
-.fresh-reserve-label {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.06em;
-  color: var(--muted);
-}
 
 .error-card { text-align: center; }
 .error-label {

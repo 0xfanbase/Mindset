@@ -24,6 +24,11 @@ full before/after reasoning is in `audits/decisions.md`'s "v1.7 (part 3 of 3)" e
 card was left as previously reviewed; a full re-audit of all 129 anchors against this subtler bar
 was not performed, only the items Fable named or that directly matched its named pattern.
 
+**v1.10 addendum:** the Fresh reserve pool (`freshReserve`, 10 evergreen fallback cards) is
+retired along with the Fresh card itself; see the new "Word of the Day" section below (30
+entries, `wordOfDay`) for its replacement. The `anchors`/`shifts` sections below and their
+review notes are unaffected by this change.
+
 ## Anchors, grouped by attribution
 
 ### — after Bill Perkins
@@ -320,18 +325,48 @@ territory) in addition to the standard attribution-confidence and closeness-to-s
 - **shift-039**: Half-listening while you plan your reply → Fully listening before you respond
 - **shift-040**: Reacting to every request → Protecting one deep work block
 
-## Fresh reserve (offline fallback)
+## Word of the Day (added v1.10, replaces the Fresh reserve/offline-fallback pool)
 
-- **reserve-01** (— evergreen): Reread one page of an old notebook. Past you left supplies for exactly this stretch.
-- **reserve-02** (— evergreen): Take the ten minute walk before any decision that feels urgent. Urgency shrinks outdoors.
-- **reserve-03** (— evergreen): Choose the first task of tomorrow tonight. Mornings are for doing, not deciding.
-- **reserve-04** (— evergreen): Close every loop that takes under two minutes. Carry fewer open things into the afternoon.
-- **reserve-05** (— evergreen): Name the exact emotion you feel before acting on it. Precision drains its power; vague feelings run the show.
-- **reserve-06** (— evergreen): Sort the problem into what you control and what you don't. Spend your energy only on the first pile.
-- **reserve-07** (— evergreen): Cross out every step in the task that is not strictly necessary. Most jobs survive losing half their steps.
-- **reserve-08** (— evergreen): Write down one thing that went right, before you sleep. Even the hardest day leaves at least one.
-- **reserve-09** (— evergreen): When you are stuck, switch to a small, unrelated task for ten minutes. Insight often arrives sideways, not head-on.
-- **reserve-10** (— evergreen): Picture advising a friend who has your exact problem. Their answer usually comes easier than your own.
+Retires the Fresh card entirely (a daily RSS/YouTube pick, disliked in live feedback) in favor
+of a self-authored, deterministic third card: one word worth knowing, its origin, and a
+one-line sense of its meaning (not a lifted dictionary definition). All 30 entries were
+pre-validated against `verify.mjs`'s exact word-cap (≤20w meaning)/quote-glyph/platitude rules
+before writing, via a throwaway Node script reimplementing those checks. No independent QA
+pass was run beyond that mechanical validation — these are single-word etymological/
+philosophical concepts, not paraphrases of a named thinker's ideas, so the attribution-
+confidence and closeness-to-source concerns that drive the anchors' second-pass review don't
+apply the same way here.
+
+- **word-01** — Wabi-sabi (Japanese): Finding beauty in what is imperfect, weathered, and incomplete.
+- **word-02** — Ikigai (Japanese): The reason you get up in the morning, where purpose meets daily life.
+- **word-03** — Amor fati (Latin): Loving your fate entirely, including the parts you did not choose.
+- **word-04** — Ubuntu (Nguni): I am because we are; a self formed through community, not apart from it.
+- **word-05** — Hygge (Danish): A deliberate, unhurried coziness, usually shared with people you trust.
+- **word-06** — Sisu (Finnish): Quiet, stubborn resolve that keeps going once willpower alone runs out.
+- **word-07** — Meraki (Greek): Doing something with so much soul that a piece of you ends up in it.
+- **word-08** — Saudade (Portuguese): A wistful longing for something absent, held without needing it resolved.
+- **word-09** — Komorebi (Japanese): Sunlight filtering through leaves, dappling the ground beneath a tree.
+- **word-10** — Waldeinsamkeit (German): The particular solitude of standing alone among trees.
+- **word-11** — Lagom (Swedish): Not too much, not too little; exactly enough.
+- **word-12** — Ataraxia (Greek): A settled calm, free of disturbance and anxious craving alike.
+- **word-13** — Eudaimonia (Greek): A life that flourishes because it is well lived, not merely a happy one.
+- **word-14** — Apatheia (Stoic Greek): Freedom from being ruled by disordered passion, not an absence of feeling.
+- **word-15** — Mono no aware (Japanese): A gentle sadness at the passing of things, aware that beauty is fleeting.
+- **word-16** — Gemütlichkeit (German): Warmth and belonging, the feeling of being unhurried among friends.
+- **word-17** — Kaizen (Japanese): Continuous improvement through many small, deliberate changes.
+- **word-18** — Wu wei (Chinese): Effortless action that moves with circumstance instead of forcing it.
+- **word-19** — Dharma (Sanskrit): The right conduct proper to who you are and the moment you are in.
+- **word-20** — Satori (Japanese): A sudden flash of understanding that arrives outside ordinary reasoning.
+- **word-21** — Filoxenia (Greek): Warmth extended to a stranger; hospitality treated as a form of love.
+- **word-22** — Sprezzatura (Italian): Making something difficult look effortless, without calling attention to the effort.
+- **word-23** — Duende (Spanish): A heightened, trembling passion that art can summon in whoever witnesses it.
+- **word-24** — Tsundoku (Japanese): Acquiring books faster than you read them, and letting them wait.
+- **word-25** — Fernweh (German): An ache for a distant place you have never actually seen.
+- **word-26** — Ren (Confucian Chinese): Benevolence toward others, treated as the root of genuine character.
+- **word-27** — Shibumi (Japanese): Understated, effortless elegance; beauty that does not ask to be noticed.
+- **word-28** — Metanoia (Greek): A change of heart that reorders what you value, not just what you think.
+- **word-29** — Sophrosyne (Greek): A disciplined self-awareness that keeps every impulse in proportion.
+- **word-30** — Firgun (Hebrew): Unselfish delight in someone else's good fortune, with no envy attached.
 
 ## Values
 
@@ -339,7 +374,7 @@ Cut from 10 to 5 in v1.2 per live human feedback (ten read as a checklist, not a
 what actually matters). The 5 shipped values:
 
 - **Consistency**: Show up on the scheduled day, especially the unremarkable ones. — *The habit happens on its calendar day, inspired or not.*
-- **Ownership**: If it lands on you, it is yours to move. — *Sends the follow up unprompted; no one has to chase.*
+- **Ownership**: If it lands on you, it is yours to move. — *Fixes the small broken thing instead of just mentioning it.*
 - **Patience**: Let compounding do the heavy lifting. — *Holds the position through the boring middle without checking hourly.*
 - **Focus**: One thing, protected, finished. — *Phone sits in another room during the deep work block.*
 - **Presence**: Be where your feet are. — *Puts the phone face down and asks the second question.*

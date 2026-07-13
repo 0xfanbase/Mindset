@@ -126,7 +126,7 @@ function stage0() {
     assert.ok(exists("audits/decisions.md"), "missing decisions.md");
   });
   check("stage0", "repo tree directories exist", () => {
-    for (const d of ["assets/fonts", "assets/icons", "data", "state", "scripts", ".github/workflows", "audits"]) {
+    for (const d of ["assets/fonts", "assets/icons", "data", "scripts", ".github/workflows", "audits"]) {
       assert.ok(fs.existsSync(abs(d)) && fs.statSync(abs(d)).isDirectory(), `missing dir ${d}`);
     }
   });
@@ -304,7 +304,7 @@ const CATEGORY_COUNTS = { stoic: 25, diewithzero: 20, growth: 20, relationships:
 function stage3() {
   check("stage3", "data/cards.json valid JSON with required shape", () => {
     const d = readJSON("data/cards.json");
-    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.shifts) && Array.isArray(d.freshReserve));
+    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.shifts) && Array.isArray(d.wordOfDay));
   });
   check("stage3", "data/values.json valid JSON, exactly 5 values", () => {
     const v = readJSON("data/values.json");
@@ -323,10 +323,10 @@ function stage3() {
     assert.equal(d.anchors.length, 129, `total anchors = ${d.anchors.length}`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
-  check("stage3", "shifts = 40, freshReserve = 10", () => {
+  check("stage3", "shifts = 40, wordOfDay = 30", () => {
     const d = readJSON("data/cards.json");
     assert.equal(d.shifts.length, 40, `shifts = ${d.shifts.length}`);
-    assert.equal(d.freshReserve.length, 10, `freshReserve = ${d.freshReserve.length}`);
+    assert.equal(d.wordOfDay.length, 30, `wordOfDay = ${d.wordOfDay.length}`);
   });
   check("stage3", "all ids unique within each pool", () => {
     const d = readJSON("data/cards.json");
@@ -335,7 +335,7 @@ function stage3() {
       assert.equal(new Set(ids).size, ids.length, `${name} has duplicate ids`);
     }
   });
-  check("stage3", "word caps respected (anchors <=40w, shifts from/to <=8w, values essence<=14w/behaviour<=16w)", () => {
+  check("stage3", "word caps respected (anchors <=40w, shifts from/to <=8w, wordOfDay meaning<=20w, values essence<=14w/behaviour<=16w)", () => {
     const d = readJSON("data/cards.json");
     const v = readJSON("data/values.json");
     const problems = [];
@@ -344,7 +344,7 @@ function stage3() {
       if (wordCount(s.from) > 8) problems.push(`${s.id} from: ${wordCount(s.from)}w`);
       if (wordCount(s.to) > 8) problems.push(`${s.id} to: ${wordCount(s.to)}w`);
     }
-    for (const r of d.freshReserve) if (wordCount(r.text) > 40) problems.push(`${r.id}: ${wordCount(r.text)}w`);
+    for (const w of d.wordOfDay) if (wordCount(w.meaning) > 20) problems.push(`${w.id}: ${wordCount(w.meaning)}w`);
     for (const val of v) {
       if (wordCount(val.essence) > 14) problems.push(`${val.name} essence: ${wordCount(val.essence)}w`);
       if (wordCount(val.behaviour) > 16) problems.push(`${val.name} behaviour: ${wordCount(val.behaviour)}w`);
@@ -358,7 +358,7 @@ function stage3() {
     const scan = (label, s) => { if (s && hasQuoteGlyph(s)) problems.push(`${label}: ${s}`); };
     for (const a of d.anchors) { scan(`${a.id}.text`, a.text); scan(`${a.id}.attribution`, a.attribution); }
     for (const s of d.shifts) { scan(`${s.id}.from`, s.from); scan(`${s.id}.to`, s.to); }
-    for (const r of d.freshReserve) { scan(`${r.id}.text`, r.text); scan(`${r.id}.attribution`, r.attribution); }
+    for (const w of d.wordOfDay) { scan(`${w.id}.word`, w.word); scan(`${w.id}.origin`, w.origin); scan(`${w.id}.meaning`, w.meaning); }
     for (const val of v) { scan(`${val.name}.essence`, val.essence); scan(`${val.name}.behaviour`, val.behaviour); }
     assert.equal(problems.length, 0, problems.join(" | "));
   });
@@ -368,7 +368,7 @@ function stage3() {
     const scan = (label, s) => { const p = s && findPlatitude(s); if (p) problems.push(`${label}: "${p}"`); };
     for (const a of d.anchors) scan(a.id, a.text);
     for (const s of d.shifts) { scan(`${s.id}.from`, s.from); scan(`${s.id}.to`, s.to); }
-    for (const r of d.freshReserve) scan(r.id, r.text);
+    for (const w of d.wordOfDay) scan(w.id, w.meaning);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
   check("stage3", "near-duplicate proxy (token-overlap) — informational, non-blocking", () => {
@@ -400,8 +400,8 @@ function stage3() {
     const dayNumber = lib.hktDayNumber(new Date());
     const anchor = d.anchors[lib.pickIndex(d.anchors.length, dayNumber, "anchor")];
     const shift = d.shifts[lib.pickIndex(d.shifts.length, dayNumber, "shift")];
-    const reserve = d.freshReserve[lib.pickIndex(d.freshReserve.length, dayNumber, "reserve")];
-    assert.ok(anchor && anchor.id && shift && shift.id && reserve && reserve.id);
+    const word = d.wordOfDay[lib.pickIndex(d.wordOfDay.length, dayNumber, "word")];
+    assert.ok(anchor && anchor.id && shift && shift.id && word && word.id);
   });
   check("stage3", "audits/CONTENT-REVIEW.md exists", () => assert.ok(exists("audits/CONTENT-REVIEW.md"), "missing"));
 }
@@ -430,17 +430,7 @@ function stage4() {
     const d = readJSON("data/daily.json");
     assert.match(d.dateHKT, /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(typeof d.generatedAtISO === "string" && !Number.isNaN(Date.parse(d.generatedAtISO)));
-    assert.ok(typeof d.anchorId === "string" && typeof d.shiftId === "string");
-    if (d.fresh !== null) {
-      assert.ok(typeof d.fresh.title === "string" && /^https:\/\//.test(d.fresh.url));
-    }
-  });
-  check("stage4", "state/fresh-history.json valid, upserted by date (no duplicate dates)", () => {
-    const h = readJSON("state/fresh-history.json");
-    assert.ok(Array.isArray(h));
-    const dates = h.map((e) => e.dateHKT);
-    assert.equal(new Set(dates).size, dates.length, "duplicate dateHKT entries — upsert not working");
-    assert.ok(h.length <= 7, `history has ${h.length} entries, cap is 7`);
+    assert.ok(typeof d.anchorId === "string" && typeof d.shiftId === "string" && typeof d.wordId === "string");
   });
 }
 

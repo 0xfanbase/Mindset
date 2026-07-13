@@ -3,9 +3,9 @@
 A personal mindset dashboard. One page, no backend, no dependencies — a small bottle of light
 breathing slowly, the day's date in Hong Kong time, and three short grounding cards
 that refresh themselves every morning at 06:00 HKT: an **Anchor** (a timeless principle),
-a **Shift** (a "from → to" reframe), and something **Fresh** (the newest item from a small
-set of public feeds, or a reserve card if none are available). A quiet **Values** tab sits
-alongside it. Two themes — `calm` (cream/blue, default) and `blossom` (soft pink).
+a **Shift** (a "from → to" reframe), and a **Word of the Day** (one word worth knowing, its
+origin, and a one-line meaning). A quiet **Values** tab sits alongside it. Two themes —
+`calm` (cream/blue, default) and `blossom` (soft pink).
 
 Zero build step, zero runtime dependencies, zero personal data about anyone but public
 thinkers already credited by name. See `BUILD-PLAN.md` for the full specification this
@@ -30,10 +30,11 @@ theme you last used.
 
 ## Ops runbook
 
-**Add or edit cards** — edit `data/cards.json` (anchors/shifts/freshReserve) or
+**Add or edit cards** — edit `data/cards.json` (anchors/shifts/wordOfDay) or
 `data/values.json` directly, commit, push to `main`. No build step. Keep the writing rules
 in `BUILD-PLAN.md` §5.3 in mind: ≤ 40 words, no quotation marks, no banned platitudes,
-person-named attribution only when you're confident the idea is really theirs.
+person-named attribution only when you're confident the idea is really theirs. Word of the
+Day entries have their own, shorter cap (≤ 20 words for `meaning`, §5.3.10).
 
 **Replace cards, not resize the pool** — the daily rotation (`lib.mjs`'s `pickIndex`) is a
 per-cycle shuffle keyed to the pool size. Swapping one card's content for another (same
@@ -41,26 +42,11 @@ id, same position in the array) doesn't affect anything else. **Adding or removi
 changes the pool size and reshuffles the *entire* rotation from that point on — it may
 briefly repeat a recently-seen card. Fine to do, just expect that one-time ripple.
 
-**Change/add a Fresh feed source** — edit the `SOURCES` array in
-`scripts/generate-daily.mjs`. Verify a new source two ways before trusting it: (1) liveness
-— `curl` it and confirm it parses; (2) identity — confirm the feed's own `<title>`/author
-actually matches who you think it is, not just that *some* feed responded. Two of the
-current five sources were resolved this way (a podcast search API for Rob Dial's show, and
-the canonical channel link for Ali Abdaal's YouTube ID) rather than trusted at face value.
-
-**Keep the Fresh card on-theme** — four of the five sources are single-topic by nature and
-always on-theme. Ali Abdaal's channel is topically broad (productivity, AI tools, book/fiction
-recommendations, business), so the generator rejects candidate titles matching
-`OFF_THEME_PATTERNS` in `scripts/generate-daily.mjs` (AI-tool tactics, app/tech reviews,
-sponsorship language, pure entertainment) and looks further back through that source's recent
-posts rather than dropping it outright. This is a keyword heuristic, not a real relevance
-check — if an off-theme pick still slips through, add a pattern for it; if a broad-topic
-source keeps producing off-theme picks despite the filter, the honest fix is removing it from
-`SOURCES` rather than growing the denylist forever.
-
 **Manually trigger the daily refresh** — GitHub → Actions → `daily-cards` → **Run workflow**
-(branch `main`). Safe to re-run same-day: `generate-daily.mjs` upserts by date, so it won't
-duplicate history or spuriously change an already-committed pick.
+(branch `main`). Safe to re-run same-day (and any day) — `generate-daily.mjs` is a pure,
+deterministic function of the date, no external fetch involved (v1.10 retired the Fresh card
+and the RSS-fetching machinery that came with it), so re-running never duplicates or changes
+anything unexpectedly.
 
 **Manually trigger the watchdog** — GitHub → Actions → `watchdog` → **Run workflow**. It
 compares today's date (Hong Kong time) against both the committed `data/daily.json` and the

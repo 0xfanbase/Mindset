@@ -1,7 +1,7 @@
-# MINDSET — Autonomous Build Plan (v1.9)
+# MINDSET — Autonomous Build Plan (v1.10)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
-> end-to-end with zero human input except the four escalation triggers in §11 (plus the
+> end-to-end with zero human input except the three escalation triggers in §11 (plus the
 > §9.2 stop-loss condition, which is a standing terminal condition alongside them — see §11).
 > If any instruction elsewhere conflicts with this file, this file wins.
 
@@ -209,6 +209,30 @@ different rather than identical, superseding v1.8's "identical" framing. The des
 media query updated to match (gap-based row layout, no leftover `border-bottom` override).
 `verify.mjs all` 59/59.
 
+**v1.10 changelog (from v1.9, post-launch human feedback):** the Fresh card (a daily RSS/
+YouTube pick, §7 v1.0–v1.9) is retired and replaced with **Word of the Day** — one word worth
+knowing, with its origin and a one-line meaning — after live feedback ("I don't really like the
+fresh card") and a menu of alternatives ("show me some ideas"); the human picked Word of the
+Day over Reflection Prompt, Micro-Practice, and dropping the third card entirely. This removes
+an entire subsystem rather than just swapping content: `generate-daily.mjs` no longer fetches
+anything (no `OFF_THEME_PATTERNS`/`isOnTheme`, no `SOURCES`, no `fetchWithTimeout`/
+`decodeEntities`/`parseItems`), `state/fresh-history.json` and the `state/` directory are
+deleted (nothing writes to them anymore), `daily.json`'s `fresh` field is replaced with a plain
+`wordId`, and `app.js`'s `validFreshUrl`/`domainOf`/`renderFreshCard`/`renderReserveCard` (and
+the `freshOk` branching between them) collapse into one `renderWordCard` used identically in
+both the daily.json-driven and offline-rotation paths — Word of the Day is deterministic
+(`cards.json`'s new 30-entry `wordOfDay` pool, rotated via the same `pickIndex` mechanism as
+anchor/shift, §6.2), so unlike Fresh there is no live-fetch failure mode and no separate
+"reserve" fallback needed. `styles.css`'s Fresh-specific classes (`.fresh-footer`,
+`.fresh-domain`, `.fresh-read`, `.fresh-reserve-label`) and the now-unused `a.card-link` rules
+are removed; one new class (`.word-title`) styles the word itself as a small headline between
+the card's chip and its meaning. §11's four escalation triggers become three (the "Feed
+collapse" trigger has nothing left to collapse). Per invariant 12, `verify.mjs`'s check count
+drops from 59 to 58 with this change — a legitimate removal (the `state/fresh-history.json`
+upsert-by-date check, since that file and the behavior it verified no longer exist), not a
+loosening of any check that still applies; logged here per the ratchet rule. `verify.mjs all`
+58/58.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -217,7 +241,7 @@ media query updated to match (gap-based row layout, no leftover `border-bottom` 
 Read BUILD-PLAN.md in full before doing anything. Then execute Stages 0 through 5
 exactly as specified, fully autonomously. Obey §2 invariants at all times, follow
 the §9 loop protocol for every stage, and only stop to ask a question if one of
-the four triggers in §11 fires, or the §9.2 stop-loss condition is hit. After each
+the three triggers in §11 fires, or the §9.2 stop-loss condition is hit. After each
 stage: run its verification, write its audit file, commit, then continue immediately
 to the next stage. When the Stage 5 acceptance checklist passes, reply with (1) the
 live GitHub Pages URL, (2) a one-screen summary of all stage audits, (3) anything
@@ -257,7 +281,7 @@ The three daily cards:
 
 1. **Anchor** — a timeless principle (Stoicism, Die With Zero, growth mindset, relationships, wealth principles, focus/energy), written as an original paraphrase with attribution.
 2. **Shift** — a "From X → To Y" reframe.
-3. **Fresh** — the newest item pulled from a small set of public RSS feeds (title + link only), or a reserve card if feeds are unavailable.
+3. **Word of the Day** (v1.10, replacing Fresh) — one word worth knowing (often untranslatable — *wabi-sabi*, *ikigai*, *amor fati*) with its origin and a one-line meaning, deterministically rotated the same way as Anchor/Shift.
 
 ---
 
@@ -267,9 +291,9 @@ The three daily cards:
    No real name, employer (past or present), financial figure, date of birth, or location
    tied to *the owner or his wife* anywhere in the repo — code, content, commit messages,
    audit files, README. This does **not** apply to public figures cited by design: anchor
-   attributions (`— after Seneca`, `— after Bill Perkins`, etc., per §5) and §7.1's podcast/
-   YouTube host names are intentional and required — the site is public, and quoting/citing
-   public thinkers is the point of the Anchor cards. The pink theme is still called `blossom`
+   attributions (`— after Seneca`, `— after Bill Perkins`, etc., per §5) are intentional and
+   required — the site is public, and quoting/citing public thinkers is the point of the
+   Anchor cards. The pink theme is still called `blossom`
    in code and UI, never a person's name. Enforcement is mechanical only where it can be
    (email-address pattern sweep excluding the git bot identity; obvious phone/financial-figure
    patterns); person/employer-of-the-owner PII is otherwise enforced by the writing rules (§5)
@@ -279,8 +303,7 @@ The three daily cards:
    **zero quotation-mark glyphs** (`"`, `"`, `"`, `'`, `'` used as quotation marks — an ASCII
    apostrophe `'` used intra-word for a contraction or possessive, e.g. "yesterday's", is not
    a quotation mark and is allowed). Attribution style: `— after Seneca`, `— after Bill Perkins`,
-   `— core principle`, `— evergreen`. Never copy sentences from books, sites, or transcripts.
-   Fresh cards carry only the item's **title + link** — no excerpts.
+   `— core principle`. Never copy sentences from books, sites, or transcripts.
 3. **Zero runtime dependencies.** Vanilla HTML/CSS/JS. No frameworks, no npm packages, no build step, no bundler, no analytics, no cookies, no third-party scripts or CDNs at runtime. `localStorage` only, keys namespaced `mindset.*`.
 4. **Node ≥ 20 built-ins only** for scripts (global `fetch`, `node:fs`, `node:test` allowed). No `npm install` at any point. When running `generate-daily.mjs` locally in this environment, set `NODE_USE_ENV_PROXY=1` so Node's built-in `fetch` honours the environment's egress proxy (GitHub Actions runners are unaffected and need no flag).
 5. **Static hosting truth:** everything must work on GitHub Pages served from `main` branch root. Include a `.nojekyll` file. All stages commit and push directly to `main` — the owner has authorized this for this repo; there is no feature-branch/PR step in this plan.
@@ -310,11 +333,9 @@ The three daily cards:
 │   ├── icons/              # icon-192.png, icon-512.png, apple-touch-icon.png (180)
 │   └── favicon.svg
 ├── data/
-│   ├── cards.json          # anchors[129], shifts[40], freshReserve[10]
+│   ├── cards.json          # anchors[129], shifts[40], wordOfDay[30]
 │   ├── values.json         # 5 values
 │   └── daily.json          # written by the pipeline daily
-├── state/
-│   └── fresh-history.json  # last 7 fresh-source picks, upserted by dateHKT (see §7)
 ├── scripts/
 │   ├── generate-daily.mjs
 │   └── verify.mjs          # stage-gated verification harness
@@ -387,7 +408,7 @@ fails 4.5:1 (it is close, ~4.3:1 on white, so expect to adjust); log any token a
 
 Self-host both webfonts as woff2 in `assets/fonts/` with `font-display: swap` and their OFL licence files. **Exit ramp:** if woff2 files cannot be fetched within the attempt budget (§9.2), ship the system stack for all roles, log it in `decisions.md`, and continue — fonts are never a blocker.
 
-Type scale (px): 10 (mono meta chips) · 12–13 (mono date line, values essence/behaviour) · 14.5–16.5 (shift text) · 15.5 (anchor/fresh card text, error state) · 17–18 (values name, wordmark) — line-height ~1.45–1.5 body/card text.
+Type scale (px): 10 (mono meta chips) · 12–13 (mono date line, values essence/behaviour) · 14.5–16.5 (shift text) · 15.5 (anchor/word card text, error state) · 17–18 (values name, wordmark) · 20 (word title) — line-height ~1.45–1.5 body/card text.
 
 ### 4.4 Layout — one no-scroll screen (390×844 baseline)
 
@@ -409,7 +430,7 @@ The design supersedes v1.0's tall hero-canvas mockup with a compact, single-scre
 │  card text (Fraunces)              │  matches the Values tab's row style exactly),
 │  — after Marcus Aurelius           │  15px vertical padding, hairline divider
 │  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈  │  between rows, no border on the last one
-│  [Shift row]  [Fresh row]          │
+│  [Shift row]  [Word row]           │
 ├────────────────────────────────────┤   stacked ≤899px, 3-across ≥900px desktop
 │ refreshes daily · 06:00 HKT        │  footer, margin-top:auto pins it down
 └────────────────────────────────────┘
@@ -428,11 +449,10 @@ since it's no longer adjacent to the notch/status bar).
 
 1. **Theme toggle:** pill button top-right, `aria-pressed`, icons ◐/❀ (calm/blossom), 44×44px, `persists mindset.theme`, default `calm`, no flash-of-wrong-theme (inline script reads localStorage before CSS paint).
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Header row = mono category chip (ANCHOR / SHIFT / FRESH, no emoji — plain mono text per the prototype). Body in Fraunces. Footer = muted attribution. Fresh card footer = source domain + a softened `Worth a look →` link (`target="_blank" rel="noopener"`, v1.7); whole Fresh card is the tap target; render the title via `textContent` only (never `innerHTML`) and validate `fresh.url` is `https:` before treating the card as live (§6.3, §7 — untrusted third-party feed content).
+3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Header row = mono category chip (ANCHOR / SHIFT / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px) between the chip and the meaning (§5.3.10). Footer = muted attribution.
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 06:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 06:00 HKT, every single day.)
-   - `daily.json` unreachable, > 48h stale, or fetch fails → page computes cards locally via `lib.mjs` rotation → slate chip `offline rotation`.
-   - Fresh slot in offline mode → deterministic pick from `freshReserve`.
+   - `daily.json` unreachable, > 48h stale, or fetch fails → page computes all three cards locally via `lib.mjs` rotation → slate chip `offline rotation`. Since Word of the Day is deterministic (v1.10), this path picks the exact same word as the server would have for that date — unlike the retired Fresh card, there is no divergent "fallback" content.
 5. **Values tab:** the 5 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px). **No numbering** — values are not a sequence. (Cut from 10 to 5 in v1.2 — ten read as a checklist; keep only what actually matters.)
 6. **Motion:** the figure is the primary animated element. Card/value-row entrance (v1.9, more noticeable per live feedback: "a small animation when I open up the page ... opening up of the cards") = a 500ms fade/rise/scale-in, staggered per item (90ms between Today's cards, 60ms between Values rows) so they visibly cascade in one after another rather than popping in together; nothing on scroll; respects `prefers-reduced-motion` (animation suppressed, content appears instantly). Hover lift 2px desktop only.
 
@@ -502,7 +522,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 {
   "anchors": [ { "id": "stoic-001", "category": "stoic", "text": "...", "attribution": "— after Epictetus" } ],
   "shifts":  [ { "id": "shift-001", "from": "Proving I belong", "to": "Deciding what is worth building" } ],
-  "freshReserve": [ { "id": "reserve-01", "text": "...", "attribution": "— evergreen" } ]
+  "wordOfDay": [ { "id": "word-01", "word": "Wabi-sabi", "origin": "Japanese", "meaning": "..." } ]
 }
 ```
 
@@ -519,20 +539,21 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 | anchors | `voices` (added v1.3 — Jay Shetty, Joe Biden, Michelle Obama; see §5.3.9) | 9 |
 | **anchors total** | | **129** |
 | shifts | — | **40** |
-| freshReserve | — | **10** |
+| wordOfDay | — (added v1.10, replacing freshReserve) | **30** |
 
 A Claude Design prototype (see changelog) already produced 18 anchors (3 per category), 10
-shifts, and 4 freshReserve cards in the intended voice — use these as the seed/first batch of
-each pool (keep their ids/text/attribution as-is; they've already had one round of human
-review during that design session) and author the remaining cards per category to reach the
-exact counts above, matching voice and format exactly. That prototype's `values.json` content
-was 5 core values + 5 "reserve" values (10 total); **v1.2 ships the 5 core values only** —
-ten read as a checklist rather than a short list of what actually matters (§5.3.6).
+shifts, and 4 freshReserve cards (the v1.0–v1.9 predecessor of `wordOfDay`, retired in v1.10)
+in the intended voice — use these as the seed/first batch of the anchors/shifts pools (keep
+their ids/text/attribution as-is; they've already had one round of human review during that
+design session) and author the remaining cards per category to reach the exact counts above,
+matching voice and format exactly. That prototype's `values.json` content was 5 core values +
+5 "reserve" values (10 total); **v1.2 ships the 5 core values only** — ten read as a checklist
+rather than a short list of what actually matters (§5.3.6).
 
 ### 5.3 Writing rules (enforced)
 
 1. ≤ 40 words per card body; one idea per card; concrete over abstract.
-2. Original paraphrase only; zero quotation-mark glyphs per invariant 2 (ASCII apostrophes for contractions/possessives are fine); attribution `— after <thinker>`, `— core principle`, or `— evergreen` (freshReserve only).
+2. Original paraphrase only; zero quotation-mark glyphs per invariant 2 (ASCII apostrophes for contractions/possessives are fine); attribution `— after <thinker>` or `— core principle`.
 3. Second person or imperative voice (`You control the response, not the event.`).
 4. **Banned platitudes** (verify.mjs greps, case-insensitive; store the list split/obfuscated in `verify.mjs` so the harness doesn't fail its own repo-wide-adjacent sweep by containing the literal strings): `believe in yourself`, `hustle`, `crush it`, `unlock your potential`, `be your best self`, `good vibes`, `grind`, `10x`, `manifest`.
 5. Shift cards: `from` ≤ 8 words, `to` ≤ 8 words, and the pair must name a real cognitive move, not a mood (`From clearing the inbox → To finishing one thing that matters`).
@@ -540,6 +561,7 @@ ten read as a checklist rather than a short list of what actually matters (§5.3
 7. **Attribution-confidence rule:** use a person-named attribution (`— after X`) only when you are confident the specific idea is centrally/traditionally X's (e.g. Epictetus/Seneca/Marcus Aurelius for Stoic control-of-response ideas, Bill Perkins for Die With Zero's core thesis, Dweck for growth-mindset framing, Carnegie for the specific relationship tactics from *How to Win Friends*, Housel for invisible-wealth/avoid-ruin framing, Newport for deep-work framing). Otherwise, demote to tradition-level attribution (`— Stoic tradition`, `— growth-mindset research`, `— core principle`) rather than guessing at a specific person. This is a quality/accuracy safeguard, independent of the (resolved) PII question — misattributing an idea to a real, named public figure is a credibility problem even though naming public figures itself is fine.
 8. Write anchors in six batches (one per category, extending each category's 3 seed cards to its full count). After each batch, run the normal mechanical self-review (word caps, quote marks, banned phrases — rules 1–5), **and then** a second, independent review pass per §10 Stage 3's content-QA step, before moving to the next batch.
 9. **`voices` category (added v1.3):** a 7th anchor category, 9 cards (3 each), for named living/recent public figures the owner's household specifically finds inspiring, so their thinking surfaces periodically via the same rotation — not a new subsystem, just more entries in the same `anchors` pool. Extra bar beyond rules 1–8 for this category specifically: (a) any figure who has held significant political office must be scoped strictly to personal-character themes (grief, resilience, self-belief, service) and must never reference their office, party, policies, or elections — attribution is tied to a specific, nonpartisan book/body of work (e.g. `— after X, from <book>`), not their public office; (b) rule 2's "no verbatim quotes" is enforced against the *spirit*, not just quote-mark glyphs — a paraphrase that lands close to the person's one most-famous, most-recognizable line is a violation even with zero quote marks and needs a rewrite, not just a rewording; (c) run the independent second-pass review (rule 8) with an explicit prompt to check attribution-confidence, political neutrality, and closeness-to-source — this category carries materially higher reputational risk per card than the historical-thinker categories.
+10. **`wordOfDay` (replaced `freshReserve` in v1.10, 30 entries):** `{ "id", "word", "origin" (a language/tradition, e.g. "Japanese", "Stoic Greek" — never a person's name, since this pool has no attribution-confidence question the way anchors do), "meaning" (≤ 20 words, one sentence, no verbatim dictionary-style copying — write the sense of the word, not a lifted definition) }`. Fully self-authored (no external source to fetch or verify), so it rotates deterministically exactly like anchors/shifts (§6.2) rather than needing the daily pipeline to do any network work for it.
 
 ---
 
@@ -554,10 +576,13 @@ ten read as a checklist rather than a short list of what actually matters (§5.3
   "generatedAtISO": "2026-07-13T22:00:41Z",
   "anchorId": "wealth-007",
   "shiftId": "shift-023",
-  "fresh": { "title": "...", "url": "https://...", "source": "Farnam Street", "publishedISO": "..." }
+  "wordId": "word-16"
 }
 ```
-`fresh` may be `null` → the page substitutes a deterministic `freshReserve` pick. `fresh.title` is rendered client-side via `textContent` only; `fresh.url` must be validated as an `https:` URL both when `generate-daily.mjs` writes it and when `app.js` reads it — an item failing either check is dropped to `fresh: null` rather than rendered (§7, invariant-adjacent: this is untrusted third-party content in the DOM). `data/daily.json` and `state/fresh-history.json` are exempt from the quote-mark sweep (Appendix A) — third-party RSS titles may legitimately contain quote characters; that invariant governs *authored* card bodies, not passthrough titles.
+All three ids are always present — unlike the retired `fresh` field (v1.0–v1.9), there is
+nothing here that can come back `null` or need URL/source validation, since `wordId` is a
+deterministic pick from the app's own `wordOfDay` pool (§6.2), not a value pulled from any
+external source.
 
 ### 6.2 Deterministic rotation (in `lib.mjs`, shared browser + node)
 
@@ -565,7 +590,7 @@ ten read as a checklist rather than a short list of what actually matters (§5.3
 - `hktDayNumber(d)` → `floor(Date.UTC(y, m-1, day) / 86400000)` from the HKT date parts.
 - `hktDateParts(d)` → `{ weekday, day, month, year }` via `Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Hong_Kong', weekday:'long', day:'numeric', month:'long', year:'numeric' })`, for rendering the date line without duplicating formatting logic in `app.js`.
 - `pickIndex(poolSize, dayNumber, salt)` → per-cycle Fisher–Yates permutation seeded with `xmur3(salt + ":" + floor(dayNumber/poolSize))` feeding `mulberry32`; return `order[dayNumber % poolSize]`. **Use the reference implementation in Appendix B verbatim.** Guarantees: no repeats *within* a full cycle (adjacent cycles are independent permutations, so a repeat can occur right at a cycle boundary — roughly a 1-in-poolSize chance — this is expected and not a bug). Fully stateless, identical results in node and browser. Note for future curation (put this in the README runbook, not enforced by code): replace cards 1-for-1; adding or removing cards changes the pool size and reshuffles the whole rotation, which may repeat a recently-seen card once.
-- Salts: `"anchor"`, `"shift"`, `"reserve"`.
+- Salts: `"anchor"`, `"shift"`, `"word"`.
 
 ### 6.3 Client behaviour (`app.js`)
 
@@ -578,47 +603,27 @@ ten read as a checklist rather than a short list of what actually matters (§5.3
 
 ## §7 — Daily pipeline (`scripts/generate-daily.mjs`)
 
-1. Compute `dateHKT`, `dayNumber` via `lib.mjs`; pick `anchorId`, `shiftId`.
-2. Fetch each feed in §7.1 with an 8-second `AbortController` timeout; tolerate any failure (skip source, log to stdout). Parse minimally with regex for up to 5 `<item>`/`<entry>` blocks per feed (not just the first — see step 3), in feed order: `title`, `link`/`href`, `pubDate`/`published`. Decode HTML entities and strip CDATA wrappers when extracting `title`. No XML libraries.
-3. Candidate items: published within 14 days, **and on-theme** (§7.2). Walk each source's parsed items newest-first and take the first one that passes both filters — this matters for topically-broad sources (Ali Abdaal's channel spans productivity, AI tools, book/fiction recommendations, etc.): don't drop the whole source just because its single newest post happens to be off-theme when an on-theme one from a few days earlier is available. Prefer a source NOT in `state/fresh-history.json` (last 3 entries); among preferred, pick newest. All feeds failed or none produced an on-theme candidate → `fresh: null`.
-4. Write `data/daily.json`; **upsert** (not append) the `state/fresh-history.json` entry keyed by `dateHKT` (cap 7 distinct dates) — this makes same-day re-runs (which Stage 4 performs: once locally, then once via the dispatched workflow) genuinely idempotent instead of duplicating history or flipping the Fresh pick.
-5. Idempotent and safe to re-run; exit 0 even when `fresh` is null (a missing fresh card must never fail the build). When run locally in this environment, invoke as `NODE_USE_ENV_PROXY=1 node scripts/generate-daily.mjs` (§2.4).
+**v1.10 note:** through v1.9, this script fetched five external RSS/YouTube feeds for the
+Fresh card, with a whole subsystem of liveness/identity verification (old §7.1), a mindset-
+relevance denylist filter (old §7.2), and a `state/fresh-history.json` idempotency file. Live
+feedback disliked the Fresh card; its replacement, Word of the Day, is a deterministic pick
+from `cards.json`'s own `wordOfDay` pool (§5.3.10) — nothing to fetch, parse, verify, or filter,
+since there's no external source that can be down, off-theme, or misidentified. All of that
+machinery is retired along with it; the script now only stamps today's three picks:
 
-### 7.1 Sources (RESOLVE AND VERIFY in Stage 4 — do not trust these blindly)
+1. Compute `dateHKT`, `dayNumber` via `lib.mjs`; pick `anchorId`, `shiftId`, `wordId` (all three
+   via the same deterministic `pickIndex` rotation, §6.2 — no fetch, no external dependency).
+2. Write `data/daily.json` (§6.1).
+3. Idempotent and safe to re-run any number of times same-day — the picks are a pure function
+   of `dateHKT`, so a re-run just rewrites `generatedAtISO` and reproduces the same three ids.
+   When run locally in this environment, invoke as `NODE_USE_ENV_PROXY=1 node
+   scripts/generate-daily.mjs` (§2.4) — this flag is now a no-op for this script specifically
+   (nothing it does needs network access) but is still correct/harmless to pass, and remains
+   required for any other script here that does use `fetch`.
 
-| Source | Type | Feed (verify with `curl -sL -m 15`, require HTTP 200 + ≥ 1 item, **AND** an identity check below) |
-|---|---|---|
-| Daily Stoic | blog | `https://dailystoic.com/feed/` — verify liveness + parse |
-| Farnam Street | blog | `https://fs.blog/feed/` — verify liveness + parse |
-| Huberman Lab | podcast | `https://feeds.megaphone.fm/hubermanlab` — verify liveness + parse |
-| The Mindset Mentor (Rob Dial) | podcast | **RESOLVE at build:** find the public RSS via the show's site / podcast directories (or the Apple Podcasts Search API, `itunes.apple.com/search?media=podcast&term=...`, which returns a `feedUrl` and `artistName` to cross-check); verify; record final URL in `decisions.md` |
-| Ali Abdaal | YouTube | `https://www.youtube.com/feeds/videos.xml?channel_id=<ID>` — **RESOLVE `<ID>`** by preference from the canonical handle `youtube.com/@aliabdaal`'s page (its `og:url`/canonical `<link>`, not the first bare `"channelId"` string match, which can appear multiple times in page source for unrelated elements); verify |
-
-**Liveness is not enough for the two discovered sources.** For Rob Dial and Ali Abdaal specifically, also check the feed's `<title>`/author (`itunes:author`, atom `<author><name>`) case-insensitively matches an expected string (`"Mindset Mentor"`/`"Rob Dial"`; `"Ali Abdaal"`) before counting the source as verified — a live-but-wrong feed (a similarly-named show, a mirror, a decoy channel) must not silently pass. Verify each source by actually running it through `generate-daily.mjs`'s own parse path (not curl alone) so a feed that returns 200 but breaks the regex parser (CDATA, HTML entities, an atom `<link href=...>` instead of element text) is caught here, not in production. A source that fails the identity check is **dropped and not counted** toward the verification threshold below — it is a failure, not a pass.
-
-Resolution budget per source: ≤ 4 attempts. Escalate via §11 trigger 3 only if **zero** sources verify (`fresh: null` is a fully supported, non-blocking outcome per LOOP-D — halting a multi-hour unattended run over the optional Fresh card is disproportionate; document in the final summary how many of the five verified either way).
-
-### 7.2 Mindset-relevance filter (v1.2)
-
-Four of the five sources are single-topic by nature (Stoicism, mental models, neuroscience/
-self-improvement, mindset — every post they publish is on-theme by construction). Ali Abdaal's
-channel is not: it spans productivity, book/fiction recommendations, AI-tool tutorials, and
-business content, only some of which fits a mindset app. Liveness and identity (§7.1) don't
-catch this — a live, correctly-identified feed can still publish an off-theme item.
-
-Maintain a denylist of regex patterns for off-theme signals in `generate-daily.mjs`
-(`OFF_THEME_PATTERNS`) — AI-tool/prompt tactics, app/tech/gadget reviews, sponsorship/
-marketing language, pure-entertainment recommendations (fan fiction, etc.) — and reject any
-candidate item whose title matches. This is a heuristic, not a semantic classifier: it catches
-the specific failure modes observed in practice (extend the list as new ones show up; this is
-meant to be a living list, not a one-time fix) but cannot guarantee every accepted item is
-genuinely mindset-relevant for a topically-broad source. If Ali Abdaal (or any future broad-
-topic source) keeps producing off-theme picks despite the filter, the honest fix is removing
-it from `SOURCES` rather than expanding the denylist indefinitely — document that tradeoff in
-the README if it comes to that.
-
-A rejected item does not disqualify the source for the day — walk further back through that
-source's recent items (§7 step 3) before giving up on it entirely.
+The daily Actions cron (LOOP-A, §9.3) and the watchdog's staleness check (LOOP-C) both still
+run exactly as before — `generatedAtISO`/`dateHKT` remain a genuine, useful signal that the
+automated pipeline is alive, independent of anything Word of the Day itself needs.
 
 ---
 
@@ -653,7 +658,7 @@ jobs:
         run: |
           git config user.name "mindset-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add data/daily.json state/fresh-history.json
+          git add data/daily.json
           git diff --cached --quiet || git commit -m "[bot] daily cards $(TZ=Asia/Hong_Kong date +%F)"
           git push
 ```
@@ -742,8 +747,8 @@ for stage in 0..5:
 1. **Heartbeat:** append one line to `audits/build-log.md` per verify cycle (not before/after every substantive action — that was excessive given the volume of work in this plan): `[HH:MM HKT] stage-N: <cycle result summary>`. A silent build is a failing build.
 2. **Pivot rule:** the **same error text 3×** across cycles → mandatory approach change first (one line in `decisions.md`: `pivot: <old> → <new> because <reason>`) — this resets the §9.1 cycle counter once per stage. Exempt from this rule: §7.1's bounded feed-resolution retries (≤4 attempts is a legitimate, expected pattern, not a stuck loop).
 3. **Command hygiene:** wrap anything that could exceed 2 minutes in `timeout 120 <cmd>`; curls get `-m 30`. **Banned outright:** interactive prompts (always pass `-y`/non-interactive flags), watch modes, dev servers of any kind (preview happens on the live Pages URL), `npm install`, global installs, `git push --force` (to any branch containing already-pushed history), touching anything outside this repo.
-4. **Network patience cap:** nothing waits on the network > 30s per attempt; feed/font fetch budgets per §7.1 / §4.3.
-5. **Stop-loss (a standing terminal condition, alongside — not instead of — §11's four named triggers):** the §9.1 cycle cap exhausted, OR an unrecoverable environment error → write `BLOCKED.md` (§11 format), commit it, and STOP the run cleanly. Never idle, never thrash, never loop hoping. (v1.0 read as if only §11's four triggers could ever justify stopping — that was an internal contradiction; this rule is always live.)
+4. **Network patience cap:** nothing waits on the network > 30s per attempt; font fetch budget per §4.3 (the daily pipeline itself has had no network dependency since v1.10 — see §7).
+5. **Stop-loss (a standing terminal condition, alongside — not instead of — §11's three named triggers):** the §9.1 cycle cap exhausted, OR an unrecoverable environment error → write `BLOCKED.md` (§11 format), commit it, and STOP the run cleanly. Never idle, never thrash, never loop hoping. (v1.0 read as if only §11's four triggers — a fourth, "Feed collapse," existed through v1.9 and is retired in v1.10 — could ever justify stopping — that was an internal contradiction; this rule is always live.)
 6. **Deploy-wait bound:** poll the Pages URL with `curl -s -o /dev/null -w "%{http_code}" -m 15` every 20s, max 12 tries — but only after the Stage 0 (initial), Stage 2, and Stage 5 pushes, not after every single stage's push (v1.0's every-stage polling added up to a meaningful chunk of dead wall-clock time for no additional information most stages). Still not 200 at Stage 5 → note `deploy pending` in the audit; Stage 5 has the final say.
 7. **Session resume (statelessness):** if the session is interrupted, on restart: read `audits/` + `git log` to find the last stage whose audit says PASS, re-run `verify.mjs` for that stage to confirm, and continue from the next stage. No stage is ever redone if its verification still passes.
 
@@ -754,7 +759,7 @@ for stage in 0..5:
 | **LOOP-A** daily refresh | Actions cron 05:56 HKT + `workflow_dispatch` | the core auto-run |
 | **LOOP-B** stuck-build killer | `timeout-minutes: 10` + `concurrency.cancel-in-progress` | any hung/overlapping run — killed inside 10 min, never "stuck for hours" |
 | **LOOP-C** dead-man's switch | watchdog 09:00 HKT → checks the *live* site, not just git → GitHub issue (deduped) + email | silent failures LOOP-B can't see (cron never fired, push failed, **or Pages didn't redeploy**) |
-| **LOOP-D** graceful degrade | client staleness chip (boundary-aware) + offline deterministic rotation + freshReserve | everything else — the page NEVER shows an empty slot |
+| **LOOP-D** graceful degrade | client staleness chip (boundary-aware) + offline deterministic rotation (anchor/shift/wordOfDay all alike, v1.10) | everything else — the page NEVER shows an empty slot |
 
 Design consequence: the worst possible failure is one morning of yesterday's (or locally rotated) cards, visibly labelled, followed by self-healing the next cron. No standing agents, no machine that must stay awake.
 
@@ -791,21 +796,21 @@ Design consequence: the worst possible failure is one morning of yesterday's (or
 
 ### Stage 3 — Content library & card engine
 **Objective:** real cards, real values, full offline resilience, genuine content QA.
-**Tasks:** extend the Claude Design project's seed content (`mindset-data.js`'s 18 anchors / 10 shifts / 4 freshReserve, pulled via `DesignSync`; its 10 values were cut to the 5 core ones in v1.2, §5.3.6) to the full §5.2 counts, six batches (one per anchor category, building on each category's 3 existing seed cards). After each batch's mechanical self-review (rules 1–5), run an **independent second pass** targeting what a script can't catch: attribution confidence (§5.3.7), closeness-to-source (quotation-in-substance risk), near-duplication against cards written so far (a cheap token-overlap check is fine as a proxy). Emit `audits/CONTENT-REVIEW.md`: all cards grouped by attribution, with any flags from either review pass noted inline. Wire card rendering in `app.js` (data from `cards.json`/`values.json`, staleness logic + offline rotation + reserve fallback + calm error state, all as pure functions in `lib.mjs` per §6.3.4 where the logic itself lives, called from `app.js`'s DOM code).
+**Tasks:** extend the Claude Design project's seed content (`mindset-data.js`'s 18 anchors / 10 shifts / 4 freshReserve, pulled via `DesignSync`; its 10 values were cut to the 5 core ones in v1.2, §5.3.6) to the full §5.2 counts, six batches (one per anchor category, building on each category's 3 existing seed cards). After each batch's mechanical self-review (rules 1–5), run an **independent second pass** targeting what a script can't catch: attribution confidence (§5.3.7), closeness-to-source (quotation-in-substance risk), near-duplication against cards written so far (a cheap token-overlap check is fine as a proxy). Emit `audits/CONTENT-REVIEW.md`: all cards grouped by attribution, with any flags from either review pass noted inline. Wire card rendering in `app.js` (data from `cards.json`/`values.json`, staleness logic + offline rotation + calm error state, all as pure functions in `lib.mjs` per §6.3.4 where the logic itself lives, called from `app.js`'s DOM code). (`freshReserve` was authored here originally; retired in favor of `wordOfDay` in v1.10, §5.3.10.)
 **DoD:** counts exact · schema valid · zero quotation-mark glyphs in bodies (apostrophes in contractions fine) · no banned platitudes · unique ids · word caps respected · offline rotation proven · `CONTENT-REVIEW.md` written and skimmed-clean (no unresolved flags, or flags explicitly accepted with a one-line reason).
 **Verify:** `stage3` = full JSON schema/count/word-cap/platitude/quote-mark validation (quote-mark sweep scoped to `cards.json`/`values.json` string fields, not the whole repo — see Appendix A) + a `node:test` that renders three simulated dates through the rotation (via `lib.mjs`'s pure functions) and asserts distinct, in-range picks + a simulated stale-`daily.json` test asserting the fallback path selects valid ids + a near-duplicate proxy check (normalized-token overlap) flagged, not necessarily hard-failed, so a human can judge borderline cases.
 **Commit:** `stage3: card library, values, offline resilience, content review`
 
 ### Stage 4 — Pipeline & loops
 **Objective:** the machine that runs without anyone.
-**Tasks:** `generate-daily.mjs` (§7), resolve + verify all feeds including the identity checks in §7.1 (log outcomes in `decisions.md`), write both workflows from §8 (as amended in this v1.1 — cron slots, watchdog live-check + dedup), run the generator locally as `NODE_USE_ENV_PROXY=1 node scripts/generate-daily.mjs` to produce a real `daily.json`, commit, push, then dispatch `daily-cards` via the GitHub MCP tools (no `gh` CLI) and poll run status (bounded: 20s × 15) until success; **after the workflow's bot commit lands, `git pull --rebase origin main` before any further local commit** (this is a guaranteed non-fast-forward otherwise); dispatch `watchdog` once against the real fresh file and confirm it passes, then run the exact stale-detection test prescribed in §8.2 (temporary branch, not an ad-hoc dry-run flag) and confirm it fails correctly with one new (then closed) issue.
-**DoD:** at least one of the five §7.1 sources verified (log exactly how many, and which); real `daily.json` committed by the *workflow* (not only locally); both workflows have at least one green dispatch run against real content; watchdog's stale-detection path proven via the prescribed temporary-branch mechanism (this run is expected-red, and does not count against the "green dispatch" DoD line above); local clone rebased cleanly onto the workflow's commit.
-**Verify:** `stage4` = YAML sanity greps (cron strings, `timeout-minutes`, permissions) + `daily.json` schema check + dispatch/poll results via the GitHub MCP tools (no `gh run list` dependency) + `fresh-history.json` upsert-by-date behaviour confirmed (re-running the generator same-day doesn't duplicate an entry or need a different Fresh pick).
+**Tasks:** `generate-daily.mjs` (§7) — as of v1.10 a pure, deterministic stamp of `anchorId`/`shiftId`/`wordId` with no network calls (§7's original v1.1-era task list here resolved + verified five RSS/YouTube feeds for the now-retired Fresh card; that entire concern no longer exists, see §7's v1.10 note) — write both workflows from §8 (cron slots, watchdog live-check + dedup), run the generator locally as `NODE_USE_ENV_PROXY=1 node scripts/generate-daily.mjs` to produce a real `daily.json`, commit, push, then dispatch `daily-cards` via the GitHub MCP tools (no `gh` CLI) and poll run status (bounded: 20s × 15) until success; **after the workflow's bot commit lands, `git pull --rebase origin main` before any further local commit** (this is a guaranteed non-fast-forward otherwise); dispatch `watchdog` once against the real deployed `daily.json` and confirm it passes, then run the exact stale-detection test prescribed in §8.2 (temporary branch, not an ad-hoc dry-run flag) and confirm it fails correctly with one new (then closed) issue.
+**DoD:** real `daily.json` committed by the *workflow* (not only locally); both workflows have at least one green dispatch run against real content; watchdog's stale-detection path proven via the prescribed temporary-branch mechanism (this run is expected-red, and does not count against the "green dispatch" DoD line above); local clone rebased cleanly onto the workflow's commit.
+**Verify:** `stage4` = YAML sanity greps (cron strings, `timeout-minutes`, permissions) + `daily.json` schema check (`anchorId`/`shiftId`/`wordId` all present) + dispatch/poll results via the GitHub MCP tools (no `gh run list` dependency).
 **Commit:** `stage4: daily pipeline, watchdog, loops live`
 
 ### Stage 5 — QA, polish, acceptance
 **Objective:** launch-grade.
-**Tasks:** favicon.svg (a minimal abstract mark — the specific motif can lag the current signature element; a single-drop mark from v1.1 is an acceptable placeholder until refreshed, not worth blocking on), icon pipeline per §4.7.10 (Linux rasterizer first), `manifest.webmanifest` + `sw.js` (Appendix C.2 **as amended** — the `res.ok` fix) + registration + theme-color sync, OG title/description meta, README (what/why/ops runbook: add cards, edit values, change feeds, manual dispatch, what the chips mean, how to Add to Home Screen on iOS/Android, platform caveats §8, the rotation's 1-for-1 replacement note from §6.2), byte-budget check, run `verify.mjs all`, confirm Pages 200 for `index.html`, `data/daily.json`, `manifest.webmanifest` AND `sw.js`, write `audits/FINAL-AUDIT.md` (including the §2 invariant-12 `verify.mjs` diff-vs-Stage-0 summary, and an honest "known imperfections" section — e.g. the blossom cold-launch splash-color mismatch from §4.7.8, any font/icon exit ramps taken), tag `v1.0`.
+**Tasks:** favicon.svg (a minimal abstract mark — the specific motif can lag the current signature element; a single-drop mark from v1.1 is an acceptable placeholder until refreshed, not worth blocking on), icon pipeline per §4.7.10 (Linux rasterizer first), `manifest.webmanifest` + `sw.js` (Appendix C.2 **as amended** — the `res.ok` fix) + registration + theme-color sync, OG title/description meta, README (what/why/ops runbook: add cards, edit values, edit the wordOfDay pool, manual dispatch, what the chips mean, how to Add to Home Screen on iOS/Android, platform caveats §8, the rotation's 1-for-1 replacement note from §6.2), byte-budget check, run `verify.mjs all`, confirm Pages 200 for `index.html`, `data/daily.json`, `manifest.webmanifest` AND `sw.js`, write `audits/FINAL-AUDIT.md` (including the §2 invariant-12 `verify.mjs` diff-vs-Stage-0 summary, and an honest "known imperfections" section — e.g. the blossom cold-launch splash-color mismatch from §4.7.8, any font/icon exit ramps taken), tag `v1.0`.
 **DoD:** the §12 acceptance checklist — every machine-verifiable line green, every explicitly-human-deferred line clearly marked as such (not silently checked off).
 **Verify:** `stage5` = budgets + curl 200s (four paths, live) + manifest JSON validation (required fields, relative `start_url`/`scope`) + `sw.js` byte-identity against Appendix C.2 **modulo the `ASSETS` array literal** (so extending it with fonts/favicon/manifest at this stage doesn't fail the gate) + a live-200 check on every entry in the extended `ASSETS` list + registration line present + `all` green.
 **Commit:** `stage5: v1.0 launch` (+ tag `v1.0`)
@@ -825,18 +830,22 @@ Honest notes: <anything imperfect, deferred, or worth the human's eyes>
 
 ---
 
-## §11 — Escalation protocol (the four named triggers — plus the standing §9.2 stop-loss)
+## §11 — Escalation protocol (the three named triggers — plus the standing §9.2 stop-loss)
 
 1. **Auth/permission failure** — cannot push, GitHub access unavailable/unauthorized, Pages enablement genuinely impossible after retries.
 2. **Repo mismatch** — remote is not the `Mindset` repo, or the working directory is not its root.
-3. **Feed collapse** — **zero** of the five §7.1 sources can be verified after the full resolution budget (revised down from v1.0's "<3" — see §7.1; `fresh: null` is a fully supported outcome, not a build-ending one).
-4. **Out-of-scope need** — anything requiring credentials, money, new scopes, or touching anything outside this repo.
+3. **Out-of-scope need** — anything requiring credentials, money, new scopes, or touching anything outside this repo.
 
-These four are the only *substantive-decision* reasons to stop and ask. Separately, §9.2 rule 5's
+(A fourth trigger, "Feed collapse" — zero of the five RSS/YouTube sources for the Fresh card
+verifiable — applied through v1.9. Retired in v1.10 along with the Fresh card itself: Word of
+the Day is self-authored and deterministic, §7, so there is no longer any external source that
+can collapse.)
+
+These three are the only *substantive-decision* reasons to stop and ask. Separately, §9.2 rule 5's
 stop-loss (cycle cap exhausted, or an unrecoverable environment error) is a standing, always-live
-reason to stop cleanly and write `BLOCKED.md` — it is not one of "the four," but it is never
+reason to stop cleanly and write `BLOCKED.md` — it is not one of "the three," but it is never
 overridden by "decide, log, proceed" either. If both a §9.2 stop-loss and ambiguity about which
-of these four (if any) applies come up at once, write `BLOCKED.md` with your best read of which
+of these three (if any) applies come up at once, write `BLOCKED.md` with your best read of which
 trigger is closest, plus the raw error — don't spend cycles deliberating the taxonomy.
 
 **On trigger:** write `BLOCKED.md` — stage, attempts made, exact last error, **two** proposed fixes, and the single specific question for the human — commit it, stop cleanly. Everything not covered by the above: **decide, log it in `audits/decisions.md`, proceed.**
@@ -890,9 +899,9 @@ it's genuinely only valid in CSS; root-absolute local URL ban across `href=`/`sr
 only**); `sw.js` byte-identity with the amended Appendix C.2, **modulo the `ASSETS` array
 literal**; a **scoped** PII/quote-mark/platitude sweep — quote-mark and platitude checks run
 only over `data/cards.json` and `data/values.json` string fields (`text`, `attribution`, `from`,
-`to`, `essence`, `behaviour`, `name`) plus any user-facing copy strings in `app.js`, **not** the
-whole repo (JS/JSON/YAML syntax legitimately contains `"`), and exclude `scripts/`, `CLAUDE.md`,
-`audits/`, `data/daily.json`, `state/`, and this file itself; the PII check is an email-address-
+`to`, `essence`, `behaviour`, `name`, `word`, `origin`, `meaning`) plus any user-facing copy
+strings in `app.js`, **not** the whole repo (JS/JSON/YAML syntax legitimately contains `"`), and
+exclude `scripts/`, `CLAUDE.md`, `audits/`, `data/daily.json`, and this file itself; the PII check is an email-address-
 pattern sweep (excluding the git bot identity) plus obvious phone/financial-figure patterns, not
 a name detector (see invariant 1); byte budgets (page ≤ 350 KB excl. fonts · fonts ≤ 300 KB ·
 JS ≤ 60 KB · icons ≤ 150 KB). Per invariant 12, after Stage 0's commit these checks may only be

@@ -93,10 +93,6 @@ function showChip(mode) {
   chip.textContent = mode === "yesterday" ? "yesterday's cards" : "offline rotation";
 }
 
-function validFreshUrl(u) {
-  try { return new URL(u).protocol === "https:"; } catch (e) { return false; }
-}
-
 function renderAnchorCard(anchor) {
   return el("article", { class: "card" }, [
     el("div", { class: "card-chip", text: "ANCHOR" }),
@@ -116,31 +112,12 @@ function renderShiftCard(shift) {
   ]);
 }
 
-function domainOf(url, fallback) {
-  try { return new URL(url).hostname.replace(/^www\./, ""); } catch (e) { return fallback || ""; }
-}
-
-// Untrusted third-party content (RSS title/link) — textContent only, https-only URL,
-// per BUILD-PLAN §4.5.3 / §6.1.
-function renderFreshCard(fresh) {
-  return el("a", { class: "card card-link", href: fresh.url, target: "_blank", rel: "noopener" }, [
-    el("div", { class: "card-chip", text: "FRESH" }),
-    el("p", { class: "card-body", text: fresh.title }),
-    el("div", { class: "fresh-footer" }, [
-      el("span", { class: "fresh-domain", text: domainOf(fresh.url, fresh.source) }),
-      el("span", { class: "fresh-read", text: "Worth a look →" }),
-    ]),
-  ]);
-}
-
-function renderReserveCard(reserve) {
+function renderWordCard(word) {
   return el("article", { class: "card" }, [
-    el("div", { class: "card-chip", text: "FRESH" }),
-    el("p", { class: "card-body", text: reserve.text }),
-    el("div", { class: "fresh-footer" }, [
-      el("span", { class: "card-attr", text: reserve.attribution }),
-      el("span", { class: "fresh-reserve-label", text: "reserve shelf" }),
-    ]),
+    el("div", { class: "card-chip", text: "WORD" }),
+    el("div", { class: "word-title", text: word.word }),
+    el("p", { class: "card-body", text: word.meaning }),
+    el("div", { class: "card-attr", text: `— ${word.origin}` }),
   ]);
 }
 
@@ -187,15 +164,12 @@ function renderToday(cardsData, dailyData) {
   if (mode === "fresh" || mode === "yesterday") {
     const anchor = cardsData.anchors.find((a) => a.id === dailyData.anchorId);
     const shift = cardsData.shifts.find((s) => s.id === dailyData.shiftId);
-    if (!anchor || !shift) { paintCards([renderErrorCard()]); return; }
-    const freshOk = dailyData.fresh && dailyData.fresh.title && validFreshUrl(dailyData.fresh.url);
-    const freshNode = freshOk
-      ? renderFreshCard(dailyData.fresh)
-      : renderReserveCard(pickToday(cardsData, new Date()).reserve);
-    paintCards([renderAnchorCard(anchor), renderShiftCard(shift), freshNode]);
+    const word = cardsData.wordOfDay.find((w) => w.id === dailyData.wordId);
+    if (!anchor || !shift || !word) { paintCards([renderErrorCard()]); return; }
+    paintCards([renderAnchorCard(anchor), renderShiftCard(shift), renderWordCard(word)]);
   } else {
-    const { anchor, shift, reserve } = pickToday(cardsData, new Date());
-    paintCards([renderAnchorCard(anchor), renderShiftCard(shift), renderReserveCard(reserve)]);
+    const { anchor, shift, word } = pickToday(cardsData, new Date());
+    paintCards([renderAnchorCard(anchor), renderShiftCard(shift), renderWordCard(word)]);
   }
 }
 
