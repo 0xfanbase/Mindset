@@ -1,0 +1,978 @@
+{
+  "anchors": [
+    {
+      "id": "stoic-001",
+      "category": "stoic",
+      "text": "You control the response, not the event. Practice at the small scale today: the delay, the tone, the traffic. The arena is everywhere.",
+      "attribution": "— after Epictetus"
+    },
+    {
+      "id": "stoic-002",
+      "category": "stoic",
+      "text": "Rehearse loss in the morning — the meeting gone wrong, the plan undone — and nothing at noon can ambush you.",
+      "attribution": "— after Seneca"
+    },
+    {
+      "id": "stoic-003",
+      "category": "stoic",
+      "text": "The obstacle is not blocking the work. Today, it is the work.",
+      "attribution": "— after Marcus Aurelius"
+    },
+    {
+      "id": "stoic-004",
+      "category": "stoic",
+      "text": "Set the goal only you can deliver: full effort, honest attempt, clean conscience. Let the sale, the score, the verdict fall where it falls — that part was never yours to promise.",
+      "attribution": "— after Epictetus"
+    },
+    {
+      "id": "stoic-005",
+      "category": "stoic",
+      "text": "Let a quiet thought surface while you laugh with your child or embrace someone you love: this will not last forever. Use it to stay present, not to darken the moment with dread.",
+      "attribution": "— after Epictetus"
+    },
+    {
+      "id": "stoic-006",
+      "category": "stoic",
+      "text": "Before you leave the house, expect the meddler, the ingrate, the rude driver. You already know your part: patience, not surprise. Meet them like a trainer, not a victim.",
+      "attribution": "— after Marcus Aurelius"
+    },
+    {
+      "id": "stoic-007",
+      "category": "stoic",
+      "text": "Wealth, praise, and health are nice to have and easy to lose. Character is the one thing no one can repossess. Bank your effort there, not in what can be taken.",
+      "attribution": "— Stoic tradition"
+    },
+    {
+      "id": "stoic-008",
+      "category": "stoic",
+      "text": "Everything you are holding onto — this mood, this problem, this version of your life — is already dissolving into something else. Stop bracing against change; it is the one constant you can rely on.",
+      "attribution": "— after Marcus Aurelius"
+    },
+    {
+      "id": "stoic-009",
+      "category": "stoic",
+      "text": "Picture this ordinary Tuesday as possibly your last. The pointless argument drops off the list immediately; so does the errand you were dreading. What remains is what actually mattered.",
+      "attribution": "— after Marcus Aurelius"
+    },
+    {
+      "id": "stoic-010",
+      "category": "stoic",
+      "text": "What stung you was never the remark itself — it was the verdict you silently attached to it. Find that sentence before you react, and question it first.",
+      "attribution": "— after Epictetus"
+    },
+    {
+      "id": "stoic-011",
+      "category": "stoic",
+      "text": "Zoom out until today's crisis is a dot on a much longer timeline — the argument, the deadline, the setback. Most of what wrecks your afternoon shrinks from orbit.",
+      "attribution": "— after Marcus Aurelius"
+    },
+    {
+      "id": "stoic-012",
+      "category": "stoic",
+      "text": "You are one strand in a shared weave, not a thread cut loose. Treat your next choice as something that ripples into other lives, because it always does.",
+      "attribution": "— after Marcus Aurelius"
+    },
+    {
+      "id": "stoic-013",
+      "category": "stoic",
+      "text": "Anger punishes the angry first — racing pulse, ruined focus, words you cannot recall. Delay the reply until the heat passes; the target rarely feels it as fast as you do.",
+      "attribution": "— after Seneca"
+    },
+    {
+      "id": "stoic-014",
+      "category": "stoic",
+      "text": "Progress will make you look strange to people who haven't changed. Let them think you slow or naive — chasing their approval is the slowest path there is.",
+      "attribution": "— after Epictetus"
+    },
+    {
+      "id": "stoic-015",
+      "category": "stoic",
+      "text": "The job, the house, even the people you love — you were never the owner, only the temporary keeper. When one is taken back, mourn if you must, but don't call it robbery.",
+      "attribution": "— after Epictetus"
+    },
+    {
+      "id": "stoic-016",
+      "category": "stoic",
+      "text": "Reserve dread for the one thing worth fearing: acting against your own values. Weather, traffic, other people's moods — waste no aversion on things that were never yours to steer.",
+      "attribution": "— after Epictetus"
+    },
+    {
+      "id": "stoic-017",
+      "category": "stoic",
+      "text": "Each night before sleep, audit the day like a ledger: where you acted well, where you slipped, what still needs fixing. Small honest accounting beats vague guilt.",
+      "attribution": "— after Seneca"
+    },
+    {
+      "id": "stoic-018",
+      "category": "stoic",
+      "text": "You guard your wallet closely and let strangers spend your afternoons for free. Time is the one asset you cannot earn back — budget it like it is scarce, because it is.",
+      "attribution": "— after Seneca"
+    },
+    {
+      "id": "stoic-019",
+      "category": "stoic",
+      "text": "Philosophy is not a lecture to admire, it is a clinic you walk into wounded. Stop collecting quotes and start applying one, today, to the actual problem in front of you.",
+      "attribution": "— after Epictetus"
+    },
+    {
+      "id": "stoic-020",
+      "category": "stoic",
+      "text": "You don't find out what you're made of during comfort. Difficulty is the diagnostic — welcome it as data on your character, not as an insult from the universe.",
+      "attribution": "— after Seneca"
+    },
+    {
+      "id": "stoic-021",
+      "category": "stoic",
+      "text": "Count how often the disaster you dreaded never actually arrived. Most of your suffering happens in rehearsal, in a scene that never gets performed.",
+      "attribution": "— after Seneca"
+    },
+    {
+      "id": "stoic-022",
+      "category": "stoic",
+      "text": "Once a month, choose the harder option on purpose — the cold shower, the plain meal, the walk instead of the ride. Comfort you chose voluntarily cannot later be used against you as a threat.",
+      "attribution": "— after Seneca"
+    },
+    {
+      "id": "stoic-023",
+      "category": "stoic",
+      "text": "A hand does not pause mid-task waiting for the foot to thank it. Do the right thing and move on — needing applause for it is a separate, needier want.",
+      "attribution": "— after Marcus Aurelius"
+    },
+    {
+      "id": "stoic-024",
+      "category": "stoic",
+      "text": "You are never asked to handle your whole life at once, only this hour. Set the rest down and finish what is directly in front of you.",
+      "attribution": "— after Marcus Aurelius"
+    },
+    {
+      "id": "stoic-025",
+      "category": "stoic",
+      "text": "You are not measured against the sage you will never fully become. Measure today against yesterday only — a little steadier, a little less reactive, that is the whole race.",
+      "attribution": "— Stoic tradition"
+    },
+    {
+      "id": "dwz-001",
+      "category": "diewithzero",
+      "text": "Memories pay a dividend every time you replay them. Book the experience while the body can still collect.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-002",
+      "category": "diewithzero",
+      "text": "Some things can only be done this decade. Put them first; the rest will wait either way.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-003",
+      "category": "diewithzero",
+      "text": "Money left unspent at the end is time you worked for nothing. Convert it to life, on purpose.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-004",
+      "category": "diewithzero",
+      "text": "Health, time, and money rarely peak together. Whichever one is abundant right now, spend it before the other two catch up.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-005",
+      "category": "diewithzero",
+      "text": "Zero at the end is the goal: run out of money the same day you run out of life, not sooner, not with leftovers.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-006",
+      "category": "diewithzero",
+      "text": "Fund the wedding or the first apartment now, when the money changes a life — not decades later as a will.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-007",
+      "category": "diewithzero",
+      "text": "Don't mistake this for reckless spending. Spend on purpose, backed by a plan, not a guess.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-008",
+      "category": "diewithzero",
+      "text": "Excess caution has a cost too: each year you postpone spending for safety is a year your body has less capacity to enjoy it. Weigh that cost, not just the risk.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-009",
+      "category": "diewithzero",
+      "text": "Give to the cause while you can still watch what your money does. A will lets you skip the best part.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-010",
+      "category": "diewithzero",
+      "text": "Buy insurance against outliving your money, then stop stockpiling against every other imagined disaster.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-011",
+      "category": "diewithzero",
+      "text": "Before you take the next contract, ask what it buys you in life, not just in savings. Some income stops paying you back.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-012",
+      "category": "diewithzero",
+      "text": "Backpacking through hostels fits your twenties; a cruise fits your seventies. Match the plan to the decade instead of running one version of fun for fifty years.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-013",
+      "category": "diewithzero",
+      "text": "A dollar at eighty cannot buy what it could at forty. Its value depends on the body you have left to spend it with.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-014",
+      "category": "diewithzero",
+      "text": "Net worth for most people keeps climbing until death, peaking decades after it could have changed anything. Let yours peak while you can still use it.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-015",
+      "category": "diewithzero",
+      "text": "You are working against two deadlines: the day you die, and the earlier day your body stops cooperating. Plan for the second one.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "dwz-016",
+      "category": "diewithzero",
+      "text": "The old script front-loads work and back-loads rest. Spread your rest across the whole timeline instead of saving it all for the end.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-017",
+      "category": "diewithzero",
+      "text": "The fear of running out often outlives the actual risk of it. Don't let that fear ration a life you can actually afford.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "dwz-018",
+      "category": "diewithzero",
+      "text": "Vacation days reset every January whether you used them or not; the years your body can still enjoy that trip do not reset. Spend the days now.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "dwz-019",
+      "category": "diewithzero",
+      "text": "Automatic saving doesn't know when to stop. Revisit why the contribution is still rising after the reason for it is gone.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "dwz-020",
+      "category": "diewithzero",
+      "text": "Past a certain point, more savings stops buying more life and starts just inflating a number. Notice when you cross that line.",
+      "attribution": "— after Bill Perkins"
+    },
+    {
+      "id": "growth-001",
+      "category": "growth",
+      "text": "Not yet is a location, not a verdict. Keep walking.",
+      "attribution": "— after Carol Dweck"
+    },
+    {
+      "id": "growth-002",
+      "category": "growth",
+      "text": "Praise the method you used, not the talent you were handed. Method repeats.",
+      "attribution": "— after Carol Dweck"
+    },
+    {
+      "id": "growth-003",
+      "category": "growth",
+      "text": "A setback is data about the approach, never a measurement of the person.",
+      "attribution": "— after Carol Dweck"
+    },
+    {
+      "id": "growth-004",
+      "category": "growth",
+      "text": "Ability is a starting point, not a ceiling. Where you begin says nothing about where you can end up.",
+      "attribution": "— growth-mindset research"
+    },
+    {
+      "id": "growth-005",
+      "category": "growth",
+      "text": "Don't mistake your effort for a confession of low talent. It is the mechanism that builds talent.",
+      "attribution": "— growth-mindset research"
+    },
+    {
+      "id": "growth-006",
+      "category": "growth",
+      "text": "Stop picking the easy task just to look smart. It trades away the exact challenge you need to grow.",
+      "attribution": "— growth-mindset research"
+    },
+    {
+      "id": "growth-007",
+      "category": "growth",
+      "text": "What you believe about your ability quietly decides how hard you are willing to try.",
+      "attribution": "— growth-mindset research"
+    },
+    {
+      "id": "growth-008",
+      "category": "growth",
+      "text": "Don't mistake a flat stretch of no visible progress for proof your climb is over.",
+      "attribution": "— growth-mindset research"
+    },
+    {
+      "id": "growth-009",
+      "category": "growth",
+      "text": "Don't write off someone else's skill as fixed. Assume it can still move, the same way yours can.",
+      "attribution": "— growth-mindset research"
+    },
+    {
+      "id": "growth-010",
+      "category": "growth",
+      "text": "Set your goal on the very next step, not the final result. The step is fully within your control today.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "growth-011",
+      "category": "growth",
+      "text": "You can hold a growth mindset at work and a fixed one at home. Check both separately.",
+      "attribution": "— growth-mindset research"
+    },
+    {
+      "id": "growth-012",
+      "category": "growth",
+      "text": "Don't stop at effort alone. Pair it with a change in strategy. That is what finally moves the number.",
+      "attribution": "— after Carol Dweck"
+    },
+    {
+      "id": "growth-013",
+      "category": "growth",
+      "text": "Don't praise the score alone. Kids praised only for being smart are more likely to hide a bad one.",
+      "attribution": "— after Carol Dweck"
+    },
+    {
+      "id": "growth-014",
+      "category": "growth",
+      "text": "Do not let being called gifted once convince you the skill is finished. It still needs reps.",
+      "attribution": "— growth-mindset research"
+    },
+    {
+      "id": "growth-015",
+      "category": "growth",
+      "text": "Practice the specific move that embarrasses you. Avoiding it only guarantees the gap stays exactly that wide.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "growth-016",
+      "category": "growth",
+      "text": "The mindset of the people around you rubs off during practice. Choose partners who treat mistakes as useful, not embarrassing.",
+      "attribution": "— growth-mindset research"
+    },
+    {
+      "id": "growth-017",
+      "category": "growth",
+      "text": "Ask how you can improve, not how well you did. One question keeps working for you.",
+      "attribution": "— growth-mindset research"
+    },
+    {
+      "id": "growth-018",
+      "category": "growth",
+      "text": "Keep a record of what you could not do six months ago. That list is the only scoreboard that matters.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "growth-019",
+      "category": "growth",
+      "text": "Don't read your confusion mid-lesson as a warning sign. It is what learning feels like in progress.",
+      "attribution": "— growth-mindset research"
+    },
+    {
+      "id": "growth-020",
+      "category": "growth",
+      "text": "Ask for the feedback that stings a little. It points straight at your next skill to build.",
+      "attribution": "— growth-mindset research"
+    },
+    {
+      "id": "rel-001",
+      "category": "relationships",
+      "text": "Ask about their work before mentioning yours. Interest given first returns multiplied.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-002",
+      "category": "relationships",
+      "text": "Remember the small thing they told you last time. It says: you exist to me.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-003",
+      "category": "relationships",
+      "text": "Hand your best idea away and help them build it. Ownership persuades where argument cannot.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-004",
+      "category": "relationships",
+      "text": "Turn a correction into a question: what do you think happened here? People fix what they discover themselves faster than what they are told.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-005",
+      "category": "relationships",
+      "text": "Skip the generic compliment. Name the specific thing they did well, and they will remember it for years.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-006",
+      "category": "relationships",
+      "text": "Before you ask for anything, work out why they would want to give it. Their reason moves them, not yours.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-007",
+      "category": "relationships",
+      "text": "Name your own mistake before you point to theirs. It turns a correction into a conversation between equals.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-008",
+      "category": "relationships",
+      "text": "Winning the argument loses the person. Let the point go and keep the relationship.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-009",
+      "category": "relationships",
+      "text": "Open a disagreement by naming the part you already agree on. Common ground first, the difference second.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-010",
+      "category": "relationships",
+      "text": "When someone concedes, leave them a graceful exit. A cornered person defends; a person with room out changes their mind.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-011",
+      "category": "relationships",
+      "text": "Tell someone the good reputation you already think they have. Most people work hard not to disappoint it.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-012",
+      "category": "relationships",
+      "text": "Smile before you say a word, even over the phone. Warmth offered first sets the tone for everything that follows.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-013",
+      "category": "relationships",
+      "text": "Tell them the mistake is easy to fix, not evidence of who they are. People keep trying when the gap looks closeable.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-014",
+      "category": "relationships",
+      "text": "Praise the improvement the moment you see it, not just the finished result. Progress noticed early keeps going.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "rel-015",
+      "category": "relationships",
+      "text": "Frame a hard task as a challenge worth meeting, not an obligation. People rise faster toward a contest than a chore.",
+      "attribution": "— after Dale Carnegie"
+    },
+    {
+      "id": "wealth-001",
+      "category": "wealth",
+      "text": "Getting wealthy rewards risk. Staying wealthy rewards paranoia. Know which game today is.",
+      "attribution": "— after Morgan Housel"
+    },
+    {
+      "id": "wealth-002",
+      "category": "wealth",
+      "text": "Real wealth is the upgrade not bought and the hours not owed. Invisible, by design.",
+      "attribution": "— after Morgan Housel"
+    },
+    {
+      "id": "wealth-003",
+      "category": "wealth",
+      "text": "Avoid ruin first. Any bet that can take you to zero is mispriced at every payout.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "wealth-004",
+      "category": "wealth",
+      "text": "Give compounding decades to work with, not headlines to chase. The wealth that looks sudden was two quiet decades in the making.",
+      "attribution": "— after Morgan Housel"
+    },
+    {
+      "id": "wealth-005",
+      "category": "wealth",
+      "text": "Plan for a range of outcomes, not one forecast. Room for error is what lets you survive being wrong.",
+      "attribution": "— after Morgan Housel"
+    },
+    {
+      "id": "wealth-006",
+      "category": "wealth",
+      "text": "Weigh advice by what the advisor loses if it turns out wrong. Risk-free counsel is often worthless counsel.",
+      "attribution": "— after Nassim Taleb"
+    },
+    {
+      "id": "wealth-007",
+      "category": "wealth",
+      "text": "Decide what enough looks like before the market decides it for you. Without a number, more always wins.",
+      "attribution": "— after Morgan Housel"
+    },
+    {
+      "id": "wealth-008",
+      "category": "wealth",
+      "text": "Your savings rate matters more than your salary. Someone who saves a third of little outbuilds someone who saves nothing of a lot.",
+      "attribution": "— after Morgan Housel"
+    },
+    {
+      "id": "wealth-009",
+      "category": "wealth",
+      "text": "Keep an emergency fund not for the interest it earns but so you are never forced to sell at the worst possible moment.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "wealth-010",
+      "category": "wealth",
+      "text": "Buying things to prove you have arrived quietly taxes the wealth that arriving was supposed to build.",
+      "attribution": "— after Morgan Housel"
+    },
+    {
+      "id": "wealth-011",
+      "category": "wealth",
+      "text": "Put most of your money where surprises cannot hurt you, and only a small slice where a surprise could pay off huge.",
+      "attribution": "— after Nassim Taleb"
+    },
+    {
+      "id": "wealth-012",
+      "category": "wealth",
+      "text": "Give luck and risk their due. Every fortune and every collapse had a silent partner you did not choose.",
+      "attribution": "— after Morgan Housel"
+    },
+    {
+      "id": "wealth-013",
+      "category": "wealth",
+      "text": "The money moves that look reckless to you make perfect sense to someone whose worst financial memory differs from yours.",
+      "attribution": "— after Morgan Housel"
+    },
+    {
+      "id": "wealth-014",
+      "category": "wealth",
+      "text": "Look for bets where the worst case is a bruise and the best case changes your decade. Size accordingly.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "wealth-015",
+      "category": "wealth",
+      "text": "Do not expect long-term returns without stomach-churning drops along the way. The drops are the cost of earning them, not evidence something is broken.",
+      "attribution": "— after Morgan Housel"
+    },
+    {
+      "id": "wealth-016",
+      "category": "wealth",
+      "text": "Make sure no single job, client, or investment can sink your entire financial life. One bad break should cost you an inconvenience, not everything.",
+      "attribution": "— after Nassim Taleb"
+    },
+    {
+      "id": "wealth-017",
+      "category": "wealth",
+      "text": "Choose the money habit you can actually keep when you are stressed and tired, not the one that is optimal on paper.",
+      "attribution": "— after Morgan Housel"
+    },
+    {
+      "id": "wealth-018",
+      "category": "wealth",
+      "text": "A handful of decisions will account for nearly all your results. Expect most days to feel uneventful in between.",
+      "attribution": "— after Morgan Housel"
+    },
+    {
+      "id": "wealth-019",
+      "category": "wealth",
+      "text": "Curb your impatience; it is the most expensive habit in investing. It sells low, buys high, and calls it bad luck.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "wealth-020",
+      "category": "wealth",
+      "text": "Compounding rewards staying invested far more than it rewards being right about timing. Outlast the downturn; do not try to outsmart it.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "focus-001",
+      "category": "focus",
+      "text": "Depth is rare, so depth is valuable. Guard three uninterrupted hours the way you guard revenue.",
+      "attribution": "— after Cal Newport"
+    },
+    {
+      "id": "focus-002",
+      "category": "focus",
+      "text": "Saying yes to one thing means saying no to many others. Make those nos explicit, not silent.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "focus-003",
+      "category": "focus",
+      "text": "Track how much energy a task costs, not just how long it takes. One rested hour outworks a tired afternoon.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "focus-004",
+      "category": "focus",
+      "text": "Switching tasks does not end the last one. A residue of attention lingers, dragging down whatever you turn to next.",
+      "attribution": "— after Cal Newport"
+    },
+    {
+      "id": "focus-005",
+      "category": "focus",
+      "text": "Answer email and admin in set blocks, not all day long. Batched, shallow work stops leaking into the hours meant for depth.",
+      "attribution": "— after Cal Newport"
+    },
+    {
+      "id": "focus-006",
+      "category": "focus",
+      "text": "Deep focus is not a personality trait. Train it deliberately, in stages, the way you would train a muscle.",
+      "attribution": "— after Cal Newport"
+    },
+    {
+      "id": "focus-007",
+      "category": "focus",
+      "text": "Pick one place, one time, one cue for entering deep work. A fixed ritual removes the daily decision to start.",
+      "attribution": "— after Cal Newport"
+    },
+    {
+      "id": "focus-008",
+      "category": "focus",
+      "text": "Let small idle moments stay empty. Reaching for your phone every time you're bored trains your mind to need constant input.",
+      "attribution": "— after Cal Newport"
+    },
+    {
+      "id": "focus-009",
+      "category": "focus",
+      "text": "Do not adopt a tool because everyone else has it. Adopt it only if its gain to your work clearly beats its cost to your attention.",
+      "attribution": "— after Cal Newport"
+    },
+    {
+      "id": "focus-010",
+      "category": "focus",
+      "text": "Close the workday on purpose. Note what's done and what's next, then let the rest go until tomorrow.",
+      "attribution": "— after Cal Newport"
+    },
+    {
+      "id": "focus-011",
+      "category": "focus",
+      "text": "Rest is not the absence of productivity. It is what rebuilds the capacity your focus just spent.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "focus-012",
+      "category": "focus",
+      "text": "Protect the first hour of your day before anyone else's request reaches you. What you choose first sets the whole day's frame.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "focus-013",
+      "category": "focus",
+      "text": "Three priorities done well beat ten done adequately. Narrow the list before you start the day, not while you're in it.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "focus-014",
+      "category": "focus",
+      "text": "Save your hardest task for your sharpest hour, whenever that falls, instead of whatever slot happens to be open.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "focus-015",
+      "category": "focus",
+      "text": "Make silence the default and interruption the exception. Turn off notifications and let people wait for your attention, not command it.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "focus-016",
+      "category": "focus",
+      "text": "Take a short walk outside when your focus fades. Movement and changing scenery rebuild attention that sitting still cannot.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "focus-017",
+      "category": "focus",
+      "text": "Give one task your full attention at a time; it finishes faster than juggling three ever will.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "focus-018",
+      "category": "focus",
+      "text": "Urgent is not the same as important. Pause before you let a ping decide what deserves your attention next.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "focus-019",
+      "category": "focus",
+      "text": "Protect your sleep like you protect your calendar. It is the foundation tomorrow's focus is built on, not a tax on it.",
+      "attribution": "— core principle"
+    },
+    {
+      "id": "focus-020",
+      "category": "focus",
+      "text": "Close every tab and app you are not using right now. An open one keeps a hook in your attention even when idle.",
+      "attribution": "— core principle"
+    }
+  ],
+  "shifts": [
+    {
+      "id": "shift-001",
+      "from": "Proving I belong",
+      "to": "Deciding what is worth building"
+    },
+    {
+      "id": "shift-002",
+      "from": "Clearing the inbox",
+      "to": "Finishing one thing that matters"
+    },
+    {
+      "id": "shift-003",
+      "from": "Reacting to the day",
+      "to": "Writing the day before it starts"
+    },
+    {
+      "id": "shift-004",
+      "from": "More hours",
+      "to": "Fewer, sharper commitments"
+    },
+    {
+      "id": "shift-005",
+      "from": "What could go wrong",
+      "to": "What I would do next"
+    },
+    {
+      "id": "shift-006",
+      "from": "Being right",
+      "to": "Getting it right"
+    },
+    {
+      "id": "shift-007",
+      "from": "Counting outcomes",
+      "to": "Counting reps"
+    },
+    {
+      "id": "shift-008",
+      "from": "Waiting to feel ready",
+      "to": "Starting the smallest true step"
+    },
+    {
+      "id": "shift-009",
+      "from": "Managing impressions",
+      "to": "Managing attention"
+    },
+    {
+      "id": "shift-010",
+      "from": "Someday",
+      "to": "A date on the calendar"
+    },
+    {
+      "id": "shift-011",
+      "from": "Winning the argument",
+      "to": "Understanding the other person"
+    },
+    {
+      "id": "shift-012",
+      "from": "Spending what is left",
+      "to": "Saving before you spend"
+    },
+    {
+      "id": "shift-013",
+      "from": "I cannot do this",
+      "to": "I cannot do this yet"
+    },
+    {
+      "id": "shift-014",
+      "from": "Wishing the past were different",
+      "to": "Working with what is now"
+    },
+    {
+      "id": "shift-015",
+      "from": "Living for the weekend",
+      "to": "Noticing this actual day"
+    },
+    {
+      "id": "shift-016",
+      "from": "Multitasking through the morning",
+      "to": "Single-tasking one block at a time"
+    },
+    {
+      "id": "shift-017",
+      "from": "Keeping score with people",
+      "to": "Keeping trust with people"
+    },
+    {
+      "id": "shift-018",
+      "from": "Chasing a bigger salary",
+      "to": "Lowering your fixed costs"
+    },
+    {
+      "id": "shift-019",
+      "from": "Hiding my mistakes",
+      "to": "Studying my mistakes"
+    },
+    {
+      "id": "shift-020",
+      "from": "Craving other people's approval",
+      "to": "Trusting your own judgment"
+    },
+    {
+      "id": "shift-021",
+      "from": "Replaying yesterday's conversation",
+      "to": "Attending to this one"
+    },
+    {
+      "id": "shift-022",
+      "from": "Checking the phone reflexively",
+      "to": "Checking it on a schedule"
+    },
+    {
+      "id": "shift-023",
+      "from": "Assuming they know you appreciate them",
+      "to": "Saying it out loud today"
+    },
+    {
+      "id": "shift-024",
+      "from": "Net income",
+      "to": "Net worth"
+    },
+    {
+      "id": "shift-025",
+      "from": "Comparing yourself to others",
+      "to": "Measuring growth against your own past"
+    },
+    {
+      "id": "shift-026",
+      "from": "Expecting the day to go as planned",
+      "to": "Adjusting the plan as things change"
+    },
+    {
+      "id": "shift-027",
+      "from": "Eating while scrolling",
+      "to": "Eating while tasting the food"
+    },
+    {
+      "id": "shift-028",
+      "from": "Working from a to-do list",
+      "to": "Working from a time-blocked calendar"
+    },
+    {
+      "id": "shift-029",
+      "from": "Fixing what is wrong with someone",
+      "to": "Accepting the person as they are"
+    },
+    {
+      "id": "shift-030",
+      "from": "Buying things to look successful",
+      "to": "Buying assets that produce income"
+    },
+    {
+      "id": "shift-031",
+      "from": "Avoiding the hard problem",
+      "to": "Seeking the right amount of difficulty"
+    },
+    {
+      "id": "shift-032",
+      "from": "Blaming the situation",
+      "to": "Examining your own reaction"
+    },
+    {
+      "id": "shift-033",
+      "from": "Rehearsing tomorrow's conversation",
+      "to": "Finishing today's conversation first"
+    },
+    {
+      "id": "shift-034",
+      "from": "Consuming more information",
+      "to": "Producing more work"
+    },
+    {
+      "id": "shift-035",
+      "from": "Assuming you know their reasons",
+      "to": "Asking what actually happened"
+    },
+    {
+      "id": "shift-036",
+      "from": "Relying on a single paycheck",
+      "to": "Diversifying where income comes from"
+    },
+    {
+      "id": "shift-037",
+      "from": "Avoiding harsh feedback",
+      "to": "Requesting the harshest feedback"
+    },
+    {
+      "id": "shift-038",
+      "from": "Resenting the traffic jam",
+      "to": "Using the wait to think"
+    },
+    {
+      "id": "shift-039",
+      "from": "Half-listening while you plan your reply",
+      "to": "Fully listening before you respond"
+    },
+    {
+      "id": "shift-040",
+      "from": "Reacting to every request",
+      "to": "Protecting one deep work block"
+    }
+  ],
+  "freshReserve": [
+    {
+      "id": "reserve-01",
+      "text": "Reread one page of an old notebook. Past you left supplies for exactly this stretch.",
+      "attribution": "— evergreen"
+    },
+    {
+      "id": "reserve-02",
+      "text": "Take the ten minute walk before any decision that feels urgent. Urgency shrinks outdoors.",
+      "attribution": "— evergreen"
+    },
+    {
+      "id": "reserve-03",
+      "text": "Choose the first task of tomorrow tonight. Mornings are for doing, not deciding.",
+      "attribution": "— evergreen"
+    },
+    {
+      "id": "reserve-04",
+      "text": "Close every loop that takes under two minutes. Carry fewer open things into the afternoon.",
+      "attribution": "— evergreen"
+    },
+    {
+      "id": "reserve-05",
+      "text": "Name the exact emotion you feel before acting on it. Precision drains its power; vague feelings run the show.",
+      "attribution": "— evergreen"
+    },
+    {
+      "id": "reserve-06",
+      "text": "Sort the problem into what you control and what you don't. Spend your energy only on the first pile.",
+      "attribution": "— evergreen"
+    },
+    {
+      "id": "reserve-07",
+      "text": "Cross out every step in the task that is not strictly necessary. Most jobs survive losing half their steps.",
+      "attribution": "— evergreen"
+    },
+    {
+      "id": "reserve-08",
+      "text": "Write down one thing that went right, before you sleep. Even the hardest day leaves at least one.",
+      "attribution": "— evergreen"
+    },
+    {
+      "id": "reserve-09",
+      "text": "When you are stuck, switch to a small, unrelated task for ten minutes. Insight often arrives sideways, not head-on.",
+      "attribution": "— evergreen"
+    },
+    {
+      "id": "reserve-10",
+      "text": "Picture advising a friend who has your exact problem. Their answer usually comes easier than your own.",
+      "attribution": "— evergreen"
+    }
+  ]
+}
