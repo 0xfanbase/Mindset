@@ -328,6 +328,19 @@ function stage3() {
     assert.equal(d.shifts.length, 40, `shifts = ${d.shifts.length}`);
     assert.equal(d.wordOfDay.length, 30, `wordOfDay = ${d.wordOfDay.length}`);
   });
+  check("stage3", "wordOfDay entries have word/origin/lang/meaning as non-empty strings", () => {
+    const d = readJSON("data/cards.json");
+    const problems = [];
+    for (const w of d.wordOfDay) {
+      for (const field of ["word", "origin", "lang", "meaning"]) {
+        if (typeof w[field] !== "string" || !w[field].trim()) problems.push(`${w.id}.${field} missing/empty`);
+      }
+      if (typeof w.lang === "string" && !/^[a-z]{2,3}(-[A-Z]{2})?$/.test(w.lang)) {
+        problems.push(`${w.id}.lang "${w.lang}" doesn't look like a BCP-47 tag`);
+      }
+    }
+    assert.equal(problems.length, 0, problems.join(" | "));
+  });
   check("stage3", "all ids unique within each pool", () => {
     const d = readJSON("data/cards.json");
     for (const [name, pool] of Object.entries(d)) {

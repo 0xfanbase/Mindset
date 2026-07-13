@@ -112,10 +112,28 @@ function renderShiftCard(shift) {
   ]);
 }
 
+function speak(text, lang) {
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = lang;
+  window.speechSynthesis.speak(utter);
+}
+
 function renderWordCard(word) {
+  const titleRow = el("div", { class: "word-title-row" }, [
+    el("div", { class: "word-title", text: word.word }),
+  ]);
+  if ("speechSynthesis" in window) {
+    const speakBtn = el("button", {
+      type: "button", class: "word-speak", "aria-label": `Pronounce ${word.word}`, title: "Pronounce",
+    });
+    speakBtn.textContent = "🔊";
+    speakBtn.addEventListener("click", () => speak(word.word, word.lang));
+    titleRow.appendChild(speakBtn);
+  }
   return el("article", { class: "card" }, [
     el("div", { class: "card-chip", text: "WORD" }),
-    el("div", { class: "word-title", text: word.word }),
+    titleRow,
     el("p", { class: "card-body", text: word.meaning }),
     el("div", { class: "card-attr", text: `— ${word.origin}` }),
   ]);

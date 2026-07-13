@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.10)
+# MINDSET — Autonomous Build Plan (v1.11)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -233,7 +233,33 @@ upsert-by-date check, since that file and the behavior it verified no longer exi
 loosening of any check that still applies; logged here per the ratchet rule. `verify.mjs all`
 58/58.
 
----
+**v1.11 changelog (from v1.10, post-launch human feedback):** (1) **a real bug found while
+closing the header-to-tabs gap** — live feedback asked (again) to tighten the space between
+the bottle and the Today/Values line. Investigation found the actual cause: `#staleness-chip`
+carries `class="chip"` even while hidden, and `.chip { display: table; ... }` (an author-
+stylesheet rule) unconditionally overrides the browser's built-in `[hidden] { display: none }`
+rule — author-origin CSS always wins over user-agent-origin CSS at equal specificity,
+regardless of selector order, so the hidden chip was never actually disappearing; it sat there
+empty but still consuming its padding/margin box (~22px) in the common "fresh" (no-chip) case,
+every single page load. `.panel[hidden] { display: none; }` already existed as the correct
+pattern elsewhere in this same stylesheet — `.chip` just never got the equivalent rule. Added
+`.chip[hidden] { display: none; }`; confirmed via `getComputedStyle` that the chip now actually
+computes to `display: none` when hidden, and the figure-to-tabs gap dropped from 24px to 2px
+with no further hand-tuning needed.
+(2) **Word of the Day gets a pronunciation button** — a real `<button>` (44×44px tap target,
+`aria-label="Pronounce <word>"`) rendered next to the word title, using the native
+`SpeechSynthesisUtterance`/`window.speechSynthesis` Web API (no library, no network request —
+same "vanilla browser API" category as `fetch`/`ResizeObserver`/`matchMedia`, already used
+elsewhere). Progressive enhancement: the button is only rendered at all if
+`"speechSynthesis" in window`, so there's never a dead control on a browser without TTS
+support. Each `wordOfDay` entry (`data/cards.json`) gained a `lang` field (a BCP-47 tag,
+e.g. `ja-JP`, `de-DE`, `el-GR`) mapped from its `origin`, so the utterance is spoken in a voice
+matched to the word's actual language rather than defaulting to whatever the browser's default
+voice/locale is — meaningfully more likely to sound like a real pronunciation, not just an
+English voice sounding out foreign spelling. `verify.mjs` gained a new stage3 check asserting
+every `wordOfDay` entry has non-empty `word`/`origin`/`lang`/`meaning` and that `lang` looks
+like a real BCP-47 tag (59/59, up from 58 — a genuine new requirement, not a re-add of the
+removed `fresh-history.json` check).
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
@@ -449,10 +475,12 @@ since it's no longer adjacent to the notch/status bar).
 
 1. **Theme toggle:** pill button top-right, `aria-pressed`, icons ◐/❀ (calm/blossom), 44×44px, `persists mindset.theme`, default `calm`, no flash-of-wrong-theme (inline script reads localStorage before CSS paint).
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Header row = mono category chip (ANCHOR / SHIFT / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px) between the chip and the meaning (§5.3.10). Footer = muted attribution.
+3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Header row = mono category chip (ANCHOR / SHIFT / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px) inside a `.word-title-row` alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 06:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 06:00 HKT, every single day.)
    - `daily.json` unreachable, > 48h stale, or fetch fails → page computes all three cards locally via `lib.mjs` rotation → slate chip `offline rotation`. Since Word of the Day is deterministic (v1.10), this path picks the exact same word as the server would have for that date — unlike the retired Fresh card, there is no divergent "fallback" content.
+   - **`.chip[hidden] { display: none; }` (v1.11, real bug fix):** `#staleness-chip` keeps `class="chip"` at all times, including while hidden; `.chip`'s own `display: table` (author-origin CSS) unconditionally overrode the browser's default `[hidden] { display: none }` (user-agent-origin CSS) — author styles always win over user-agent styles at equal specificity, regardless of selector order. The hidden chip was never actually disappearing; it sat empty but still consumed its padding/margin box in the default "fresh" case, every load. Fixed with an explicit override, matching the pattern `.panel[hidden] { display: none; }` already used correctly elsewhere in the same stylesheet.
+4a. **Word pronunciation (v1.11):** a 44×44px `<button aria-label="Pronounce <word>">🔊</button>` next to the word title, calling `window.speechSynthesis.speak(new SpeechSynthesisUtterance(word))` with `utterance.lang` set from the entry's `lang` field (§5.1/§5.3.10) — a native browser API, not a dependency (same category as `fetch`/`ResizeObserver`, already used). Rendered only if `"speechSynthesis" in window` (progressive enhancement — never a dead control on an unsupported browser).
 5. **Values tab:** the 5 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px). **No numbering** — values are not a sequence. (Cut from 10 to 5 in v1.2 — ten read as a checklist; keep only what actually matters.)
 6. **Motion:** the figure is the primary animated element. Card/value-row entrance (v1.9, more noticeable per live feedback: "a small animation when I open up the page ... opening up of the cards") = a 500ms fade/rise/scale-in, staggered per item (90ms between Today's cards, 60ms between Values rows) so they visibly cascade in one after another rather than popping in together; nothing on scroll; respects `prefers-reduced-motion` (animation suppressed, content appears instantly). Hover lift 2px desktop only.
 
@@ -522,7 +550,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 {
   "anchors": [ { "id": "stoic-001", "category": "stoic", "text": "...", "attribution": "— after Epictetus" } ],
   "shifts":  [ { "id": "shift-001", "from": "Proving I belong", "to": "Deciding what is worth building" } ],
-  "wordOfDay": [ { "id": "word-01", "word": "Wabi-sabi", "origin": "Japanese", "meaning": "..." } ]
+  "wordOfDay": [ { "id": "word-01", "word": "Wabi-sabi", "origin": "Japanese", "lang": "ja-JP", "meaning": "..." } ]
 }
 ```
 
@@ -561,7 +589,7 @@ rather than a short list of what actually matters (§5.3.6).
 7. **Attribution-confidence rule:** use a person-named attribution (`— after X`) only when you are confident the specific idea is centrally/traditionally X's (e.g. Epictetus/Seneca/Marcus Aurelius for Stoic control-of-response ideas, Bill Perkins for Die With Zero's core thesis, Dweck for growth-mindset framing, Carnegie for the specific relationship tactics from *How to Win Friends*, Housel for invisible-wealth/avoid-ruin framing, Newport for deep-work framing). Otherwise, demote to tradition-level attribution (`— Stoic tradition`, `— growth-mindset research`, `— core principle`) rather than guessing at a specific person. This is a quality/accuracy safeguard, independent of the (resolved) PII question — misattributing an idea to a real, named public figure is a credibility problem even though naming public figures itself is fine.
 8. Write anchors in six batches (one per category, extending each category's 3 seed cards to its full count). After each batch, run the normal mechanical self-review (word caps, quote marks, banned phrases — rules 1–5), **and then** a second, independent review pass per §10 Stage 3's content-QA step, before moving to the next batch.
 9. **`voices` category (added v1.3):** a 7th anchor category, 9 cards (3 each), for named living/recent public figures the owner's household specifically finds inspiring, so their thinking surfaces periodically via the same rotation — not a new subsystem, just more entries in the same `anchors` pool. Extra bar beyond rules 1–8 for this category specifically: (a) any figure who has held significant political office must be scoped strictly to personal-character themes (grief, resilience, self-belief, service) and must never reference their office, party, policies, or elections — attribution is tied to a specific, nonpartisan book/body of work (e.g. `— after X, from <book>`), not their public office; (b) rule 2's "no verbatim quotes" is enforced against the *spirit*, not just quote-mark glyphs — a paraphrase that lands close to the person's one most-famous, most-recognizable line is a violation even with zero quote marks and needs a rewrite, not just a rewording; (c) run the independent second-pass review (rule 8) with an explicit prompt to check attribution-confidence, political neutrality, and closeness-to-source — this category carries materially higher reputational risk per card than the historical-thinker categories.
-10. **`wordOfDay` (replaced `freshReserve` in v1.10, 30 entries):** `{ "id", "word", "origin" (a language/tradition, e.g. "Japanese", "Stoic Greek" — never a person's name, since this pool has no attribution-confidence question the way anchors do), "meaning" (≤ 20 words, one sentence, no verbatim dictionary-style copying — write the sense of the word, not a lifted definition) }`. Fully self-authored (no external source to fetch or verify), so it rotates deterministically exactly like anchors/shifts (§6.2) rather than needing the daily pipeline to do any network work for it.
+10. **`wordOfDay` (replaced `freshReserve` in v1.10, 30 entries):** `{ "id", "word", "origin" (a language/tradition, e.g. "Japanese", "Stoic Greek" — never a person's name, since this pool has no attribution-confidence question the way anchors do), "lang" (added v1.11 — a BCP-47 tag, e.g. "ja-JP", "de-DE", mapped from `origin`, feeding the pronunciation button's `SpeechSynthesisUtterance.lang` per §4.5.4a so the word is spoken in a voice matched to its actual language), "meaning" (≤ 20 words, one sentence, no verbatim dictionary-style copying — write the sense of the word, not a lifted definition) }`. Fully self-authored (no external source to fetch or verify), so it rotates deterministically exactly like anchors/shifts (§6.2) rather than needing the daily pipeline to do any network work for it.
 
 ---
 

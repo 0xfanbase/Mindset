@@ -331,7 +331,10 @@ Retires the Fresh card entirely (a daily RSS/YouTube pick, disliked in live feed
 of a self-authored, deterministic third card: one word worth knowing, its origin, and a
 one-line sense of its meaning (not a lifted dictionary definition). All 30 entries were
 pre-validated against `verify.mjs`'s exact word-cap (≤20w meaning)/quote-glyph/platitude rules
-before writing, via a throwaway Node script reimplementing those checks. No independent QA
+before writing, via a throwaway Node script reimplementing those checks. **v1.11 addendum:**
+each entry also carries a `lang` BCP-47 tag (mapped 1:1 from `origin` below, e.g. Japanese →
+`ja-JP`) feeding the new pronunciation button's `SpeechSynthesisUtterance.lang` — see
+`decisions.md`'s v1.11 entry for the full origin→lang mapping table. No independent QA
 pass was run beyond that mechanical validation — these are single-word etymological/
 philosophical concepts, not paraphrases of a named thinker's ideas, so the attribution-
 confidence and closeness-to-source concerns that drive the anchors' second-pass review don't

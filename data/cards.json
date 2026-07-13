@@ -982,180 +982,210 @@
       "id": "word-01",
       "word": "Wabi-sabi",
       "origin": "Japanese",
+      "lang": "ja-JP",
       "meaning": "Finding beauty in what is imperfect, weathered, and incomplete."
     },
     {
       "id": "word-02",
       "word": "Ikigai",
       "origin": "Japanese",
+      "lang": "ja-JP",
       "meaning": "The reason you get up in the morning, where purpose meets daily life."
     },
     {
       "id": "word-03",
       "word": "Amor fati",
       "origin": "Latin",
+      "lang": "la",
       "meaning": "Loving your fate entirely, including the parts you did not choose."
     },
     {
       "id": "word-04",
       "word": "Ubuntu",
       "origin": "Nguni",
+      "lang": "zu-ZA",
       "meaning": "I am because we are; a self formed through community, not apart from it."
     },
     {
       "id": "word-05",
       "word": "Hygge",
       "origin": "Danish",
+      "lang": "da-DK",
       "meaning": "A deliberate, unhurried coziness, usually shared with people you trust."
     },
     {
       "id": "word-06",
       "word": "Sisu",
       "origin": "Finnish",
+      "lang": "fi-FI",
       "meaning": "Quiet, stubborn resolve that keeps going once willpower alone runs out."
     },
     {
       "id": "word-07",
       "word": "Meraki",
       "origin": "Greek",
+      "lang": "el-GR",
       "meaning": "Doing something with so much soul that a piece of you ends up in it."
     },
     {
       "id": "word-08",
       "word": "Saudade",
       "origin": "Portuguese",
+      "lang": "pt-PT",
       "meaning": "A wistful longing for something absent, held without needing it resolved."
     },
     {
       "id": "word-09",
       "word": "Komorebi",
       "origin": "Japanese",
+      "lang": "ja-JP",
       "meaning": "Sunlight filtering through leaves, dappling the ground beneath a tree."
     },
     {
       "id": "word-10",
       "word": "Waldeinsamkeit",
       "origin": "German",
+      "lang": "de-DE",
       "meaning": "The particular solitude of standing alone among trees."
     },
     {
       "id": "word-11",
       "word": "Lagom",
       "origin": "Swedish",
+      "lang": "sv-SE",
       "meaning": "Not too much, not too little; exactly enough."
     },
     {
       "id": "word-12",
       "word": "Ataraxia",
       "origin": "Greek",
+      "lang": "el-GR",
       "meaning": "A settled calm, free of disturbance and anxious craving alike."
     },
     {
       "id": "word-13",
       "word": "Eudaimonia",
       "origin": "Greek",
+      "lang": "el-GR",
       "meaning": "A life that flourishes because it is well lived, not merely a happy one."
     },
     {
       "id": "word-14",
       "word": "Apatheia",
       "origin": "Stoic Greek",
+      "lang": "el-GR",
       "meaning": "Freedom from being ruled by disordered passion, not an absence of feeling."
     },
     {
       "id": "word-15",
       "word": "Mono no aware",
       "origin": "Japanese",
+      "lang": "ja-JP",
       "meaning": "A gentle sadness at the passing of things, aware that beauty is fleeting."
     },
     {
       "id": "word-16",
       "word": "Gemütlichkeit",
       "origin": "German",
+      "lang": "de-DE",
       "meaning": "Warmth and belonging, the feeling of being unhurried among friends."
     },
     {
       "id": "word-17",
       "word": "Kaizen",
       "origin": "Japanese",
+      "lang": "ja-JP",
       "meaning": "Continuous improvement through many small, deliberate changes."
     },
     {
       "id": "word-18",
       "word": "Wu wei",
       "origin": "Chinese",
+      "lang": "zh-CN",
       "meaning": "Effortless action that moves with circumstance instead of forcing it."
     },
     {
       "id": "word-19",
       "word": "Dharma",
       "origin": "Sanskrit",
+      "lang": "hi-IN",
       "meaning": "The right conduct proper to who you are and the moment you are in."
     },
     {
       "id": "word-20",
       "word": "Satori",
       "origin": "Japanese",
+      "lang": "ja-JP",
       "meaning": "A sudden flash of understanding that arrives outside ordinary reasoning."
     },
     {
       "id": "word-21",
       "word": "Filoxenia",
       "origin": "Greek",
+      "lang": "el-GR",
       "meaning": "Warmth extended to a stranger; hospitality treated as a form of love."
     },
     {
       "id": "word-22",
       "word": "Sprezzatura",
       "origin": "Italian",
+      "lang": "it-IT",
       "meaning": "Making something difficult look effortless, without calling attention to the effort."
     },
     {
       "id": "word-23",
       "word": "Duende",
       "origin": "Spanish",
+      "lang": "es-ES",
       "meaning": "A heightened, trembling passion that art can summon in whoever witnesses it."
     },
     {
       "id": "word-24",
       "word": "Tsundoku",
       "origin": "Japanese",
+      "lang": "ja-JP",
       "meaning": "Acquiring books faster than you read them, and letting them wait."
     },
     {
       "id": "word-25",
       "word": "Fernweh",
       "origin": "German",
+      "lang": "de-DE",
       "meaning": "An ache for a distant place you have never actually seen."
     },
     {
       "id": "word-26",
       "word": "Ren",
       "origin": "Confucian Chinese",
+      "lang": "zh-CN",
       "meaning": "Benevolence toward others, treated as the root of genuine character."
     },
     {
       "id": "word-27",
       "word": "Shibumi",
       "origin": "Japanese",
+      "lang": "ja-JP",
       "meaning": "Understated, effortless elegance; beauty that does not ask to be noticed."
     },
     {
       "id": "word-28",
       "word": "Metanoia",
       "origin": "Greek",
+      "lang": "el-GR",
       "meaning": "A change of heart that reorders what you value, not just what you think."
     },
     {
       "id": "word-29",
       "word": "Sophrosyne",
       "origin": "Greek",
+      "lang": "el-GR",
       "meaning": "A disciplined self-awareness that keeps every impulse in proportion."
     },
     {
       "id": "word-30",
       "word": "Firgun",
       "origin": "Hebrew",
+      "lang": "he-IL",
       "meaning": "Unselfish delight in someone else's good fortune, with no envy attached."
     }
   ]
