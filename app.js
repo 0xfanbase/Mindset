@@ -209,13 +209,11 @@ async function boot() {
       fetchJSON("./data/cards.json"),
       fetchJSON("./data/values.json"),
     ]);
+    renderValues(valuesData);
+    renderToday(cardsData, dailyData);
   } catch (e) {
     paintCards([renderErrorCard()]);
-    return;
   }
-
-  renderValues(valuesData);
-  renderToday(cardsData, dailyData);
 }
 
 boot();
