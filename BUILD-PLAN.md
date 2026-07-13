@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.3)
+# MINDSET — Autonomous Build Plan (v1.4)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the four escalation triggers in §11 (plus the
@@ -50,6 +50,23 @@ anchor category (9 cards)** for named public figures the owner's household finds
 inspiring (Jay Shetty, Joe Biden, Michelle Obama) — new §5.2 row, new §5.3.9 rule (extra bar for
 this category: nonpartisan scope for anyone who has held political office, stricter
 closeness-to-source check, mandatory independent QA pass), anchors total 120 → 129.
+
+**v1.4 changelog (from v1.3, post-launch human feedback):** (1) the v1.3 "still not moving"
+diagnosis is **confirmed** — the owner had the OS-level Reduce Motion accessibility setting on;
+turning it off resolved it, with no code change needed (see `decisions.md`); (2) **the figure now
+sits at the true top of the page**, ahead of the header — `.figure-wrap` moved out of `<main>` to
+be `<body>`'s first child (before `<header>`), and the safe-area-inset-top padding moved from the
+header to the figure-wrap accordingly (§4.4/§4.5); (3) **the sun-salutation animation is
+substantially slower and closer to a real practice pace**: replaced the old constant-speed,
+evenly-divided 12s loop with a hold-then-ease model — each pose is actually held for a beat (like
+a breath) before a distinct transition to the next, 26.2s per full cycle, longer holds at the
+poses held longest in practice (down-dog, the standing poses); (4) **added the missing eighth
+pose** (Ashtanga Namaskara, the low bridge between plank and up-dog) for closer fidelity to a real
+Surya Namaskar A sequence, now 12 named poses instead of 11; (5) the figure now renders a filled
+torso band (shoulder-to-hip) instead of a single wire-thin spine line, reading more like an actual
+body and less like a stick-figure skeleton, within the same canvas/no-image/no-dependency
+constraints; `figure.js` stays at ~10KB, under the 12KB budget; (6) `sw.js` cache version bumped
+`mindset-v2` → `mindset-v3` (Appendix C.2 amended to match) since core assets changed again.
 
 ---
 
@@ -239,9 +256,10 @@ The design supersedes v1.0's tall hero-canvas mockup with a compact, single-scre
 
 ```
 ┌────────────────────────────────────┐
-│ mindset (italic wordmark)  ◐ toggle│  header, ~44px, tightened in v1.2
+│        [ small figure, ~96×112 ]   │  the page's literal top element (v1.4) —
+├────────────────────────────────────┤  safe-area-inset-top padding lives here now
+│ mindset (italic wordmark)  ◐ toggle│  header, ~44px, sits below the figure
 ├────────────────────────────────────┤
-│        [ small figure, ~96×112 ]   │  centred, inline — not a tall hero
 │      MONDAY · 13 JULY 2026         │  mono, letterspaced, uppercase
 │   (staleness chip if applicable)   │
 ├────────────────────────────────────┤
@@ -262,6 +280,11 @@ On mobile the whole thing must fit one viewport height (`100svh`, `vh` fallback)
 scrolling in the common case; if a very small viewport or large system font forces overflow,
 allow the page itself to scroll rather than clipping content — never clip.
 
+**v1.4:** the figure moved out of `<main>` to be `<body>`'s first child, ahead of `<header>` —
+live feedback asked for it to sit at the true top of the page. It carries the safe-area-inset-top
+padding now instead of the header (the header's own top padding dropped to a small fixed value
+since it's no longer adjacent to the notch/status bar).
+
 ### 4.5 Components
 
 1. **Theme toggle:** pill button top-right, `aria-pressed`, icons ◐/❀ (calm/blossom), 44×44px, `persists mindset.theme`, default `calm`, no flash-of-wrong-theme (inline script reads localStorage before CSS paint).
@@ -281,24 +304,31 @@ v1.2 replaces the water drop with a small human figure moving through a yoga sun
 (the drop's slow bead-forming phase read, to a live human reviewer, as "not moving" even when
 it technically was), and still one continuous, calm, legible loop:
 
-1. **Form:** a side-profile stick figure (head circle + spine/neck/arm/leg line segments,
-   round line caps, soft glow sprite behind it) interpolated smoothly between named pose
-   keyframes in a full loop (~12s): standing prayer (Pranamasana) → arms raised overhead
-   (Urdhva Hastasana, slight back bend) → forward fold (Uttanasana) → lunge, one leg back
-   (Ashwa Sanchalanasana) → plank (Kumbhakasana) → upward dog (Urdhva Mukha Svanasana) →
-   downward dog (Adho Mukha Svanasana) → lunge (return) → forward fold → raised arms →
-   standing (loop restarts). Poses are defined as named keypoint sets in a normalized 0–100
-   box; each transition eases with a smoothstep, so the motion between recognizable poses is
-   itself the visible "aliveness" — no reliance on a single subtle physical effect the way the
-   drop's slow bead-growth was.
-2. **Rendering:** plain 2D canvas strokes (round caps/joins) for the limbs, a filled circle for
-   the head, and the same offscreen-sprite ambient glow technique as v1.1's drop (no per-frame
-   `shadowBlur`) stamped behind the figure each frame. No DOM particles, no bezier body-fill
-   shading — simpler than the drop's rendering, on purpose, since the pose transitions carry
-   the motion.
+1. **Form:** a side-profile figure (head circle + a filled shoulder-to-hip torso band +
+   neck/arm/leg line segments, round line caps, soft glow sprite behind it) interpolated
+   smoothly between named pose keyframes in a full loop (**26.2s, v1.4** — see "Pace" below):
+   standing prayer (Pranamasana) → arms raised overhead (Urdhva Hastasana, slight back bend) →
+   forward fold (Uttanasana) → lunge, one leg back (Ashwa Sanchalanasana) → plank
+   (Kumbhakasana) → **eight-limbed pose (Ashtanga Namaskara, added v1.4)** → upward dog
+   (Urdhva Mukha Svanasana) → downward dog (Adho Mukha Svanasana) → lunge (return) → forward
+   fold → raised arms → standing (loop restarts) — 12 named poses. Poses are defined as named
+   keypoint sets in a normalized 0–100 box; each transition eases with a smoothstep, so the
+   motion between recognizable poses is itself the visible "aliveness" — no reliance on a
+   single subtle physical effect the way the drop's slow bead-growth was.
+2. **Rendering:** plain 2D canvas — a filled torso band between shoulder and hip (v1.4, so the
+   figure reads as a body rather than a wire skeleton), stroked limb segments (round caps/joins),
+   a filled circle for the head, and the same offscreen-sprite ambient glow technique as v1.1's
+   drop (no per-frame `shadowBlur`) stamped behind the figure each frame. No DOM particles, no
+   bezier body-fill shading beyond the torso band — still simple on purpose, since the pose
+   transitions carry the motion.
 3. **Life:** legible, continuous motion through named poses — not a single physics effect. Slow
    enough to read as calm, fast enough that a glance clearly shows it moving (this directly
    addresses the v1.1 "wasn't moving" report).
+3a. **Pace (v1.4):** live feedback asked for slower, more realistic movement — a real sun
+   salutation holds each pose for a breath rather than drifting at constant speed. Replaced the
+   even 12s loop with a per-pose hold (600ms–1.9s, longest at down-dog and the standing poses,
+   shortest at the brief eight-limbed bridge) followed by its own eased transition (0.9–1.3s) into
+   the next pose — 26.2s per full cycle.
 4. **Performance:** `requestAnimationFrame`; the same offscreen radial-gradient sprite glow
    technique as before (never per-frame `shadowBlur`); `devicePixelRatio` capped at 2; cancel
    RAF on `visibilitychange` hidden (resume on visible, unless reduced motion); `ResizeObserver`-
@@ -312,7 +342,7 @@ it technically was), and still one continuous, calm, legible loop:
 6. **Themes:** the element takes `color`/`glow` as attributes; `app.js` sets these to the
    current theme's `--pulse` value on init and again on every theme-toggle event, so the figure
    is blue in `calm` and rose in `blossom`.
-7. **Budget:** `figure.js` ≤ 12 KB (the reference implementation is ~8 KB).
+7. **Budget:** `figure.js` ≤ 12 KB (the reference implementation is ~10 KB as of v1.4).
 8. **Not part of the shipped file:** the original Claude Design prototype's `ios-frame.jsx` and
    `support.js` were prototyping scaffolding only for the water-drop era and were never shipped;
    `figure.js` is an original implementation for v1.2, not ported from any external prototype.
@@ -826,7 +856,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v2";
+const CACHE = "mindset-v3";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
