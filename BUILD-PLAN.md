@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.4)
+# MINDSET — Autonomous Build Plan (v1.5)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the four escalation triggers in §11 (plus the
@@ -67,6 +67,25 @@ torso band (shoulder-to-hip) instead of a single wire-thin spine line, reading m
 body and less like a stick-figure skeleton, within the same canvas/no-image/no-dependency
 constraints; `figure.js` stays at ~10KB, under the 12KB budget; (6) `sw.js` cache version bumped
 `mindset-v2` → `mindset-v3` (Appendix C.2 amended to match) since core assets changed again.
+
+**v1.5 changelog (from v1.4, Fable-led end-to-end audit):** requested audit of UI/UX, code, and
+whether the daily-refresh pipeline works in practice, plus a full current-and-historical PII
+sweep. Full findings in `audits/v1.5-fable-audit.md`. Headline result: **`daily.yml`'s bot
+commits were never triggering `pages-deploy.yml`**, because GitHub does not fire other
+workflows' `on: push` for commits made with the default `GITHUB_TOKEN` — proven empirically by
+dispatching the real workflow twice and observing zero downstream `pages-deploy.yml` runs. Left
+unfixed, the live site would have stayed frozen on whatever a human's last push deployed, every
+day, forever, with the existing `watchdog.yml` unable to notice (it only compared the calendar
+date, which doesn't change within a day). Fixed: `daily.yml` now explicitly dispatches
+`pages-deploy.yml` via `gh workflow run` after a successful commit; `watchdog.yml` now also
+compares `generatedAtISO`, not just the date. Also fixed: two real UI/UX gaps (no
+`:focus-visible` anywhere; `.card`'s shadow color hardcoded to one theme) and one real code gap
+(`app.js`'s render calls sat outside `boot()`'s `try`/`catch`, so malformed data — not just a
+fetch failure, which was already handled correctly — could crash the render silently instead of
+showing the graceful error card). Three claimed issues from the initial (cheaper-model) review
+did not survive independent fact-checking and were discarded — recomputing WCAG contrast by
+hand in Node showed all three flagged pairs actually pass 4.5:1; `verify.mjs`'s own numeric
+check was right all along. PII/history scan: clean, no findings.
 
 ---
 

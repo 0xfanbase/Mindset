@@ -7,6 +7,7 @@ on:
   workflow_dispatch: {}
 permissions:
   contents: write
+  actions: write
 concurrency:
   group: daily
   cancel-in-progress: true
@@ -21,9 +22,24 @@ jobs:
           node-version: "20"
       - run: node scripts/generate-daily.mjs
       - name: commit if changed
+        id: commit
         run: |
           git config user.name "mindset-bot"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add data/daily.json state/fresh-history.json
-          git diff --cached --quiet || git commit -m "[bot] daily cards $(TZ=Asia/Hong_Kong date +%F)"
-          git push
+          if git diff --cached --quiet; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            git commit -m "[bot] daily cards $(TZ=Asia/Hong_Kong date +%F)"
+            git push
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+      - name: trigger Pages redeploy
+        # A push authored with the default GITHUB_TOKEN does not itself fire other
+        # workflows' `on: push` triggers (GitHub's own loop-prevention) -- without this,
+        # pages-deploy.yml would silently never redeploy the bot's daily commit, and the
+        # live site would never actually pick up the new daily.json. Dispatch it directly.
+        if: steps.commit.outputs.changed == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh workflow run pages-deploy.yml --ref main
