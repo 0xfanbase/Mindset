@@ -218,6 +218,15 @@ mindset-figure {
 }
 a.card-link:active { transform: scale(0.99); }
 
+/* Fresh is a side door, not a third obligation -- quietest of the three cards,
+   flat instead of elevated, framed as an invitation rather than a command. */
+.card-fresh {
+  background: var(--bg);
+  box-shadow: none;
+  border: 1px solid var(--hairline);
+}
+.card-fresh .card-chip { color: var(--muted); }
+
 .card-chip {
   font-family: "IBM Plex Mono", monospace;
   font-size: 9px;
@@ -279,7 +288,7 @@ a.card-link {
   font-family: "Fraunces", Georgia, serif;
   font-style: italic;
   font-size: 13px;
-  color: var(--accent);
+  color: var(--muted);
 }
 .fresh-reserve-label {
   font-family: "IBM Plex Mono", monospace;
