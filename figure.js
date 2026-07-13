@@ -1,7 +1,8 @@
 // figure.js — a small human figure moving through a yoga sun salutation, on repeat
 // (the signature element, replacing the water drop — BUILD-PLAN.md §4.6)
 // <mindset-figure color="#7FB0FF" glow="#7FB0FF" animate="1">
-// Side-profile stick figure, smoothly interpolated between named poses, looping.
+// Side-profile figure, smoothly interpolated between named poses with a real hold at
+// each one (not constant drifting) — closer to the pace of an actual sun salutation.
 // Pauses when hidden; static frame under reduced motion.
 (function () {
   if (customElements.get("mindset-figure")) return;
@@ -20,15 +21,27 @@
   const FOLD = { head: [62, 62], sh: [55, 48], hip: [50, 55], el: [63, 74], ha: [65, 88], kf: [50, 72], ff: [50, 88], kb: [50, 72], fb: [50, 88] };
   const LUNGE = { head: [59, 38], sh: [53, 44], hip: [48, 60], el: [58, 58], ha: [62, 88], kf: [35, 70], ff: [26, 88], kb: [65, 78], fb: [85, 90] };
   const PLANK = { head: [18, 52], sh: [26, 55], hip: [55, 58], el: [26, 70], ha: [28, 88], kf: [80, 60], ff: [95, 64], kb: [80, 60], fb: [95, 64] };
+  // Ashtanga Namaskara — chest and chin lower toward the floor while the hips stay raised,
+  // elbows bent and tucked close to the ribs (the bridge between plank and up-dog).
+  const EIGHTLIMB = { head: [18, 72], sh: [26, 74], hip: [52, 52], el: [22, 80], ha: [28, 88], kf: [80, 60], ff: [95, 64], kb: [80, 60], fb: [95, 64] };
   const UPDOG = { head: [25, 35], sh: [35, 45], hip: [55, 72], el: [35, 63], ha: [38, 88], kf: [78, 70], ff: [95, 78], kb: [78, 70], fb: [95, 78] };
   const DOWNDOG = { head: [28, 60], sh: [35, 55], hip: [55, 30], el: [38, 72], ha: [40, 88], kf: [75, 55], ff: [92, 88], kb: [75, 55], fb: [92, 88] };
 
-  // One full sun-salutation cycle: standing -> raised -> fold -> lunge -> plank -> up-dog
-  // -> down-dog -> lunge -> fold -> raised -> standing (loop).
-  const POSES = [STANDING, RAISED, FOLD, LUNGE, PLANK, UPDOG, DOWNDOG, LUNGE, FOLD, RAISED, STANDING];
-  const DUR = 12000; // one full cycle, ms
-  const SEG = DUR / (POSES.length - 1);
+  // One full sun-salutation cycle: standing -> raised -> fold -> lunge -> plank ->
+  // eight-limbed -> up-dog -> down-dog -> lunge -> fold -> raised -> standing (loop).
+  const POSES = [STANDING, RAISED, FOLD, LUNGE, PLANK, EIGHTLIMB, UPDOG, DOWNDOG, LUNGE, FOLD, RAISED, STANDING];
   const JOINTS = ["head", "sh", "hip", "el", "ha", "kf", "ff", "kb", "fb"];
+
+  // Each pose is held (a real pause, like a breath) before easing into the next one —
+  // continuous constant-speed drifting between poses does not read as an actual person
+  // moving through a sequence. Longer holds at the poses usually held longest in practice
+  // (down-dog, the standing poses); the eight-limbed bridge pose is brief by nature.
+  const HOLD = [1600, 1000, 1300, 1500, 1000, 600, 1400, 1900, 1500, 1300, 1000];
+  const MOVE = [900, 1300, 1200, 1000, 900, 1000, 1200, 1200, 1200, 1300, 900];
+  const SEG_START = [];
+  let _acc = 0;
+  for (let i = 0; i < HOLD.length; i++) { SEG_START.push(_acc); _acc += HOLD[i] + MOVE[i]; }
+  const CYCLE = _acc;
 
   function lerpPose(a, b, t) {
     const q = smooth(t);
@@ -135,8 +148,10 @@
       ctx.globalAlpha = 1;
       ctx.drawImage(this._spriteC, hip[0] - gs / 2, hip[1] - gs / 2, gs, gs);
 
-      ctx.strokeStyle = "rgba(" + r + "," + g + "," + b + ",0.9)";
-      ctx.lineWidth = Math.max(2, 4.5 * s);
+      const fill = "rgba(" + r + "," + g + "," + b + ",0.9)";
+      ctx.strokeStyle = fill;
+      ctx.fillStyle = fill;
+      ctx.lineWidth = Math.max(2, 4 * s);
       ctx.lineCap = "round";
       ctx.lineJoin = "round";
 
@@ -144,22 +159,42 @@
         const p1 = this._pt(pose, a), p2 = this._pt(pose, b2);
         ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
       };
-      seg("sh", "hip");   // spine
-      seg("head", "sh");  // neck
-      seg("sh", "el"); seg("el", "ha");       // arm
-      seg("hip", "kf"); seg("kf", "ff");      // front leg
-      seg("hip", "kb"); seg("kb", "fb");      // back leg
+
+      // torso as a filled band (shoulder-to-hip), not a thin wire, so it reads as a body
+      const sh = this._pt(pose, "sh");
+      const dx = hip[0] - sh[0], dy = hip[1] - sh[1];
+      const len = Math.hypot(dx, dy) || 1;
+      const nx = (-dy / len) * 5.5 * s, ny = (dx / len) * 5.5 * s;
+      ctx.beginPath();
+      ctx.moveTo(sh[0] + nx, sh[1] + ny);
+      ctx.lineTo(hip[0] + nx, hip[1] + ny);
+      ctx.lineTo(hip[0] - nx, hip[1] - ny);
+      ctx.lineTo(sh[0] - nx, sh[1] - ny);
+      ctx.closePath();
+      ctx.fill();
+
+      seg("head", "sh");              // neck
+      seg("sh", "el"); seg("el", "ha"); // arm
+      seg("hip", "kf"); seg("kf", "ff"); // front leg
+      seg("hip", "kb"); seg("kb", "fb"); // back leg
 
       const headPt = this._pt(pose, "head");
-      ctx.fillStyle = "rgba(" + r + "," + g + "," + b + ",0.95)";
       ctx.beginPath(); ctx.arc(headPt[0], headPt[1], Math.max(3, 6.5 * s), 0, 6.2832); ctx.fill();
     }
     _step(now) {
       if (!this._running) return;
-      const t = (now - this._t0) % DUR;
-      const i = Math.min(POSES.length - 2, Math.floor(t / SEG));
-      const local = (t - i * SEG) / SEG;
-      this._draw(lerpPose(POSES[i], POSES[i + 1], local));
+      const t = (now - this._t0) % CYCLE;
+      let i = SEG_START.length - 1;
+      for (let k = 0; k < SEG_START.length; k++) {
+        if (t < SEG_START[k] + HOLD[k] + MOVE[k]) { i = k; break; }
+      }
+      const segT = t - SEG_START[i];
+      if (segT < HOLD[i]) {
+        this._draw(POSES[i]);
+      } else {
+        const localT = (segT - HOLD[i]) / MOVE[i];
+        this._draw(lerpPose(POSES[i], POSES[i + 1], localT));
+      }
       this._raf = requestAnimationFrame(this._step.bind(this));
     }
     _start() {
