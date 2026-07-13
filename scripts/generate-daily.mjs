@@ -95,7 +95,11 @@ async function main() {
   if (fs.existsSync(historyPath)) {
     try { history = JSON.parse(fs.readFileSync(historyPath, "utf8")); } catch (e) { history = []; }
   }
-  const recentSources = new Set(history.slice(-3).map((h) => h.source).filter(Boolean));
+  // Exclude today's own (possibly already-upserted, from an earlier same-day run) entry when
+  // computing "recently used" sources — otherwise a same-day re-run sees today's own prior pick
+  // as recent-to-avoid and flips the Fresh pick every time it re-runs, which is not idempotent.
+  const priorHistory = history.filter((h) => h.dateHKT !== dateHKT);
+  const recentSources = new Set(priorHistory.slice(-3).map((h) => h.source).filter(Boolean));
 
   const candidates = [];
   for (const { source, url } of SOURCES) {
