@@ -82,10 +82,17 @@ header {
   align-items: center;
   column-gap: 8px;
   min-height: 44px;
-  padding-top: 10px;
-  padding-bottom: 4px;
+  padding-top: calc(env(safe-area-inset-top, 0px) + 10px);
+  padding-bottom: 6px;
   padding-left: max(20px, env(safe-area-inset-left));
   padding-right: max(20px, env(safe-area-inset-right));
+}
+
+.brand {
+  justify-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
 }
 
 .wordmark {
@@ -93,7 +100,6 @@ header {
   font-style: italic;
   font-size: 18px;
   color: var(--ink);
-  justify-self: start;
 }
 
 .theme-toggle {
@@ -122,27 +128,24 @@ main {
 }
 
 .figure-wrap {
-  padding-top: calc(env(safe-area-inset-top, 0px) + 8px);
-  padding-left: max(10px, env(safe-area-inset-left));
-  padding-right: max(10px, env(safe-area-inset-right));
+  justify-self: center;
   display: flex;
   justify-content: center;
 }
 mindset-figure {
   display: block;
-  width: 96px;
-  height: 112px;
+  width: 84px;
+  height: 96px;
 }
 
 .date-line {
-  text-align: center;
+  text-align: left;
   font-family: "IBM Plex Mono", monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.2em;
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
   color: var(--muted);
   text-transform: uppercase;
   white-space: nowrap;
-  justify-self: center;
 }
 
 .chip {
@@ -193,7 +196,7 @@ mindset-figure {
   padding: 14px 20px 8px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 24px;
 }
 .panel[hidden] { display: none; }
 
