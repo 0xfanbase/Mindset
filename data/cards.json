@@ -977,56 +977,186 @@
       "to": "Protecting one deep work block"
     }
   ],
-  "freshReserve": [
+  "wordOfDay": [
     {
-      "id": "reserve-01",
-      "text": "Reread one page of an old notebook. Past you left supplies for exactly this stretch.",
-      "attribution": "— evergreen"
+      "id": "word-01",
+      "word": "Wabi-sabi",
+      "origin": "Japanese",
+      "meaning": "Finding beauty in what is imperfect, weathered, and incomplete."
     },
     {
-      "id": "reserve-02",
-      "text": "Take the ten minute walk before any decision that feels urgent. Urgency shrinks outdoors.",
-      "attribution": "— evergreen"
+      "id": "word-02",
+      "word": "Ikigai",
+      "origin": "Japanese",
+      "meaning": "The reason you get up in the morning, where purpose meets daily life."
     },
     {
-      "id": "reserve-03",
-      "text": "Choose the first task of tomorrow tonight. Mornings are for doing, not deciding.",
-      "attribution": "— evergreen"
+      "id": "word-03",
+      "word": "Amor fati",
+      "origin": "Latin",
+      "meaning": "Loving your fate entirely, including the parts you did not choose."
     },
     {
-      "id": "reserve-04",
-      "text": "Close every loop that takes under two minutes. Carry fewer open things into the afternoon.",
-      "attribution": "— evergreen"
+      "id": "word-04",
+      "word": "Ubuntu",
+      "origin": "Nguni",
+      "meaning": "I am because we are; a self formed through community, not apart from it."
     },
     {
-      "id": "reserve-05",
-      "text": "Name the exact emotion you feel before acting on it. Precision drains its power; vague feelings run the show.",
-      "attribution": "— evergreen"
+      "id": "word-05",
+      "word": "Hygge",
+      "origin": "Danish",
+      "meaning": "A deliberate, unhurried coziness, usually shared with people you trust."
     },
     {
-      "id": "reserve-06",
-      "text": "Sort the problem into what you control and what you don't. Spend your energy only on the first pile.",
-      "attribution": "— evergreen"
+      "id": "word-06",
+      "word": "Sisu",
+      "origin": "Finnish",
+      "meaning": "Quiet, stubborn resolve that keeps going once willpower alone runs out."
     },
     {
-      "id": "reserve-07",
-      "text": "Cross out every step in the task that is not strictly necessary. Most jobs survive losing half their steps.",
-      "attribution": "— evergreen"
+      "id": "word-07",
+      "word": "Meraki",
+      "origin": "Greek",
+      "meaning": "Doing something with so much soul that a piece of you ends up in it."
     },
     {
-      "id": "reserve-08",
-      "text": "Write down one thing that went right, before you sleep. Even the hardest day leaves at least one.",
-      "attribution": "— evergreen"
+      "id": "word-08",
+      "word": "Saudade",
+      "origin": "Portuguese",
+      "meaning": "A wistful longing for something absent, held without needing it resolved."
     },
     {
-      "id": "reserve-09",
-      "text": "When you are stuck, switch to a small, unrelated task for ten minutes. Insight often arrives sideways, not head-on.",
-      "attribution": "— evergreen"
+      "id": "word-09",
+      "word": "Komorebi",
+      "origin": "Japanese",
+      "meaning": "Sunlight filtering through leaves, dappling the ground beneath a tree."
     },
     {
-      "id": "reserve-10",
-      "text": "Picture advising a friend who has your exact problem. Their answer usually comes easier than your own.",
-      "attribution": "— evergreen"
+      "id": "word-10",
+      "word": "Waldeinsamkeit",
+      "origin": "German",
+      "meaning": "The particular solitude of standing alone among trees."
+    },
+    {
+      "id": "word-11",
+      "word": "Lagom",
+      "origin": "Swedish",
+      "meaning": "Not too much, not too little; exactly enough."
+    },
+    {
+      "id": "word-12",
+      "word": "Ataraxia",
+      "origin": "Greek",
+      "meaning": "A settled calm, free of disturbance and anxious craving alike."
+    },
+    {
+      "id": "word-13",
+      "word": "Eudaimonia",
+      "origin": "Greek",
+      "meaning": "A life that flourishes because it is well lived, not merely a happy one."
+    },
+    {
+      "id": "word-14",
+      "word": "Apatheia",
+      "origin": "Stoic Greek",
+      "meaning": "Freedom from being ruled by disordered passion, not an absence of feeling."
+    },
+    {
+      "id": "word-15",
+      "word": "Mono no aware",
+      "origin": "Japanese",
+      "meaning": "A gentle sadness at the passing of things, aware that beauty is fleeting."
+    },
+    {
+      "id": "word-16",
+      "word": "Gemütlichkeit",
+      "origin": "German",
+      "meaning": "Warmth and belonging, the feeling of being unhurried among friends."
+    },
+    {
+      "id": "word-17",
+      "word": "Kaizen",
+      "origin": "Japanese",
+      "meaning": "Continuous improvement through many small, deliberate changes."
+    },
+    {
+      "id": "word-18",
+      "word": "Wu wei",
+      "origin": "Chinese",
+      "meaning": "Effortless action that moves with circumstance instead of forcing it."
+    },
+    {
+      "id": "word-19",
+      "word": "Dharma",
+      "origin": "Sanskrit",
+      "meaning": "The right conduct proper to who you are and the moment you are in."
+    },
+    {
+      "id": "word-20",
+      "word": "Satori",
+      "origin": "Japanese",
+      "meaning": "A sudden flash of understanding that arrives outside ordinary reasoning."
+    },
+    {
+      "id": "word-21",
+      "word": "Filoxenia",
+      "origin": "Greek",
+      "meaning": "Warmth extended to a stranger; hospitality treated as a form of love."
+    },
+    {
+      "id": "word-22",
+      "word": "Sprezzatura",
+      "origin": "Italian",
+      "meaning": "Making something difficult look effortless, without calling attention to the effort."
+    },
+    {
+      "id": "word-23",
+      "word": "Duende",
+      "origin": "Spanish",
+      "meaning": "A heightened, trembling passion that art can summon in whoever witnesses it."
+    },
+    {
+      "id": "word-24",
+      "word": "Tsundoku",
+      "origin": "Japanese",
+      "meaning": "Acquiring books faster than you read them, and letting them wait."
+    },
+    {
+      "id": "word-25",
+      "word": "Fernweh",
+      "origin": "German",
+      "meaning": "An ache for a distant place you have never actually seen."
+    },
+    {
+      "id": "word-26",
+      "word": "Ren",
+      "origin": "Confucian Chinese",
+      "meaning": "Benevolence toward others, treated as the root of genuine character."
+    },
+    {
+      "id": "word-27",
+      "word": "Shibumi",
+      "origin": "Japanese",
+      "meaning": "Understated, effortless elegance; beauty that does not ask to be noticed."
+    },
+    {
+      "id": "word-28",
+      "word": "Metanoia",
+      "origin": "Greek",
+      "meaning": "A change of heart that reorders what you value, not just what you think."
+    },
+    {
+      "id": "word-29",
+      "word": "Sophrosyne",
+      "origin": "Greek",
+      "meaning": "A disciplined self-awareness that keeps every impulse in proportion."
+    },
+    {
+      "id": "word-30",
+      "word": "Firgun",
+      "origin": "Hebrew",
+      "meaning": "Unselfish delight in someone else's good fortune, with no envy attached."
     }
   ]
 }
