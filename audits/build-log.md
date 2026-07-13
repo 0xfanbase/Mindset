@@ -10,3 +10,5 @@
 [11:36 HKT] stage3: assembled cards.json (fixed an id-prefix-vs-position mapping bug in the assembly script), wrote CONTENT-REVIEW.md, verify.mjs stage3 12/12 — pass
 [03:42 UTC] stage4: generate-daily.mjs run locally (NODE_USE_ENV_PROXY=1), 5/5 sources returned candidates (Daily Stoic's newest item was outside the 14-day window, correctly skipped), fresh=Ali Abdaal
 [03:45 UTC] stage4: found + fixed same-day idempotency bug (recent-source window included today's own entry), verified stable across 3 re-runs
+[03:44 UTC] stage4: dispatched daily-cards via GitHub MCP tools, success, real bot commit, rebased local onto it
+[03:45 UTC] stage4: dispatched watchdog against fresh file, correctly detected Pages is not live (real, not simulated), filed issue #1
