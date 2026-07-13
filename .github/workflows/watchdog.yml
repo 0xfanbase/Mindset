@@ -19,14 +19,22 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           today=$(TZ=Asia/Hong_Kong date +%F)
-          live=$(curl -s -m 15 "https://${{ github.repository_owner }}.github.io/Mindset/data/daily.json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).dateHKT" 2>/dev/null || echo "unreadable")
+          live_json=$(curl -s -m 15 "https://${{ github.repository_owner }}.github.io/Mindset/data/daily.json")
+          live=$(echo "$live_json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).dateHKT" 2>/dev/null || echo "unreadable")
+          live_gen=$(echo "$live_json" | node -p "JSON.parse(require('fs').readFileSync(0,'utf8')).generatedAtISO" 2>/dev/null || echo "unreadable")
           filedate=$(node -p "JSON.parse(require('fs').readFileSync('data/daily.json','utf8')).dateHKT")
-          if [ "$today" != "$filedate" ] || [ "$today" != "$live" ]; then
+          filegen=$(node -p "JSON.parse(require('fs').readFileSync('data/daily.json','utf8')).generatedAtISO")
+          # dateHKT alone misses a same-day mismatch (e.g. Pages stuck on an earlier
+          # same-day generation because its deploy never fired) -- generatedAtISO also
+          # has to match the committed file's, not just the calendar date. By the time
+          # this runs (09:00 HKT, ~3h after the expected refresh) any normal CDN cache
+          # lag has long since expired, so this isn't a flaky check.
+          if [ "$today" != "$filedate" ] || [ "$today" != "$live" ] || [ "$live_gen" != "$filegen" ]; then
             already_open=$(gh issue list --search "Mindset daily build stale in:title" --state open --json number --jq 'length')
             if [ "$already_open" = "0" ]; then
               gh issue create \
                 --title "⚠️ Mindset daily build stale ($today)" \
-                --body "Checkout dateHKT=$filedate, live Pages dateHKT=$live, expected $today. Check the daily-cards workflow run logs and confirm Pages actually redeployed the latest commit." \
+                --body "Checkout dateHKT=$filedate (generatedAtISO=$filegen), live Pages dateHKT=$live (generatedAtISO=$live_gen), expected $today. Check the daily-cards workflow run logs and confirm Pages actually redeployed the latest commit." \
                 || true
             fi
             exit 1

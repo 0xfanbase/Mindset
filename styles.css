@@ -10,6 +10,7 @@
   --pulse: #7FB0FF;
   --edge: rgba(43, 95, 217, 0.16);
   --hairline: rgba(28, 27, 23, 0.10);
+  --shadow: rgba(28, 27, 23, 0.07);
 }
 [data-theme="blossom"] {
   --bg: #FBF4F6;
@@ -20,6 +21,7 @@
   --pulse: #F2A9C6;
   --edge: rgba(201, 79, 124, 0.16);
   --hairline: rgba(36, 26, 32, 0.10);
+  --shadow: rgba(36, 26, 32, 0.07);
 }
 
 @font-face {
@@ -67,13 +69,19 @@ body {
 }
 
 button, a { -webkit-tap-highlight-color: transparent; }
+.theme-toggle:focus-visible,
+.tab:focus-visible,
+a.card-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
 
 header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   min-height: 44px;
-  padding-top: 6px;
+  padding-top: 10px;
   padding-bottom: 4px;
   padding-left: max(20px, env(safe-area-inset-left));
   padding-right: max(20px, env(safe-area-inset-right));
@@ -193,7 +201,7 @@ mindset-figure {
 .card {
   background: var(--surface);
   border-radius: 22px;
-  box-shadow: 0 14px 36px rgba(36, 26, 32, 0.07);
+  box-shadow: 0 14px 36px var(--shadow);
   padding: 20px 22px;
   animation: cardIn 0.25s ease-out both;
   transition: transform 0.15s ease;
