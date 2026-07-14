@@ -930,6 +930,115 @@ apply the same way here.
 - **word-29** — Sophrosyne (Greek): A disciplined self-awareness that keeps every impulse in proportion.
 - **word-30** — Firgun (Hebrew): Unselfish delight in someone else's good fortune, with no envy attached.
 
+## Kenya facts (added v1.15, fourth Today card between Journal and Word of the Day)
+
+Added at live request ahead of a trip to Kenya (Masai Mara) — one new fact about Kenya per day,
+spanning animals, geography, politics, history, and more, with correctness as the explicit bar.
+Unlike the anchors' attribution-confidence review, the load-bearing QA question here is factual
+accuracy, not whose idea it is: all 60 entries were drafted first, then an independent research
+pass (live web search against primary/reliable sources, not memory) fact-checked ~30 of the more
+specific numeric/date/superlative claims (elevations, discovery years, UNESCO status, "largest/
+only/first" claims) before anything was finalized. 29 of 30 held up exactly as drafted; one
+(the Nairobi/UNEP claim) was tightened from an unnecessarily hedged "one of very few" to the
+factually correct and stronger "the only" UN agency headquarters in the Global South. A minor
+etymological nuance was also corrected pre-emptively: the Maasai Mara entry states the more
+precise origin of "Mara" (Maa for "spotted," describing the plains) rather than the commonly
+repeated but slightly-reversed river-naming version. One candidate fact was dropped entirely
+during drafting rather than included with a caveat: the popular equator "water drains the other
+way" roadside demonstration near Nanyuki is widely repeated in travel writing but is a staged
+trick, not a real demonstration of the Coriolis effect at that scale — it would have shipped a
+fun-sounding but false claim. All 60 entries were also pre-validated against `verify.mjs`'s exact
+mechanical rules (word cap ≤40, quote-glyph scan, banned-platitude scan, near-duplicate
+token-overlap proxy) via a throwaway Node script before being written — zero issues found,
+word counts ranged 17–31.
+
+Content is deliberately biased toward durability over freshness: no named current officeholders,
+no fast-moving statistics or sports records, no unverified folklore — see `decisions.md`'s v1.15
+entry for the full reasoning.
+
+### Geography — 12 entries
+
+- **kenya-01**: Kenya straddles the equator, with the line crossing the country just south of Mount Kenya near the town of Nanyuki.
+- **kenya-02**: Mount Kenya rises to 5,199 meters, Africa's second-highest peak after Kilimanjaro, and the country takes its name from the mountain.
+- **kenya-03**: The Great Rift Valley cuts through Kenya from north to south, part of a vast tectonic fracture stretching from Lebanon to Mozambique.
+- **kenya-04**: Lake Victoria, shared by Kenya, Uganda, and Tanzania, is Africa's largest lake by surface area, though Kenya holds only a small slice of its shoreline.
+- **kenya-05**: Lake Turkana, nicknamed the Jade Sea for its striking color, is the world's largest permanent desert lake.
+- **kenya-06**: The Tana River, Kenya's longest, rises near Mount Kenya and winds roughly a thousand kilometers to the Indian Ocean.
+- **kenya-07**: Nairobi sits nearly 1,800 meters above sea level, giving a capital almost on the equator a famously mild, spring-like climate year-round.
+- **kenya-08**: A chain of shallow, alkaline Rift Valley lakes, including Nakuru and Bogoria, can turn pink each year as huge flocks of flamingos gather to feed.
+- **kenya-09**: Kakamega Forest, in western Kenya, is the country's only surviving tropical rainforest, a remnant of a much larger Central African forest belt.
+- **kenya-10**: Kenya's Indian Ocean coastline runs for roughly 500 kilometers, fringed by coral reefs, mangroves, and centuries-old Swahili trading towns.
+- **kenya-11**: Mount Kenya's glaciers, sitting almost on the equator, are a rare sight this close to the tropics, though they have shrunk sharply in recent decades.
+- **kenya-12**: Kenya holds snow-capped peaks, dense rainforest, coral coastline, and true desert within a single country roughly the size of France.
+
+### Wildlife — 14 entries
+
+- **kenya-13**: The term Big Five, lion, leopard, elephant, buffalo, and rhino, was coined by big-game hunters for the five hardest animals to track on foot, not the largest.
+- **kenya-14**: The Maasai Mara takes its name from the Maasai people and the Maa word mara, meaning spotted, describing its acacia-dotted plains.
+  - ⚑ Etymology corrected pre-emptively during drafting (not a post-hoc QA fix): the commonly repeated framing implies the region was named after the Mara River; research confirmed "mara" (spotted) is the underlying Maa word, and the river itself takes its name from the same word, not the reverse.
+- **kenya-15**: Each year, roughly 1.5 million wildebeest, plus hundreds of thousands of zebra and gazelle, migrate in a loop between the Serengeti and the Maasai Mara chasing seasonal rain.
+- **kenya-16**: Nairobi National Park, established in 1946 as Kenya's first national park, is one of the only places on Earth where lions and rhinos roam within view of a capital city's skyline.
+- **kenya-17**: Amboseli National Park offers some of the clearest views anywhere of Mount Kilimanjaro, even though the mountain itself stands just across the border in Tanzania.
+- **kenya-18**: Ol Pejeta Conservancy is home to the last two northern white rhinos on Earth, Najin and Fatu, both female, guarded around the clock by dedicated rangers.
+- **kenya-19**: Kenya's black rhino population collapsed under heavy poaching in the twentieth century; fenced, heavily ranger-patrolled conservancies like Ol Pejeta have since helped it slowly recover.
+- **kenya-20**: More than a thousand bird species have been recorded in Kenya, drawn by habitats ranging from Rift Valley soda lakes to coastal mangroves and highland forest.
+- **kenya-21**: Tsavo, one of Kenya's oldest and largest national parks, is known for its elephants, which turn reddish from rolling in the local ochre soil.
+- **kenya-22**: Kenya is home to both the Maasai giraffe and the more localized Rothschild's giraffe, distinguishable by the jagged versus smoother edges of their coat patches.
+- **kenya-23**: Kenya Wildlife Service manages dozens of national parks and reserves, together covering a meaningful share of the country's total land area.
+- **kenya-24**: Lake Nakuru National Park was created largely to protect its lesser flamingo population, which can number in the hundreds of thousands when conditions are right.
+- **kenya-25**: Hippos and Nile crocodiles share the Mara River with migrating wildebeest herds, making the river crossings one of the migration's most dramatic moments.
+- **kenya-26**: A sprinting cheetah can outaccelerate most sports cars off the line, though it can only hold its top speed for a few hundred meters.
+
+### History — 10 entries
+
+- **kenya-27**: Fossils unearthed near Lake Turkana, including the near-complete skeleton known as Turkana Boy, have made the region one of the most important sites for studying human origins.
+- **kenya-28**: Fort Jesus, overlooking Mombasa's harbor, was built by the Portuguese in the 1590s and later changed hands between Portuguese, Omani, and British rule.
+- **kenya-29**: Lamu Old Town, a UNESCO World Heritage Site, is the oldest continuously inhabited Swahili settlement in East Africa, still built largely of coral stone.
+- **kenya-30**: The Uganda Railway, built by the British starting in 1896, gave Nairobi its start as a supply depot; the town grew into the country's capital within a few decades.
+- **kenya-31**: Kenya gained independence from Britain on December 12, 1963, and became a republic exactly one year later, with Jomo Kenyatta as its first president.
+- **kenya-32**: The Mau Mau uprising of the 1950s, a rebellion against British colonial rule and land seizures, was a pivotal chapter on the road to Kenyan independence.
+- **kenya-33**: Danish author Karen Blixen farmed coffee in the hills outside Nairobi in the early twentieth century; her memoir of those years inspired the film Out of Africa.
+- **kenya-34**: Swahili culture along the coast grew from centuries of Indian Ocean trade linking East Africa with Arabia, Persia, and India.
+- **kenya-35**: Kenya returned to multi-party democracy in the early 1990s after roughly two decades in which a single party dominated politics.
+- **kenya-36**: Nairobi began in 1899 as little more than a railway supply camp; within a century it had grown into one of Africa's largest cities.
+
+### Government — 8 entries
+
+- **kenya-37**: Kenya's 2010 constitution created 47 counties, each with its own elected governor and assembly, devolving significant power away from the national government.
+- **kenya-38**: Harambee, Swahili for let's all pull together, is Kenya's national motto and describes a long tradition of communities pooling money and labor for shared projects.
+- **kenya-39**: Kenya's flag carries black for its people, red for the struggle for independence, green for the land, and white for peace, with a Maasai shield and spears at its center.
+- **kenya-40**: The shield and crossed spears on Kenya's flag and coat of arms symbolize the defense of freedom won at independence.
+- **kenya-41**: Kenya's coat of arms features a rooster holding an axe, framed by two lions, with Mount Kenya rising in the background.
+- **kenya-42**: Kenya was a founding member of the East African Community, a regional bloc formed with Uganda and Tanzania to deepen economic and political cooperation.
+- **kenya-43**: Nairobi hosts the headquarters of the United Nations Environment Programme, the only United Nations agency headquarters located anywhere in the Global South.
+  - ⚑ Fact-check correction: originally drafted as "one of very few" UN agency headquarters in the Global South; independent research confirmed it is factually the *only* one, so the claim was tightened to the stronger, correct version rather than left hedged.
+- **kenya-44**: Kenya's legal system blends English common law, customary law, and Islamic law, reflecting its colonial history and diverse population.
+
+### Culture — 8 entries
+
+- **kenya-45**: Swahili and English are Kenya's two official languages, with Swahili also serving as a common trade language across much of East Africa.
+- **kenya-46**: Kenya is home to more than forty ethnic communities, including the Kikuyu, Luhya, Kalenjin, Luo, Kamba, and Maasai, each with its own language and traditions.
+- **kenya-47**: The Maasai are traditionally semi-nomadic cattle herders known for red shuka cloth, intricate beadwork, and the adumu, a high vertical jumping dance performed at ceremonies.
+- **kenya-48**: The Swahili phrase hakuna matata, meaning no worries, was an everyday greeting long before it became internationally famous through animated film.
+- **kenya-49**: Ugali, a firm maize porridge, is Kenya's staple food, typically eaten alongside vegetables like sukuma wiki or grilled meat known as nyama choma.
+- **kenya-50**: Matatus, Kenya's privately run minibus taxis, are known for loud music, vivid custom paint jobs, and sometimes elaborate portraits of celebrities or pop icons.
+- **kenya-51**: Nairobi's nickname, the Green City in the Sun, refers to its parks, tree-lined streets, and temperate highland climate.
+- **kenya-52**: Traditional Maasai homes, called manyattas, are built from a framework of branches plastered with a mix of mud, grass, and cow dung.
+
+### Economy — 4 entries
+
+- **kenya-53**: M-Pesa, launched by Safaricom in 2007, became one of the world's first successful large-scale mobile money systems, letting people send cash by phone without a bank account.
+- **kenya-54**: Kenya is the world's leading exporter of black tea, much of it grown on highland estates around Kericho.
+- **kenya-55**: Kenyan coffee, especially the AA grade grown on volcanic highland soil, is prized worldwide for its bright, wine-like acidity.
+- **kenya-56**: Nairobi's thriving tech and startup scene has earned it the nickname Silicon Savannah, attracting investment from across Africa and beyond.
+
+### Sports — 4 entries
+
+- **kenya-57**: Kenya has produced generations of world-class distance runners, a phenomenon researchers link to high-altitude training, a running-centered daily life, and strong local running traditions.
+- **kenya-58**: Many of Kenya's elite distance runners come from the Kalenjin community and the highland town of Iten, often called the Home of Champions.
+- **kenya-59**: Training at altitude in Kenya's Rift Valley highlands is thought to boost runners' oxygen-carrying capacity, an edge some athletes chase by relocating there for months at a time.
+- **kenya-60**: Kenya's first Olympic medal came at the 1964 Tokyo Games, a bronze in the 800 meters; distance running has remained the country's most decorated event ever since.
+
 ## Values
 
 Cut from 10 to 5 in v1.2 per live human feedback (ten read as a checklist, not a short list of
