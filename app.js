@@ -108,6 +108,14 @@ function renderJournalCard(journal) {
   ]);
 }
 
+function renderKenyaCard(kenya) {
+  return el("article", { class: "card" }, [
+    el("div", { class: "card-chip", text: "KENYA" }),
+    el("p", { class: "card-body", text: kenya.fact }),
+    el("div", { class: "card-attr", text: `— ${kenya.category}` }),
+  ]);
+}
+
 function speak(text, lang) {
   window.speechSynthesis.cancel();
   const utter = new SpeechSynthesisUtterance(text);
@@ -178,12 +186,13 @@ function renderToday(cardsData, dailyData) {
   if (mode === "fresh" || mode === "yesterday") {
     const anchor = cardsData.anchors.find((a) => a.id === dailyData.anchorId);
     const journal = cardsData.journal.find((j) => j.id === dailyData.journalId);
+    const kenya = cardsData.kenya.find((k) => k.id === dailyData.kenyaId);
     const word = cardsData.wordOfDay.find((w) => w.id === dailyData.wordId);
-    if (!anchor || !journal || !word) { paintCards([renderErrorCard()]); return; }
-    paintCards([renderAnchorCard(anchor), renderJournalCard(journal), renderWordCard(word)]);
+    if (!anchor || !journal || !kenya || !word) { paintCards([renderErrorCard()]); return; }
+    paintCards([renderAnchorCard(anchor), renderJournalCard(journal), renderKenyaCard(kenya), renderWordCard(word)]);
   } else {
-    const { anchor, journal, word } = pickToday(cardsData, new Date());
-    paintCards([renderAnchorCard(anchor), renderJournalCard(journal), renderWordCard(word)]);
+    const { anchor, journal, kenya, word } = pickToday(cardsData, new Date());
+    paintCards([renderAnchorCard(anchor), renderJournalCard(journal), renderKenyaCard(kenya), renderWordCard(word)]);
   }
 }
 
