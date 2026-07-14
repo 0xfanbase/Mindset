@@ -10,6 +10,8 @@
 // against to detect a stale/un-deployed daily.json (the staleness chip, §4.5.4).
 // v1.12: the second card (Shift, a from->to reframe) was replaced with a mindful Journal
 // prompt, same deterministic pool-rotation approach.
+// v1.15: a fourth card, Kenya (a daily fact about Kenya), was added between Journal and
+// Word of the Day, same deterministic pool-rotation approach as the other three.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -25,6 +27,7 @@ function main() {
   const cards = JSON.parse(fs.readFileSync(path.join(ROOT, "data/cards.json"), "utf8"));
   const anchor = cards.anchors[pickIndex(cards.anchors.length, dayNumber, "anchor")];
   const journal = cards.journal[pickIndex(cards.journal.length, dayNumber, "journal")];
+  const kenya = cards.kenya[pickIndex(cards.kenya.length, dayNumber, "kenya")];
   const word = cards.wordOfDay[pickIndex(cards.wordOfDay.length, dayNumber, "word")];
 
   const daily = {
@@ -33,6 +36,7 @@ function main() {
     generatedAtISO: now.toISOString(),
     anchorId: anchor.id,
     journalId: journal.id,
+    kenyaId: kenya.id,
     wordId: word.id,
   };
   fs.writeFileSync(path.join(ROOT, "data/daily.json"), JSON.stringify(daily, null, 2) + "\n");

@@ -300,11 +300,12 @@ function stage2() {
 // ---------- Stage 3 ----------
 
 const CATEGORY_COUNTS = { stoic: 55, buddhist: 55, taoist: 25, impermanence: 35, attention: 35, relationships: 30, growth: 30, money: 25, voices: 40, grounding: 35 };
+const KENYA_CATEGORY_COUNTS = { Geography: 12, Wildlife: 14, History: 10, Government: 8, Culture: 8, Economy: 4, Sports: 4 };
 
 function stage3() {
   check("stage3", "data/cards.json valid JSON with required shape", () => {
     const d = readJSON("data/cards.json");
-    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.journal) && Array.isArray(d.wordOfDay));
+    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.journal) && Array.isArray(d.kenya) && Array.isArray(d.wordOfDay));
   });
   check("stage3", "data/values.json valid JSON, exactly 5 values", () => {
     const v = readJSON("data/values.json");
@@ -323,9 +324,10 @@ function stage3() {
     assert.equal(d.anchors.length, 365, `total anchors = ${d.anchors.length}`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
-  check("stage3", "journal = 40, wordOfDay = 30", () => {
+  check("stage3", "journal = 40, kenya = 60, wordOfDay = 30", () => {
     const d = readJSON("data/cards.json");
     assert.equal(d.journal.length, 40, `journal = ${d.journal.length}`);
+    assert.equal(d.kenya.length, 60, `kenya = ${d.kenya.length}`);
     assert.equal(d.wordOfDay.length, 30, `wordOfDay = ${d.wordOfDay.length}`);
   });
   check("stage3", "wordOfDay entries have word/origin/lang/meaning as non-empty strings", () => {
@@ -341,6 +343,21 @@ function stage3() {
     }
     assert.equal(problems.length, 0, problems.join(" | "));
   });
+  check("stage3", "kenya entries have category/fact as non-empty strings; category counts exact (60 total)", () => {
+    const d = readJSON("data/cards.json");
+    const problems = [];
+    const counts = {};
+    for (const k of d.kenya) {
+      for (const field of ["category", "fact"]) {
+        if (typeof k[field] !== "string" || !k[field].trim()) problems.push(`${k.id}.${field} missing/empty`);
+      }
+      counts[k.category] = (counts[k.category] || 0) + 1;
+    }
+    for (const [cat, want] of Object.entries(KENYA_CATEGORY_COUNTS)) {
+      if (counts[cat] !== want) problems.push(`${cat}: got ${counts[cat] || 0}, want ${want}`);
+    }
+    assert.equal(problems.length, 0, problems.join(" | "));
+  });
   check("stage3", "all ids unique within each pool", () => {
     const d = readJSON("data/cards.json");
     for (const [name, pool] of Object.entries(d)) {
@@ -348,12 +365,13 @@ function stage3() {
       assert.equal(new Set(ids).size, ids.length, `${name} has duplicate ids`);
     }
   });
-  check("stage3", "word caps respected (anchors <=40w, journal prompts <=25w, wordOfDay meaning<=20w, values essence<=14w/behaviour<=16w)", () => {
+  check("stage3", "word caps respected (anchors <=40w, journal prompts <=25w, kenya facts<=40w, wordOfDay meaning<=20w, values essence<=14w/behaviour<=16w)", () => {
     const d = readJSON("data/cards.json");
     const v = readJSON("data/values.json");
     const problems = [];
     for (const a of d.anchors) if (wordCount(a.text) > 40) problems.push(`${a.id}: ${wordCount(a.text)}w`);
     for (const j of d.journal) if (wordCount(j.prompt) > 25) problems.push(`${j.id}: ${wordCount(j.prompt)}w`);
+    for (const k of d.kenya) if (wordCount(k.fact) > 40) problems.push(`${k.id}: ${wordCount(k.fact)}w`);
     for (const w of d.wordOfDay) if (wordCount(w.meaning) > 20) problems.push(`${w.id}: ${wordCount(w.meaning)}w`);
     for (const val of v) {
       if (wordCount(val.essence) > 14) problems.push(`${val.name} essence: ${wordCount(val.essence)}w`);
@@ -368,6 +386,7 @@ function stage3() {
     const scan = (label, s) => { if (s && hasQuoteGlyph(s)) problems.push(`${label}: ${s}`); };
     for (const a of d.anchors) { scan(`${a.id}.text`, a.text); scan(`${a.id}.attribution`, a.attribution); }
     for (const j of d.journal) scan(`${j.id}.prompt`, j.prompt);
+    for (const k of d.kenya) { scan(`${k.id}.category`, k.category); scan(`${k.id}.fact`, k.fact); }
     for (const w of d.wordOfDay) { scan(`${w.id}.word`, w.word); scan(`${w.id}.origin`, w.origin); scan(`${w.id}.meaning`, w.meaning); }
     for (const val of v) { scan(`${val.name}.essence`, val.essence); scan(`${val.name}.behaviour`, val.behaviour); }
     assert.equal(problems.length, 0, problems.join(" | "));
@@ -378,6 +397,7 @@ function stage3() {
     const scan = (label, s) => { const p = s && findPlatitude(s); if (p) problems.push(`${label}: "${p}"`); };
     for (const a of d.anchors) scan(a.id, a.text);
     for (const j of d.journal) scan(j.id, j.prompt);
+    for (const k of d.kenya) scan(k.id, k.fact);
     for (const w of d.wordOfDay) scan(w.id, w.meaning);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
@@ -410,8 +430,9 @@ function stage3() {
     const dayNumber = lib.hktDayNumber(new Date());
     const anchor = d.anchors[lib.pickIndex(d.anchors.length, dayNumber, "anchor")];
     const journal = d.journal[lib.pickIndex(d.journal.length, dayNumber, "journal")];
+    const kenya = d.kenya[lib.pickIndex(d.kenya.length, dayNumber, "kenya")];
     const word = d.wordOfDay[lib.pickIndex(d.wordOfDay.length, dayNumber, "word")];
-    assert.ok(anchor && anchor.id && journal && journal.id && word && word.id);
+    assert.ok(anchor && anchor.id && journal && journal.id && kenya && kenya.id && word && word.id);
   });
   check("stage3", "audits/CONTENT-REVIEW.md exists", () => assert.ok(exists("audits/CONTENT-REVIEW.md"), "missing"));
 }
@@ -440,7 +461,7 @@ function stage4() {
     const d = readJSON("data/daily.json");
     assert.match(d.dateHKT, /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(typeof d.generatedAtISO === "string" && !Number.isNaN(Date.parse(d.generatedAtISO)));
-    assert.ok(typeof d.anchorId === "string" && typeof d.journalId === "string" && typeof d.wordId === "string");
+    assert.ok(typeof d.anchorId === "string" && typeof d.journalId === "string" && typeof d.kenyaId === "string" && typeof d.wordId === "string");
   });
 }
 

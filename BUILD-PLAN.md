@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.14)
+# MINDSET — Autonomous Build Plan (v1.15)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -358,6 +358,54 @@ via Playwright: the Anchor card renders correctly, zero console errors. This is 
 replacement, not an incremental edit — see `audits/CONTENT-REVIEW.md` for the complete new pool
 and `audits/decisions.md` for the taxonomy design rationale and full QA findings.
 
+**v1.15 changelog (from v1.14, live feature request):** the owner is traveling to Kenya (Masai
+Mara) and asked for a fourth Today card — one new fact about Kenya per day, spanning animals,
+geography, politics, history, "etc," with correctness as the explicit bar. This is an addition,
+not a replacement of an existing card: a new **Kenya** card is inserted between **Journal** and
+**Word of the Day** (render order: Anchor, Journal, Kenya, Word), using the same deterministic
+`pickIndex`-based rotation (salt `"kenya"`) as the other three, so it works identically whether
+`daily.json` resolves or the client falls back to offline rotation.
+
+- **Content:** authored 60 entries (`data/cards.json`'s new `kenya` array, `{ id, category, fact
+}`) across seven categories — `Geography` (12), `Wildlife` (14), `History` (10), `Government`
+(8), `Culture` (8), `Economy` (4), `Sports` (4) — weighted toward Wildlife/Geography since those
+are most relevant to a Masai Mara safari, while still covering the requested breadth. Before
+writing any of it, dispatched an independent research pass (live web search) against ~30 of the
+draft entries' more specific numeric/date/superlative claims (Mount Kenya's exact elevation, Lake
+Turkana's "largest desert lake" claim, the Turkana Boy fossil discovery, Fort Jesus/Lamu's UNESCO
+status, the Uganda Railway/Nairobi founding date, the 1963/1964 independence dates, the 2010
+constitution's 47 counties, M-Pesa's 2007 launch, Kenya's first Olympic medal, and more) — 29 of
+30 confirmed accurate as drafted; one (the UNEP/Nairobi claim) was tightened from "one of very
+few" to the factually stronger and correct "the only UN agency headquarters located in the Global
+South." Deliberately avoided anything likely to go stale — no named current officeholders, no
+volatile statistics, no unverified travel-blog folklore (e.g. the popular but scientifically
+staged equator water-drain demonstration near Nanyuki was left out on purpose). All 60 entries
+pre-validated clean against `verify.mjs`'s exact mechanical rules (word cap, quote-glyph scan,
+banned-platitude scan, near-duplicate token-overlap proxy) via a throwaway Node script before
+being written, same method used for every prior content batch.
+- **Same architecture, new pool, no schema break for existing cards:** `lib.mjs`'s `pickToday`
+gains a `kenya` pick (salt `"kenya"`); `generate-daily.mjs` stamps a new `kenyaId`;
+`data/daily.json`'s schema gains `kenyaId` alongside the existing three ids. `app.js` gains
+`renderKenyaCard()` (`KENYA` chip, the fact in `.card-body`, the category as a small `.card-attr`
+line — e.g. `— Wildlife` — mirroring how Word of the Day's `origin` renders), wired into both the
+`daily.json`-driven render path and the offline-rotation fallback path. No new CSS was needed —
+the card reuses `.card`/`.card-chip`/`.card-body`/`.card-attr` exactly as-is.
+- **`verify.mjs` tightened, not loosened, per the invariant-12 ratchet:** stage3 gained a
+`kenya`-shape check, a `journal = 40, kenya = 60, wordOfDay = 30` count check, a
+category-counts-exact check (a new `KENYA_CATEGORY_COUNTS` constant mirroring the existing
+anchor `CATEGORY_COUNTS` pattern), and `kenya` was added to the existing word-cap (≤40, same cap
+as anchors), quote-glyph, banned-platitude, and offline-fallback-simulation checks. `stage4`'s
+`daily.json` schema check now also asserts `kenyaId` is a string. Check count rises from 59 to 60
+(a genuine new requirement, not a re-add of anything removed).
+- **Verified:** `verify.mjs all` 60/60. Regenerated `data/daily.json` for real via
+`NODE_USE_ENV_PROXY=1 node scripts/generate-daily.mjs` (today, 2026-07-14, picked `kenya-51`).
+Ran the real `pickIndex`/`hktDayNumber` across 10 consecutive HKT dates against the real `kenya`
+pool and got 10 distinct facts, no repeats, matching the actually-shipped pick for today.
+Verified visually via Playwright + the pre-installed headless Chromium at a real 390×844
+viewport: cards render in the order Anchor → Journal → **Kenya** → Word, the Kenya card is
+visually identical in styling to the other three (no drift, no new CSS bugs), zero console
+errors.
+
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
 ```
@@ -456,7 +504,7 @@ The three daily cards:
 │   ├── icons/              # icon-192.png, icon-512.png, apple-touch-icon.png (180)
 │   └── favicon.svg
 ├── data/
-│   ├── cards.json          # anchors[365], journal[40], wordOfDay[30]
+│   ├── cards.json          # anchors[365], journal[40], kenya[60], wordOfDay[30]
 │   ├── values.json         # 5 values
 │   └── daily.json          # written by the pipeline daily
 ├── scripts/
@@ -553,8 +601,11 @@ The design supersedes v1.0's tall hero-canvas mockup with a compact, single-scre
 │  card text (Fraunces)              │  matches the Values tab's row style exactly),
 │  — after Marcus Aurelius           │  15px vertical padding, hairline divider
 │  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈  │  between rows, no border on the last one
-│  [Journal row]  [Word row]         │
-├────────────────────────────────────┤   stacked ≤899px, 3-across ≥900px desktop
+│  [Journal row]  [Kenya row]        │  Kenya added v1.15, between Journal and Word
+│  [Word row]                        │
+├────────────────────────────────────┤   stacked ≤899px, 4-across ≥900px desktop
+                                          (desktop card min-width tightened 260→200px
+                                          in v1.15 so 4 cards fit one row, not 3+1)
 │ refreshes daily · 06:00 HKT        │  footer, margin-top:auto pins it down
 └────────────────────────────────────┘
 ```
@@ -572,7 +623,7 @@ since it's no longer adjacent to the notch/status bar).
 
 1. **Theme toggle:** pill button top-right, `aria-pressed`, icons ◐/❀ (calm/blossom), 44×44px, `persists mindset.theme`, default `calm`, no flash-of-wrong-theme (inline script reads localStorage before CSS paint).
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Header row = mono category chip (ANCHOR / JOURNAL / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px, italic and centered per v1.13 — live feedback that it "sitting on the left" undersold it as a headline) inside a `.word-title-row` (also centered, v1.13) alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
+3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Header row = mono category chip (ANCHOR / JOURNAL / KENYA / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Kenya card (added v1.15, between Journal and Word) is the same minimal shape as Anchor — chip, fact in `.card-body`, category as a small `.card-attr` line (e.g. `— Wildlife`) — no new CSS needed. Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px, italic and centered per v1.13 — live feedback that it "sitting on the left" undersold it as a headline) inside a `.word-title-row` (also centered, v1.13) alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 06:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 06:00 HKT, every single day.)
    - `daily.json` unreachable, > 48h stale, or fetch fails → page computes all three cards locally via `lib.mjs` rotation → slate chip `offline rotation`. Since Word of the Day is deterministic (v1.10), this path picks the exact same word as the server would have for that date — unlike the retired Fresh card, there is no divergent "fallback" content.
@@ -647,6 +698,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 {
   "anchors": [ { "id": "stoic-001", "category": "stoic", "text": "...", "attribution": "— after Epictetus" } ],
   "journal": [ { "id": "journal-01", "prompt": "What's one thing you're avoiding right now, and what is it costing you to keep avoiding it?" } ],
+  "kenya": [ { "id": "kenya-01", "category": "Geography", "fact": "Kenya straddles the equator, with the line crossing the country just south of Mount Kenya near the town of Nanyuki." } ],
   "wordOfDay": [ { "id": "word-01", "word": "Wabi-sabi", "origin": "Japanese", "lang": "ja-JP", "meaning": "..." } ]
 }
 ```
@@ -667,6 +719,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 | anchors | `grounding` (added v1.14 — universal sensory/body observations, no named attribution) | 35 |
 | **anchors total** | | **365** |
 | journal | — (replaced `shifts` in v1.12) | **40** |
+| kenya | `Geography` (12) `Wildlife` (14) `History` (10) `Government` (8) `Culture` (8) `Economy` (4) `Sports` (4) — added v1.15 | **60** |
 | wordOfDay | — (added v1.10, replacing freshReserve) | **30** |
 
 A Claude Design prototype (see changelog) already produced 18 anchors (3 per category), 10
@@ -690,6 +743,7 @@ rather than a short list of what actually matters (§5.3.6).
 8. Write anchors in six batches (one per category, extending each category's 3 seed cards to its full count). After each batch, run the normal mechanical self-review (word caps, quote marks, banned phrases — rules 1–5), **and then** a second, independent review pass per §10 Stage 3's content-QA step, before moving to the next batch.
 9. **`voices` category (added v1.3):** a 7th anchor category, 9 cards (3 each), for named living/recent public figures the owner's household specifically finds inspiring, so their thinking surfaces periodically via the same rotation — not a new subsystem, just more entries in the same `anchors` pool. Extra bar beyond rules 1–8 for this category specifically: (a) any figure who has held significant political office must be scoped strictly to personal-character themes (grief, resilience, self-belief, service) and must never reference their office, party, policies, or elections — attribution is tied to a specific, nonpartisan book/body of work (e.g. `— after X, from <book>`), not their public office; (b) rule 2's "no verbatim quotes" is enforced against the *spirit*, not just quote-mark glyphs — a paraphrase that lands close to the person's one most-famous, most-recognizable line is a violation even with zero quote marks and needs a rewrite, not just a rewording; (c) run the independent second-pass review (rule 8) with an explicit prompt to check attribution-confidence, political neutrality, and closeness-to-source — this category carries materially higher reputational risk per card than the historical-thinker categories.
 10. **`wordOfDay` (replaced `freshReserve` in v1.10, 30 entries):** `{ "id", "word", "origin" (a language/tradition, e.g. "Japanese", "Stoic Greek" — never a person's name, since this pool has no attribution-confidence question the way anchors do), "lang" (added v1.11 — a BCP-47 tag, e.g. "ja-JP", "de-DE", mapped from `origin`, feeding the pronunciation button's `SpeechSynthesisUtterance.lang` per §4.5.4a so the word is spoken in a voice matched to its actual language), "meaning" (≤ 20 words, one sentence, no verbatim dictionary-style copying — write the sense of the word, not a lifted definition) }`. Fully self-authored (no external source to fetch or verify), so it rotates deterministically exactly like anchors/journal (§6.2) rather than needing the daily pipeline to do any network work for it.
+11. **`kenya` (added v1.15, 60 entries):** `{ "id", "category" (one of `Geography`/`Wildlife`/`History`/`Government`/`Culture`/`Economy`/`Sports`, capitalized to match `wordOfDay`'s `origin` convention — rendered directly as the card's `.card-attr` line), "fact" (≤ 40 words, same cap as anchors, one self-contained factual sentence or two) }`. **Correctness is the load-bearing rule for this pool, not attribution confidence** — every specific numeric/date/superlative claim (elevations, dates, "largest"/"only"/"first" claims) must be independently verified against a real source before writing, not written from memory, and content must be chosen for durability: no named current officeholders, no fast-moving statistics or sports records, no unverified travel-blog folklore. Same mechanical rules apply otherwise (word cap, zero quotation-mark glyphs, no banned platitudes, unique ids). Rotates deterministically exactly like anchors/journal/wordOfDay (§6.2, salt `"kenya"`).
 
 ---
 
@@ -704,13 +758,14 @@ rather than a short list of what actually matters (§5.3.6).
   "generatedAtISO": "2026-07-13T22:00:41Z",
   "anchorId": "wealth-007",
   "journalId": "journal-23",
+  "kenyaId": "kenya-51",
   "wordId": "word-16"
 }
 ```
-All three ids are always present — unlike the retired `fresh` field (v1.0–v1.9), there is
-nothing here that can come back `null` or need URL/source validation, since `wordId` is a
-deterministic pick from the app's own `wordOfDay` pool (§6.2), not a value pulled from any
-external source.
+All four ids are always present — unlike the retired `fresh` field (v1.0–v1.9), there is
+nothing here that can come back `null` or need URL/source validation, since `wordId`/`kenyaId`
+are deterministic picks from the app's own `wordOfDay`/`kenya` pools (§6.2), not values pulled
+from any external source.
 
 ### 6.2 Deterministic rotation (in `lib.mjs`, shared browser + node)
 
@@ -718,7 +773,7 @@ external source.
 - `hktDayNumber(d)` → `floor(Date.UTC(y, m-1, day) / 86400000)` from the HKT date parts.
 - `hktDateParts(d)` → `{ weekday, day, month, year }` via `Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Hong_Kong', weekday:'long', day:'numeric', month:'long', year:'numeric' })`, for rendering the date line without duplicating formatting logic in `app.js`.
 - `pickIndex(poolSize, dayNumber, salt)` → per-cycle Fisher–Yates permutation seeded with `xmur3(salt + ":" + floor(dayNumber/poolSize))` feeding `mulberry32`; return `order[dayNumber % poolSize]`. **Use the reference implementation in Appendix B verbatim.** Guarantees: no repeats *within* a full cycle (adjacent cycles are independent permutations, so a repeat can occur right at a cycle boundary — roughly a 1-in-poolSize chance — this is expected and not a bug). Fully stateless, identical results in node and browser. Note for future curation (put this in the README runbook, not enforced by code): replace cards 1-for-1; adding or removing cards changes the pool size and reshuffles the whole rotation, which may repeat a recently-seen card once.
-- Salts: `"anchor"`, `"journal"`, `"word"`.
+- Salts: `"anchor"`, `"journal"`, `"kenya"`, `"word"`.
 
 ### 6.3 Client behaviour (`app.js`)
 
@@ -737,13 +792,15 @@ relevance denylist filter (old §7.2), and a `state/fresh-history.json` idempote
 feedback disliked the Fresh card; its replacement, Word of the Day, is a deterministic pick
 from `cards.json`'s own `wordOfDay` pool (§5.3.10) — nothing to fetch, parse, verify, or filter,
 since there's no external source that can be down, off-theme, or misidentified. All of that
-machinery is retired along with it; the script now only stamps today's three picks:
+machinery is retired along with it; the script now only stamps today's four picks (a Kenya pick,
+`kenyaId`, was added in v1.15 alongside the original three):
 
-1. Compute `dateHKT`, `dayNumber` via `lib.mjs`; pick `anchorId`, `journalId`, `wordId` (all three
-   via the same deterministic `pickIndex` rotation, §6.2 — no fetch, no external dependency).
+1. Compute `dateHKT`, `dayNumber` via `lib.mjs`; pick `anchorId`, `journalId`, `kenyaId`, `wordId`
+   (all four via the same deterministic `pickIndex` rotation, §6.2 — no fetch, no external
+   dependency).
 2. Write `data/daily.json` (§6.1).
 3. Idempotent and safe to re-run any number of times same-day — the picks are a pure function
-   of `dateHKT`, so a re-run just rewrites `generatedAtISO` and reproduces the same three ids.
+   of `dateHKT`, so a re-run just rewrites `generatedAtISO` and reproduces the same four ids.
    When run locally in this environment, invoke as `NODE_USE_ENV_PROXY=1 node
    scripts/generate-daily.mjs` (§2.4) — this flag is now a no-op for this script specifically
    (nothing it does needs network access) but is still correct/harmless to pass, and remains
@@ -931,9 +988,9 @@ Design consequence: the worst possible failure is one morning of yesterday's (or
 
 ### Stage 4 — Pipeline & loops
 **Objective:** the machine that runs without anyone.
-**Tasks:** `generate-daily.mjs` (§7) — as of v1.10 a pure, deterministic stamp of `anchorId`/`journalId`/`wordId` with no network calls (§7's original v1.1-era task list here resolved + verified five RSS/YouTube feeds for the now-retired Fresh card; that entire concern no longer exists, see §7's v1.10 note) — write both workflows from §8 (cron slots, watchdog live-check + dedup), run the generator locally as `NODE_USE_ENV_PROXY=1 node scripts/generate-daily.mjs` to produce a real `daily.json`, commit, push, then dispatch `daily-cards` via the GitHub MCP tools (no `gh` CLI) and poll run status (bounded: 20s × 15) until success; **after the workflow's bot commit lands, `git pull --rebase origin main` before any further local commit** (this is a guaranteed non-fast-forward otherwise); dispatch `watchdog` once against the real deployed `daily.json` and confirm it passes, then run the exact stale-detection test prescribed in §8.2 (temporary branch, not an ad-hoc dry-run flag) and confirm it fails correctly with one new (then closed) issue.
+**Tasks:** `generate-daily.mjs` (§7) — as of v1.10 a pure, deterministic stamp of `anchorId`/`journalId`/`kenyaId`/`wordId` with no network calls (§7's original v1.1-era task list here resolved + verified five RSS/YouTube feeds for the now-retired Fresh card; that entire concern no longer exists, see §7's v1.10 note) — write both workflows from §8 (cron slots, watchdog live-check + dedup), run the generator locally as `NODE_USE_ENV_PROXY=1 node scripts/generate-daily.mjs` to produce a real `daily.json`, commit, push, then dispatch `daily-cards` via the GitHub MCP tools (no `gh` CLI) and poll run status (bounded: 20s × 15) until success; **after the workflow's bot commit lands, `git pull --rebase origin main` before any further local commit** (this is a guaranteed non-fast-forward otherwise); dispatch `watchdog` once against the real deployed `daily.json` and confirm it passes, then run the exact stale-detection test prescribed in §8.2 (temporary branch, not an ad-hoc dry-run flag) and confirm it fails correctly with one new (then closed) issue.
 **DoD:** real `daily.json` committed by the *workflow* (not only locally); both workflows have at least one green dispatch run against real content; watchdog's stale-detection path proven via the prescribed temporary-branch mechanism (this run is expected-red, and does not count against the "green dispatch" DoD line above); local clone rebased cleanly onto the workflow's commit.
-**Verify:** `stage4` = YAML sanity greps (cron strings, `timeout-minutes`, permissions) + `daily.json` schema check (`anchorId`/`journalId`/`wordId` all present) + dispatch/poll results via the GitHub MCP tools (no `gh run list` dependency).
+**Verify:** `stage4` = YAML sanity greps (cron strings, `timeout-minutes`, permissions) + `daily.json` schema check (`anchorId`/`journalId`/`kenyaId`/`wordId` all present) + dispatch/poll results via the GitHub MCP tools (no `gh run list` dependency).
 **Commit:** `stage4: daily pipeline, watchdog, loops live`
 
 ### Stage 5 — QA, polish, acceptance
