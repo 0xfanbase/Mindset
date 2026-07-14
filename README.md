@@ -1,9 +1,10 @@
 # Mindset
 
 A personal mindset dashboard. One page, no backend, no dependencies — a small bottle of light
-breathing slowly, the day's date in Hong Kong time, and three short grounding cards
+breathing slowly, the day's date in Hong Kong time, and four short cards
 that refresh themselves every morning at 06:00 HKT: an **Anchor** (a timeless principle),
-a **Journal** prompt (a mindful reflection question), and a **Word of the Day** (one word
+a **Journal** prompt (a mindful reflection question), a **Kenya** fact (one fact about Kenya —
+geography, wildlife, history, culture, and more), and a **Word of the Day** (one word
 worth knowing, its origin, and a one-line meaning). A quiet **Values** tab sits alongside it.
 Two themes — `calm` (cream/blue, default) and `blossom` (soft pink).
 
@@ -30,11 +31,15 @@ theme you last used.
 
 ## Ops runbook
 
-**Add or edit cards** — edit `data/cards.json` (anchors/journal/wordOfDay) or
+**Add or edit cards** — edit `data/cards.json` (anchors/journal/kenya/wordOfDay) or
 `data/values.json` directly, commit, push to `main`. No build step. Keep the writing rules
 in `BUILD-PLAN.md` §5.3 in mind: ≤ 40 words, no quotation marks, no banned platitudes,
 person-named attribution only when you're confident the idea is really theirs. Word of the
-Day entries have their own, shorter cap (≤ 20 words for `meaning`, §5.3.10).
+Day entries have their own, shorter cap (≤ 20 words for `meaning`, §5.3.10). Kenya facts
+(§5.3.11) share the anchors' ≤ 40 word cap, but the load-bearing rule there is correctness,
+not attribution: verify any specific number, date, or superlative claim before writing it,
+and favor durable facts over anything that could go stale (current officeholders, fast-moving
+stats, unverified travel folklore).
 
 **Replace cards, not resize the pool** — the daily rotation (`lib.mjs`'s `pickIndex`) is a
 per-cycle shuffle keyed to the pool size. Swapping one card's content for another (same

@@ -2353,6 +2353,308 @@
       "prompt": "What's the kindest thing you did today, and did you notice it at the time?"
     }
   ],
+  "kenya": [
+    {
+      "id": "kenya-01",
+      "category": "Geography",
+      "fact": "Kenya straddles the equator, with the line crossing the country just south of Mount Kenya near the town of Nanyuki."
+    },
+    {
+      "id": "kenya-02",
+      "category": "Geography",
+      "fact": "Mount Kenya rises to 5,199 meters, Africa's second-highest peak after Kilimanjaro, and the country takes its name from the mountain."
+    },
+    {
+      "id": "kenya-03",
+      "category": "Geography",
+      "fact": "The Great Rift Valley cuts through Kenya from north to south, part of a vast tectonic fracture stretching from Lebanon to Mozambique."
+    },
+    {
+      "id": "kenya-04",
+      "category": "Geography",
+      "fact": "Lake Victoria, shared by Kenya, Uganda, and Tanzania, is Africa's largest lake by surface area, though Kenya holds only a small slice of its shoreline."
+    },
+    {
+      "id": "kenya-05",
+      "category": "Geography",
+      "fact": "Lake Turkana, nicknamed the Jade Sea for its striking color, is the world's largest permanent desert lake."
+    },
+    {
+      "id": "kenya-06",
+      "category": "Geography",
+      "fact": "The Tana River, Kenya's longest, rises near Mount Kenya and winds roughly a thousand kilometers to the Indian Ocean."
+    },
+    {
+      "id": "kenya-07",
+      "category": "Geography",
+      "fact": "Nairobi sits nearly 1,800 meters above sea level, giving a capital almost on the equator a famously mild, spring-like climate year-round."
+    },
+    {
+      "id": "kenya-08",
+      "category": "Geography",
+      "fact": "A chain of shallow, alkaline Rift Valley lakes, including Nakuru and Bogoria, can turn pink each year as huge flocks of flamingos gather to feed."
+    },
+    {
+      "id": "kenya-09",
+      "category": "Geography",
+      "fact": "Kakamega Forest, in western Kenya, is the country's only surviving tropical rainforest, a remnant of a much larger Central African forest belt."
+    },
+    {
+      "id": "kenya-10",
+      "category": "Geography",
+      "fact": "Kenya's Indian Ocean coastline runs for roughly 500 kilometers, fringed by coral reefs, mangroves, and centuries-old Swahili trading towns."
+    },
+    {
+      "id": "kenya-11",
+      "category": "Geography",
+      "fact": "Mount Kenya's glaciers, sitting almost on the equator, are a rare sight this close to the tropics, though they have shrunk sharply in recent decades."
+    },
+    {
+      "id": "kenya-12",
+      "category": "Geography",
+      "fact": "Kenya holds snow-capped peaks, dense rainforest, coral coastline, and true desert within a single country roughly the size of France."
+    },
+    {
+      "id": "kenya-13",
+      "category": "Wildlife",
+      "fact": "The term Big Five, lion, leopard, elephant, buffalo, and rhino, was coined by big-game hunters for the five hardest animals to track on foot, not the largest."
+    },
+    {
+      "id": "kenya-14",
+      "category": "Wildlife",
+      "fact": "The Maasai Mara takes its name from the Maasai people and the Maa word mara, meaning spotted, describing its acacia-dotted plains."
+    },
+    {
+      "id": "kenya-15",
+      "category": "Wildlife",
+      "fact": "Each year, roughly 1.5 million wildebeest, plus hundreds of thousands of zebra and gazelle, migrate in a loop between the Serengeti and the Maasai Mara chasing seasonal rain."
+    },
+    {
+      "id": "kenya-16",
+      "category": "Wildlife",
+      "fact": "Nairobi National Park, established in 1946 as Kenya's first national park, is one of the only places on Earth where lions and rhinos roam within view of a capital city's skyline."
+    },
+    {
+      "id": "kenya-17",
+      "category": "Wildlife",
+      "fact": "Amboseli National Park offers some of the clearest views anywhere of Mount Kilimanjaro, even though the mountain itself stands just across the border in Tanzania."
+    },
+    {
+      "id": "kenya-18",
+      "category": "Wildlife",
+      "fact": "Ol Pejeta Conservancy is home to the last two northern white rhinos on Earth, Najin and Fatu, both female, guarded around the clock by dedicated rangers."
+    },
+    {
+      "id": "kenya-19",
+      "category": "Wildlife",
+      "fact": "Kenya's black rhino population collapsed under heavy poaching in the twentieth century; fenced, heavily ranger-patrolled conservancies like Ol Pejeta have since helped it slowly recover."
+    },
+    {
+      "id": "kenya-20",
+      "category": "Wildlife",
+      "fact": "More than a thousand bird species have been recorded in Kenya, drawn by habitats ranging from Rift Valley soda lakes to coastal mangroves and highland forest."
+    },
+    {
+      "id": "kenya-21",
+      "category": "Wildlife",
+      "fact": "Tsavo, one of Kenya's oldest and largest national parks, is known for its elephants, which turn reddish from rolling in the local ochre soil."
+    },
+    {
+      "id": "kenya-22",
+      "category": "Wildlife",
+      "fact": "Kenya is home to both the Maasai giraffe and the more localized Rothschild's giraffe, distinguishable by the jagged versus smoother edges of their coat patches."
+    },
+    {
+      "id": "kenya-23",
+      "category": "Wildlife",
+      "fact": "Kenya Wildlife Service manages dozens of national parks and reserves, together covering a meaningful share of the country's total land area."
+    },
+    {
+      "id": "kenya-24",
+      "category": "Wildlife",
+      "fact": "Lake Nakuru National Park was created largely to protect its lesser flamingo population, which can number in the hundreds of thousands when conditions are right."
+    },
+    {
+      "id": "kenya-25",
+      "category": "Wildlife",
+      "fact": "Hippos and Nile crocodiles share the Mara River with migrating wildebeest herds, making the river crossings one of the migration's most dramatic moments."
+    },
+    {
+      "id": "kenya-26",
+      "category": "Wildlife",
+      "fact": "A sprinting cheetah can outaccelerate most sports cars off the line, though it can only hold its top speed for a few hundred meters."
+    },
+    {
+      "id": "kenya-27",
+      "category": "History",
+      "fact": "Fossils unearthed near Lake Turkana, including the near-complete skeleton known as Turkana Boy, have made the region one of the most important sites for studying human origins."
+    },
+    {
+      "id": "kenya-28",
+      "category": "History",
+      "fact": "Fort Jesus, overlooking Mombasa's harbor, was built by the Portuguese in the 1590s and later changed hands between Portuguese, Omani, and British rule."
+    },
+    {
+      "id": "kenya-29",
+      "category": "History",
+      "fact": "Lamu Old Town, a UNESCO World Heritage Site, is the oldest continuously inhabited Swahili settlement in East Africa, still built largely of coral stone."
+    },
+    {
+      "id": "kenya-30",
+      "category": "History",
+      "fact": "The Uganda Railway, built by the British starting in 1896, gave Nairobi its start as a supply depot; the town grew into the country's capital within a few decades."
+    },
+    {
+      "id": "kenya-31",
+      "category": "History",
+      "fact": "Kenya gained independence from Britain on December 12, 1963, and became a republic exactly one year later, with Jomo Kenyatta as its first president."
+    },
+    {
+      "id": "kenya-32",
+      "category": "History",
+      "fact": "The Mau Mau uprising of the 1950s, a rebellion against British colonial rule and land seizures, was a pivotal chapter on the road to Kenyan independence."
+    },
+    {
+      "id": "kenya-33",
+      "category": "History",
+      "fact": "Danish author Karen Blixen farmed coffee in the hills outside Nairobi in the early twentieth century; her memoir of those years inspired the film Out of Africa."
+    },
+    {
+      "id": "kenya-34",
+      "category": "History",
+      "fact": "Swahili culture along the coast grew from centuries of Indian Ocean trade linking East Africa with Arabia, Persia, and India."
+    },
+    {
+      "id": "kenya-35",
+      "category": "History",
+      "fact": "Kenya returned to multi-party democracy in the early 1990s after roughly two decades in which a single party dominated politics."
+    },
+    {
+      "id": "kenya-36",
+      "category": "History",
+      "fact": "Nairobi began in 1899 as little more than a railway supply camp; within a century it had grown into one of Africa's largest cities."
+    },
+    {
+      "id": "kenya-37",
+      "category": "Government",
+      "fact": "Kenya's 2010 constitution created 47 counties, each with its own elected governor and assembly, devolving significant power away from the national government."
+    },
+    {
+      "id": "kenya-38",
+      "category": "Government",
+      "fact": "Harambee, Swahili for let's all pull together, is Kenya's national motto and describes a long tradition of communities pooling money and labor for shared projects."
+    },
+    {
+      "id": "kenya-39",
+      "category": "Government",
+      "fact": "Kenya's flag carries black for its people, red for the struggle for independence, green for the land, and white for peace, with a Maasai shield and spears at its center."
+    },
+    {
+      "id": "kenya-40",
+      "category": "Government",
+      "fact": "The shield and crossed spears on Kenya's flag and coat of arms symbolize the defense of freedom won at independence."
+    },
+    {
+      "id": "kenya-41",
+      "category": "Government",
+      "fact": "Kenya's coat of arms features a rooster holding an axe, framed by two lions, with Mount Kenya rising in the background."
+    },
+    {
+      "id": "kenya-42",
+      "category": "Government",
+      "fact": "Kenya was a founding member of the East African Community, a regional bloc formed with Uganda and Tanzania to deepen economic and political cooperation."
+    },
+    {
+      "id": "kenya-43",
+      "category": "Government",
+      "fact": "Nairobi hosts the headquarters of the United Nations Environment Programme, the only United Nations agency headquarters located anywhere in the Global South."
+    },
+    {
+      "id": "kenya-44",
+      "category": "Government",
+      "fact": "Kenya's legal system blends English common law, customary law, and Islamic law, reflecting its colonial history and diverse population."
+    },
+    {
+      "id": "kenya-45",
+      "category": "Culture",
+      "fact": "Swahili and English are Kenya's two official languages, with Swahili also serving as a common trade language across much of East Africa."
+    },
+    {
+      "id": "kenya-46",
+      "category": "Culture",
+      "fact": "Kenya is home to more than forty ethnic communities, including the Kikuyu, Luhya, Kalenjin, Luo, Kamba, and Maasai, each with its own language and traditions."
+    },
+    {
+      "id": "kenya-47",
+      "category": "Culture",
+      "fact": "The Maasai are traditionally semi-nomadic cattle herders known for red shuka cloth, intricate beadwork, and the adumu, a high vertical jumping dance performed at ceremonies."
+    },
+    {
+      "id": "kenya-48",
+      "category": "Culture",
+      "fact": "The Swahili phrase hakuna matata, meaning no worries, was an everyday greeting long before it became internationally famous through animated film."
+    },
+    {
+      "id": "kenya-49",
+      "category": "Culture",
+      "fact": "Ugali, a firm maize porridge, is Kenya's staple food, typically eaten alongside vegetables like sukuma wiki or grilled meat known as nyama choma."
+    },
+    {
+      "id": "kenya-50",
+      "category": "Culture",
+      "fact": "Matatus, Kenya's privately run minibus taxis, are known for loud music, vivid custom paint jobs, and sometimes elaborate portraits of celebrities or pop icons."
+    },
+    {
+      "id": "kenya-51",
+      "category": "Culture",
+      "fact": "Nairobi's nickname, the Green City in the Sun, refers to its parks, tree-lined streets, and temperate highland climate."
+    },
+    {
+      "id": "kenya-52",
+      "category": "Culture",
+      "fact": "Traditional Maasai homes, called manyattas, are built from a framework of branches plastered with a mix of mud, grass, and cow dung."
+    },
+    {
+      "id": "kenya-53",
+      "category": "Economy",
+      "fact": "M-Pesa, launched by Safaricom in 2007, became one of the world's first successful large-scale mobile money systems, letting people send cash by phone without a bank account."
+    },
+    {
+      "id": "kenya-54",
+      "category": "Economy",
+      "fact": "Kenya is the world's leading exporter of black tea, much of it grown on highland estates around Kericho."
+    },
+    {
+      "id": "kenya-55",
+      "category": "Economy",
+      "fact": "Kenyan coffee, especially the AA grade grown on volcanic highland soil, is prized worldwide for its bright, wine-like acidity."
+    },
+    {
+      "id": "kenya-56",
+      "category": "Economy",
+      "fact": "Nairobi's thriving tech and startup scene has earned it the nickname Silicon Savannah, attracting investment from across Africa and beyond."
+    },
+    {
+      "id": "kenya-57",
+      "category": "Sports",
+      "fact": "Kenya has produced generations of world-class distance runners, a phenomenon researchers link to high-altitude training, a running-centered daily life, and strong local running traditions."
+    },
+    {
+      "id": "kenya-58",
+      "category": "Sports",
+      "fact": "Many of Kenya's elite distance runners come from the Kalenjin community and the highland town of Iten, often called the Home of Champions."
+    },
+    {
+      "id": "kenya-59",
+      "category": "Sports",
+      "fact": "Training at altitude in Kenya's Rift Valley highlands is thought to boost runners' oxygen-carrying capacity, an edge some athletes chase by relocating there for months at a time."
+    },
+    {
+      "id": "kenya-60",
+      "category": "Sports",
+      "fact": "Kenya's first Olympic medal came at the 1964 Tokyo Games, a bronze in the 800 meters; distance running has remained the country's most decorated event ever since."
+    }
+  ],
   "wordOfDay": [
     {
       "id": "word-01",

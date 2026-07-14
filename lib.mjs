@@ -78,6 +78,7 @@ export function pickToday(cards, now = new Date()) {
   const dayNumber = hktDayNumber(now);
   const anchor = cards.anchors[pickIndex(cards.anchors.length, dayNumber, "anchor")];
   const journal = cards.journal[pickIndex(cards.journal.length, dayNumber, "journal")];
+  const kenya = cards.kenya[pickIndex(cards.kenya.length, dayNumber, "kenya")];
   const word = cards.wordOfDay[pickIndex(cards.wordOfDay.length, dayNumber, "word")];
-  return { anchor, journal, word, dayNumber };
+  return { anchor, journal, kenya, word, dayNumber };
 }
