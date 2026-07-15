@@ -210,6 +210,9 @@ async function fetchJSON(path) {
   return res.json();
 }
 
+let paintedFocusState = null;
+let bootedToday = null;
+
 function renderToday(cardsData, dailyData) {
   const mode = staleness(dailyData && dailyData.dateHKT);
   showChip(mode);
@@ -226,7 +229,8 @@ function renderToday(cardsData, dailyData) {
   }
 
   const rest = [renderAnchorCard(anchor), renderKenyaCard(kenya), renderWordCard(word)];
-  if (isFocusWindowHKT(new Date())) {
+  paintedFocusState = isFocusWindowHKT(new Date());
+  if (paintedFocusState) {
     paintFocusedToday(renderJournalCard(journal), rest);
   } else {
     paintCards([renderJournalCard(journal), ...rest]);
@@ -246,11 +250,24 @@ async function boot() {
       fetchJSON("./data/values.json"),
     ]);
     renderValues(valuesData);
+    bootedToday = { cardsData, dailyData };
     renderToday(cardsData, dailyData);
   } catch (e) {
     paintCards([renderErrorCard()]);
   }
 }
+
+// Installed iOS PWAs freeze JS while backgrounded and resume the frozen render on
+// return, so an 08:45 open can still show the pre-09:00 focus mode at 11:00 if the
+// user only switched apps and came back — re-check the boundary (not the network)
+// whenever the tab becomes visible again, and only repaint if it actually flipped.
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible" || !bootedToday) return;
+  if (isFocusWindowHKT(new Date()) !== paintedFocusState) {
+    initDateLine();
+    renderToday(bootedToday.cardsData, bootedToday.dailyData);
+  }
+});
 
 boot();
 

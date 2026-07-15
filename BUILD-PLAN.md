@@ -461,6 +461,28 @@ before (all four cards, Journal first), with no collapse and no control at all.
   entrance cascade and flips the pill to "hide the rest"; clicking again re-collapses; at
   09:00 HKT and later the page renders all four cards Journal-first with no pill at all.
   Zero console errors in either state.
+- **Fable-led iOS UX audit (pre-merge, this app's primary real-world context):** read the
+  actual shipped code against researched WebKit/iOS Safari/VoiceOver behavior rather than
+  generic advice. Confirmed correct as-is and left untouched: the `display:none`→animation
+  restart on reveal (CSS Animations Level 1 guarantees this; no forced-reflow hack needed),
+  the `#cards-more[hidden]{display:none}` specificity override (the same trap the v1.11
+  `.chip` fix caught), 44px tap target sizing/spacing, `touch-action: manipulation` (still
+  meaningfully different from the viewport meta's tap-delay fix at non-1x zoom, confirmed
+  against WebKit's own 2016 announcement), and the VoiceOver disclosure pattern (iOS doesn't
+  auto-announce the state *change* on activation — a known, old platform gap, not a bug in
+  this code — but the swapped button label and the revealed card being the very next DOM
+  node after it both compensate). One genuine, iOS-specific finding: installed iOS PWAs
+  freeze JS while backgrounded and resume the frozen render on foreground, unlike a normal
+  browser tab, so `isFocusWindowHKT`'s single load-time check could leave an 08:45-opened
+  session still showing collapsed focus mode at 11:00 if the owner only app-switched and
+  came back rather than reloading. Fixed: `app.js` now caches the booted `{cardsData,
+  dailyData}` and the focus state it last painted, and a `visibilitychange` listener
+  re-runs `renderToday` (idempotent, cheap, no network) only when the boundary has actually
+  flipped since the last paint. Verified via Playwright: opened frozen-clock at 08:45 HKT
+  (focus mode paints), advanced the clock to 11:00 HKT and dispatched a synthetic
+  `visibilitychange` event with **no page reload** (the same event a real resume fires),
+  confirmed the page repaints to the full Journal-first four-card layout with no toggle,
+  zero console errors.
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
