@@ -250,6 +250,14 @@ function stage1() {
     assert.ok(d1 >= 0, "dayNumber must be non-negative for real post-epoch HKT dates");
   });
 
+  check("stage1", "lib.mjs: isFocusWindowHKT correct at the 09:00 HKT boundary", async () => {
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    // 2026-07-15T00:59:00Z = 2026-07-15T08:59 HKT — inside the pre-09:00 focus window
+    assert.equal(lib.isFocusWindowHKT(new Date("2026-07-15T00:59:00Z")), true);
+    // 2026-07-15T01:00:00Z = 2026-07-15T09:00 HKT — window has closed
+    assert.equal(lib.isFocusWindowHKT(new Date("2026-07-15T01:00:00Z")), false);
+  });
+
   check("stage1", "lib.mjs: pickIndex full-cycle uniqueness for pools 120/40/10", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     for (const poolSize of [120, 40, 10]) {
