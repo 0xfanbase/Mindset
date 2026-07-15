@@ -12,6 +12,8 @@
 // prompt, same deterministic pool-rotation approach.
 // v1.15: a fourth card, Kenya (a daily fact about Kenya), was added between Journal and
 // Word of the Day, same deterministic pool-rotation approach as the other three.
+// v1.19: a fifth pick, Closing (an evening close-the-day reflection, shown after 20:00 HKT),
+// same deterministic pool-rotation approach as the other four.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -29,6 +31,7 @@ function main() {
   const journal = cards.journal[pickIndex(cards.journal.length, dayNumber, "journal")];
   const kenya = cards.kenya[pickIndex(cards.kenya.length, dayNumber, "kenya")];
   const word = cards.wordOfDay[pickIndex(cards.wordOfDay.length, dayNumber, "word")];
+  const closing = cards.closing[pickIndex(cards.closing.length, dayNumber, "closing")];
 
   const daily = {
     version: 1,
@@ -38,6 +41,7 @@ function main() {
     journalId: journal.id,
     kenyaId: kenya.id,
     wordId: word.id,
+    closingId: closing.id,
   };
   fs.writeFileSync(path.join(ROOT, "data/daily.json"), JSON.stringify(daily, null, 2) + "\n");
   console.log(`[generate-daily] wrote daily.json for ${dateHKT}`);

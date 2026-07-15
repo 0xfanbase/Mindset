@@ -73,6 +73,13 @@ export function isFocusWindowHKT(now = new Date()) {
   return hktHour(now) < 9;
 }
 
+// After 20:00 HKT: a "Closing" reflection leads, paired with a low-stimulation palette
+// (data-period="evening" in app.js/styles.css). Non-overlapping with isFocusWindowHKT by
+// construction (hktHour is never simultaneously < 9 and >= 20).
+export function isEveningWindowHKT(now = new Date()) {
+  return hktHour(now) >= 20;
+}
+
 export function staleness(dailyDateHKT, now = new Date()) {
   if (!dailyDateHKT) return "offline";
   const expected = expectedDateHKT(now);
@@ -100,5 +107,6 @@ export function pickToday(cards, now = new Date()) {
   const journal = cards.journal[pickIndex(cards.journal.length, dayNumber, "journal")];
   const kenya = cards.kenya[pickIndex(cards.kenya.length, dayNumber, "kenya")];
   const word = cards.wordOfDay[pickIndex(cards.wordOfDay.length, dayNumber, "word")];
-  return { anchor, journal, kenya, word, dayNumber };
+  const closing = cards.closing[pickIndex(cards.closing.length, dayNumber, "closing")];
+  return { anchor, journal, kenya, word, closing, dayNumber };
 }

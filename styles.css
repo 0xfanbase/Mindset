@@ -24,6 +24,15 @@
   --shadow: rgba(36, 26, 32, 0.07);
 }
 
+/* Evening (>=20:00 HKT, v1.19). Touches --bg and --shadow ONLY. AA verified against both
+   themes; blossom accent on this bg = 4.57:1 — do NOT darken --bg further without
+   re-verifying by hand. Declared after both theme blocks so it always wins the cascade
+   tie (equal-specificity attribute selectors on <html>, source order decides). */
+[data-period="evening"] {
+  --bg: #FAF4EA;
+  --shadow: rgba(120, 72, 30, 0.12);
+}
+
 @font-face {
   font-family: "Fraunces";
   font-style: normal;

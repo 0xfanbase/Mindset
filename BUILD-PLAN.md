@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.18)
+# MINDSET — Autonomous Build Plan (v1.19)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -574,6 +574,53 @@ animate in.
   changed). `figure.js` measured 9,554 B (≤12KB cap). Full Playwright pass at 390×844 across
   both motion-allowed and reduced-motion states — 24/24 assertions passed, including the
   reduced-motion fix above. See `audits/decisions.md` for the complete verification record.
+
+**v1.19 changelog (from v1.18, second half of the deep-research-informed enhancement pass):**
+the same research pass surfaced an evening "close the day" pattern; the owner picked it as the
+second feature, mirroring the existing pre-09:00 focus window on the other end of the day.
+
+- **`lib.mjs`:** new `isEveningWindowHKT(now) => hktHour(now) >= 20`; `pickToday` extended
+  with a fifth pick, `closing` (salt `"closing"`), same rotation mechanism as the other four
+  pools.
+- **`data/cards.json`:** new `closing` pool, 30 entries (`{id, prompt}`), themed on releasing/
+  closing the day (unfinished business, small gratitudes, self-forgiveness, body tension, a
+  closing gesture toward tomorrow) — pre-validated against `verify.mjs`'s exact word-cap/
+  quote-glyph/banned-platitude logic before insertion, all 30 passed on the first attempt.
+- **`scripts/generate-daily.mjs`:** extended with the `closing` pick and a `closingId` field,
+  kept as inline duplicated logic rather than refactored onto `pickToday` (minimizes this
+  version's blast radius, flagged as an optional future cleanup).
+- **`data/daily.json`:** `closingId` added as a new always-present field, `version` held at
+  `1` — same treatment as `kenyaId` in v1.15. An old `daily.json` missing the field degrades
+  to the existing error card via the (extended) defensive null-check, not a thrown exception
+  — confirmed directly in a real browser, not assumed. Regenerated and committed in the same
+  commit as the `app.js` changes so the gap never exists in practice.
+- **`app.js`:** `windowMode(now)` reduces the day to `"focus"` / `"evening"` / `"normal"`,
+  replacing the old boolean `paintedFocusState`; the existing v1.16 iOS-background-freeze
+  re-check on `visibilitychange` now transparently covers all three transitions.
+  `paintFocusedToday`'s `journalNode` parameter renamed to `leadNode` and reused verbatim for
+  the evening Closing card — zero new paint logic. `document.documentElement` gains a
+  `data-period` attribute (`"evening"`/`"day"`), mirroring how `data-theme` is set.
+- **`styles.css`:** `[data-period="evening"]` touches only `--bg` and `--shadow`, declared
+  after `[data-theme="blossom"]` so it wins the cascade tie against either theme. Contrast
+  hand-verified using `verify.mjs`'s own contrast functions: worst pair (blossom accent on the
+  evening background) measures 4.57:1, clearing the 4.5:1 AA floor — noted as close to this
+  token architecture's practical dimming limit. The existing `#cards.focus` desktop
+  single-column override applies for free, with zero new desktop CSS.
+- **`verify.mjs` tightened, not loosened (invariant 12):** new evening-boundary check (19:59/
+  20:00 HKT); WCAG contrast check extended with composed `calmEvening`/`blossomEvening`
+  entries, guarded by an explicit non-empty-extraction assertion (verified real: blanking the
+  evening CSS block makes the check fail with the guard message, not silently pass); Stage 3
+  gained a `closing`-shape/count assertion plus extended word-cap/quote-glyph/platitude/
+  offline-fallback checks; Stage 4 extended the `daily.json` schema check to require
+  `closingId`. Check count: 62 → 63.
+- **Verified end to end, real browser, real clock:** `verify.mjs all` 63/63. Full Playwright
+  pass with `page.clock.install` pinned at each boundary — evening mode in both themes (Closing
+  leads, correct reveal-rest ordering, single-column desktop layout), morning-focus and
+  midday-normal regression checks unaffected, a live 19:58:30→20:00:30 HKT boundary crossover
+  via `visibilitychange` with no reload, and the previously-untested combined
+  stale-`daily.json` + evening-hour state (backdated a live file, loaded at an evening clock
+  instant) — all composed correctly with zero console errors. 24/24 assertions passed. Full
+  record in `audits/decisions.md`.
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
@@ -1349,7 +1396,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v4";
+const CACHE = "mindset-v5";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",

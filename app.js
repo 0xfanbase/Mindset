@@ -1,5 +1,5 @@
 // app.js — UI logic: tabs, theme, date, cards, staleness (BUILD-PLAN.md §4/§6)
-import { hktDateParts, staleness, pickToday, isFocusWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
+import { hktDateParts, staleness, pickToday, isFocusWindowHKT, isEveningWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
 
 const PULSE = { calm: "#7FB0FF", blossom: "#F2A9C6" };
 const BG = { calm: "#FAF9F5", blossom: "#FBF4F6" };
@@ -108,6 +108,13 @@ function renderJournalCard(journal) {
   ]);
 }
 
+function renderClosingCard(closing) {
+  return el("article", { class: "card" }, [
+    el("div", { class: "card-chip", text: "CLOSING" }),
+    el("p", { class: "card-body", text: closing.prompt }),
+  ]);
+}
+
 // Countdown to the 2026-08-15 flight (v1.17), shown only while the trip is still ahead --
 // a countdown that goes negative the day after departure would read as a bug, not a feature,
 // so the badge simply stops rendering once the trip has passed (kenya-facts content keeps
@@ -178,15 +185,17 @@ function paintCards(nodes) {
   });
 }
 
-// Pre-09:00 HKT: Journal stands alone, the other three sit behind a reveal toggle
-// so they don't compete for attention before the morning's actual reflection (v1.16).
-function paintFocusedToday(journalNode, restNodes) {
+// Pre-09:00 HKT: Journal stands alone, the other three sit behind a reveal toggle so
+// they don't compete for attention before the morning's actual reflection (v1.16).
+// Reused for the evening Closing card (v1.19) — same "one lead card, rest collapsed"
+// layout, just a different lead node depending on the time of day.
+function paintFocusedToday(leadNode, restNodes) {
   const host = document.getElementById("cards");
   host.classList.add("focus");
   host.textContent = "";
 
-  journalNode.style.animationDelay = `${ARRIVAL_BEAT_S}s`;
-  host.appendChild(journalNode);
+  leadNode.style.animationDelay = `${ARRIVAL_BEAT_S}s`;
+  host.appendChild(leadNode);
 
   const toggle = el("button", {
     type: "button", class: "reveal-rest",
@@ -228,28 +237,41 @@ async function fetchJSON(path) {
   return res.json();
 }
 
-let paintedFocusState = null;
+// Tri-state read of "what part of the day is it" -- focus (pre-09:00, Journal leads),
+// evening (>=20:00, Closing leads), or normal (flat four-card layout) (v1.19).
+function windowMode(now) {
+  if (isFocusWindowHKT(now)) return "focus";
+  if (isEveningWindowHKT(now)) return "evening";
+  return "normal";
+}
+
+let paintedWindowMode = null;
 let bootedToday = null;
 
 function renderToday(cardsData, dailyData) {
-  const mode = staleness(dailyData && dailyData.dateHKT);
-  showChip(mode);
+  const staleMode = staleness(dailyData && dailyData.dateHKT);
+  showChip(staleMode);
 
-  let anchor, journal, kenya, word;
-  if (mode === "fresh" || mode === "yesterday") {
+  let anchor, journal, kenya, word, closing;
+  if (staleMode === "fresh" || staleMode === "yesterday") {
     anchor = cardsData.anchors.find((a) => a.id === dailyData.anchorId);
     journal = cardsData.journal.find((j) => j.id === dailyData.journalId);
     kenya = cardsData.kenya.find((k) => k.id === dailyData.kenyaId);
     word = cardsData.wordOfDay.find((w) => w.id === dailyData.wordId);
-    if (!anchor || !journal || !kenya || !word) { paintCards([renderErrorCard()]); return; }
+    closing = cardsData.closing.find((c) => c.id === dailyData.closingId);
+    if (!anchor || !journal || !kenya || !word || !closing) { paintCards([renderErrorCard()]); return; }
   } else {
-    ({ anchor, journal, kenya, word } = pickToday(cardsData, new Date()));
+    ({ anchor, journal, kenya, word, closing } = pickToday(cardsData, new Date()));
   }
 
   const rest = [renderAnchorCard(anchor), renderKenyaCard(kenya), renderWordCard(word)];
-  paintedFocusState = isFocusWindowHKT(new Date());
-  if (paintedFocusState) {
+  const winMode = windowMode(new Date());
+  paintedWindowMode = winMode;
+  document.documentElement.setAttribute("data-period", winMode === "evening" ? "evening" : "day");
+  if (winMode === "focus") {
     paintFocusedToday(renderJournalCard(journal), rest);
+  } else if (winMode === "evening") {
+    paintFocusedToday(renderClosingCard(closing), [renderJournalCard(journal), ...rest]);
   } else {
     paintCards([renderJournalCard(journal), ...rest]);
   }
@@ -281,7 +303,7 @@ async function boot() {
 // whenever the tab becomes visible again, and only repaint if it actually flipped.
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible" || !bootedToday) return;
-  if (isFocusWindowHKT(new Date()) !== paintedFocusState) {
+  if (windowMode(new Date()) !== paintedWindowMode) {
     initDateLine();
     renderToday(bootedToday.cardsData, bootedToday.dailyData);
   }
