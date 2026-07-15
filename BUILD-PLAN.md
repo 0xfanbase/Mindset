@@ -504,9 +504,9 @@ and a Fable UI/UX audit before merging.
   Mono 500, `--ink` text on a `--edge` accent-tinted pill, `999px` radius) — both new rules, no
   changes to any existing selector. Contrast was computed by hand before shipping (not
   assumed): `--accent` text on the composited `--edge`-over-`--surface` background measured
-  4.46:1 (calm) and 4.01:1 (blossom) — both fail the 4.5:1 AA bar for this pill's 10px text, so
+  4.46:1 (calm) and 4.07:1 (blossom) — both fail the 4.5:1 AA bar for this pill's 10px text, so
   `--ink` was used instead once `--accent` was ruled out; `--ink` on the same composited
-  background measures 13.70:1 (calm) / 13.55:1 (blossom), comfortably clearing AA. `verify.mjs`
+  background measures 13.70:1 (calm) / 13.74:1 (blossom), comfortably clearing AA. `verify.mjs`
   doesn't check this specific pair mechanically (it isn't one of the app's persistent
   background/text token pairs), so this was verified directly in Node against the exact
   composited RGB before commit, the same method `verify.mjs`'s own contrast check uses.
@@ -523,8 +523,19 @@ and a Fable UI/UX audit before merging.
   out in both themes, 1 day out, the trip's own HKT day (renders `TODAY`), and the day after
   (pill absent, rest of the card unaffected) — plus a real-current-time pass confirming zero
   console errors. `#cards`'s existing entrance-cascade and the `@media (min-width: 900px)`
-  4-across layout are both untouched; the pill adds no height to the card's chip row since it
-  sits inline with the existing `.card-chip` inside the new flex wrapper.
+  4-across layout are both untouched; the new `.card-top` flex row does add a small amount of
+  height versus the bare `.card-chip` it replaces (measured ~11px → ~19px, the Kenya card runs
+  ~8px taller than its siblings) — an accepted, deliberate tradeoff for the countdown, not an
+  oversight.
+- **Fable's independent recheck (before merge) caught two factual errors in this entry's first
+  draft**, both fixed here rather than left standing: the blossom contrast figures above were
+  originally miscomputed as 13.55:1 / 4.01:1 because the implementer's verification script
+  substituted `--accent`'s hex for `--edge`'s literal `rgba(201, 79, 124, 0.16)` tuple — the two
+  aren't the same color in the blossom theme (unlike calm, where `--edge`'s literal RGB happens
+  to equal `--accent`'s). Recomputed from the actual literal tuple: 13.74:1 / 4.07:1, both
+  fixed above. And the original draft claimed the pill "adds no height to the chip row," which
+  Fable measured as false (~8px taller) — corrected above too. Full write-up:
+  `audits/v1.17-fable-audit.md`.
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
