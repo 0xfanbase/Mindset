@@ -55,14 +55,22 @@ export function hktDateParts(d = new Date()) {
 
 // Pure staleness/fallback selection — kept here (not inline in app.js's DOM code)
 // so it's headlessly testable under node:test (BUILD-PLAN §6.3.4).
-export function expectedDateHKT(now = new Date()) {
-  const parts = hktDateParts(now);
-  const hktHour = Number(
-    new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", hour12: false }).format(now)
+export function hktHour(d = new Date()) {
+  return Number(
+    new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", hour12: false }).format(d)
   );
-  if (hktHour >= 6) return hktDateString(now);
+}
+
+export function expectedDateHKT(now = new Date()) {
+  if (hktHour(now) >= 6) return hktDateString(now);
   const yesterday = new Date(now.getTime() - 86400000);
   return hktDateString(yesterday);
+}
+
+// Pre-09:00 HKT "focus window" — Journal-first morning UI hides the other three
+// cards behind a reveal toggle so they don't compete with the journal prompt (v1.16).
+export function isFocusWindowHKT(now = new Date()) {
+  return hktHour(now) < 9;
 }
 
 export function staleness(dailyDateHKT, now = new Date()) {

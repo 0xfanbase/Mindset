@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.15)
+# MINDSET — Autonomous Build Plan (v1.16)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -406,6 +406,62 @@ viewport: cards render in the order Anchor → Journal → **Kenya** → Word, t
 visually identical in styling to the other three (no drift, no new CSS bugs), zero console
 errors.
 
+**v1.16 changelog (from v1.15, live UI request):** the owner asked for two changes aimed at
+making the morning open of the app calmer: (1) **Journal now renders first**, directly under
+the Today tab, ahead of Anchor/Kenya/Word; (2) **before 09:00 HKT, only Journal shows** — the
+other three cards are collapsed behind a quiet reveal control instead of rendering (and
+competing for attention) alongside it. At or after 09:00 HKT the page renders exactly as
+before (all four cards, Journal first), with no collapse and no control at all.
+
+- **Why collapse instead of dim:** a project-director pass (Fable) considered blur/opacity
+  dimming, an auto-reveal timer, and a native `<details>` disclosure before recommending a
+  full collapse behind a `button[aria-expanded][aria-controls]` toggle. Dimmed-but-legible
+  text is still a distraction (arguably a stronger one — half-visible copy invites a closer
+  look) and fails the WCAG AA contrast pairs at any opacity worth calling "dimmed"; a live
+  09:00 timer/`setInterval` would be new complexity this single-person app has never needed
+  elsewhere (every other time-dependent render — cards, date line, staleness chip — is
+  computed once at load, not kept live); `<details>/<summary>` would force the cards to nest
+  inside it, breaking `#cards`'s flex/gap layout and the existing `cardIn` stagger. A plain
+  disclosure button reuses the codebase's existing idioms (the `[hidden] { display: none }`
+  override pattern from the v1.11 `.chip` bug fix, the mono pill visual language of the
+  staleness chip/theme toggle, and the `cardIn` stagger, which replays for free when a
+  `display:none` subtree is revealed) at effectively zero new JS.
+- **`lib.mjs`:** the inline HKT-hour `Intl.DateTimeFormat` expression inside `expectedDateHKT`
+  was extracted into a new exported `hktHour(d)` (pure refactor, `expectedDateHKT`'s behavior
+  unchanged); a new `isFocusWindowHKT(d) = hktHour(d) < 9` drives the gate. 00:00–08:59 HKT
+  counts as the focus window (including the pre-06:00 hours when yesterday's cards are still
+  showing) — a 5am open should if anything be quieter, not less so.
+- **`app.js`:** `renderToday` now resolves `{anchor, journal, kenya, word}` once regardless of
+  staleness mode, then branches on `isFocusWindowHKT(new Date())`: `paintCards([Journal,
+  Anchor, Kenya, Word])` post-09:00 (same function as before, just reordered), or the new
+  `paintFocusedToday(journalNode, restNodes)` pre-09:00, which renders Journal alone, a
+  `.reveal-rest` toggle button (text flips "show the rest" / "hide the rest"; `aria-expanded`
+  flips with it), and a `#cards-more` wrapper (`hidden` by default) holding the other three.
+  The toggle is a real disclosure, not a one-way reveal — clicking it again re-collapses —
+  which avoids the focus-management problem of removing a focused control from the DOM.
+  No new localStorage key: the window re-collapses on every fresh load before 09:00 by
+  design (the point is the daily nudge back to Journal, not a one-time dismissal), and no
+  live boundary-crossing update (consistent with every other time-gated render in this app).
+- **`styles.css`:** new `.reveal-rest` (44px min-height pill, mono, matches the muted/hairline
+  register of the staleness chip and theme toggle, `:focus-visible` ring, respects
+  `prefers-reduced-motion`) and `#cards-more` (mirrors `#cards`'s flex column + gap; the
+  `[hidden] { display: none }` override is required for the same reason the v1.11 `.chip`
+  fix was — author-origin `display` would otherwise beat the user-agent `[hidden]` rule). The
+  existing `@media (min-width: 900px)` 4-across row layout is untouched for the normal
+  (post-09:00 or already-revealed) case; a `#cards.focus` override keeps the pre-09:00 state
+  a single stacked column even on desktop, since the two states aren't meant to look alike.
+- **`verify.mjs` tightened, not loosened, per the invariant-12 ratchet:** stage1 gained a
+  boundary check pinning `isFocusWindowHKT` at 08:59 HKT (`true`) and 09:00 HKT (`false`).
+  Check count rises from 60 to 61.
+- **Verified:** `verify.mjs all` 61/61. Visually confirmed via Playwright + the pre-installed
+  headless Chromium at a real 390×844 viewport, driven without a local dev server (all
+  requests fulfilled directly from disk through Playwright's own request interception, per
+  this project's no-local-server convention): before 09:00 HKT the page shows Journal alone
+  plus a "show the rest" pill; clicking it reveals Anchor/Kenya/Word with the existing
+  entrance cascade and flips the pill to "hide the rest"; clicking again re-collapses; at
+  09:00 HKT and later the page renders all four cards Journal-first with no pill at all.
+  Zero console errors in either state.
+
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
 ```
@@ -597,13 +653,12 @@ The design supersedes v1.0's tall hero-canvas mockup with a compact, single-scre
 ├────────────────────────────────────┤
 │      Today      Values             │  tabs (role=tablist), underline-active style
 ├────────────────────────────────────┤
-│  ANCHOR (mono chip)                │  cards: flat, no shadow/radius (v1.8 —
-│  card text (Fraunces)              │  matches the Values tab's row style exactly),
-│  — after Marcus Aurelius           │  15px vertical padding, hairline divider
-│  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈  │  between rows, no border on the last one
-│  [Journal row]  [Kenya row]        │  Kenya added v1.15, between Journal and Word
-│  [Word row]                        │
-├────────────────────────────────────┤   stacked ≤899px, 4-across ≥900px desktop
+│  JOURNAL (mono chip)                │  cards: surface + shadow + radius (v1.9);
+│  card text (Fraunces)              │  Journal renders first since v1.16 (§4.5
+│  ┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈┈  │  item 4b — before 09:00 HKT this is the
+│  [Anchor row]  [Kenya row]         │  only card shown, with a reveal toggle below
+│  [Word row]                        │  it; at/after 09:00 HKT all four render as
+├────────────────────────────────────┤  shown here, stacked ≤899px, 4-across ≥900px
                                           (desktop card min-width tightened 260→200px
                                           in v1.15 so 4 cards fit one row, not 3+1)
 │ refreshes daily · 06:00 HKT        │  footer, margin-top:auto pins it down
@@ -623,12 +678,13 @@ since it's no longer adjacent to the notch/status bar).
 
 1. **Theme toggle:** pill button top-right, `aria-pressed`, icons ◐/❀ (calm/blossom), 44×44px, `persists mindset.theme`, default `calm`, no flash-of-wrong-theme (inline script reads localStorage before CSS paint).
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Header row = mono category chip (ANCHOR / JOURNAL / KENYA / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Kenya card (added v1.15, between Journal and Word) is the same minimal shape as Anchor — chip, fact in `.card-body`, category as a small `.card-attr` line (e.g. `— Wildlife`) — no new CSS needed. Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px, italic and centered per v1.13 — live feedback that it "sitting on the left" undersold it as a headline) inside a `.word-title-row` (also centered, v1.13) alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
+3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Render order is **Journal, Anchor, Kenya, Word** (Journal moved to lead the list in v1.16 — see item 4b for what happens to the other three before 09:00 HKT). Header row = mono category chip (ANCHOR / JOURNAL / KENYA / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Kenya card (added v1.15) is the same minimal shape as Anchor — chip, fact in `.card-body`, category as a small `.card-attr` line (e.g. `— Wildlife`) — no new CSS needed. Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px, italic and centered per v1.13 — live feedback that it "sitting on the left" undersold it as a headline) inside a `.word-title-row` (also centered, v1.13) alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 06:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 06:00 HKT, every single day.)
    - `daily.json` unreachable, > 48h stale, or fetch fails → page computes all three cards locally via `lib.mjs` rotation → slate chip `offline rotation`. Since Word of the Day is deterministic (v1.10), this path picks the exact same word as the server would have for that date — unlike the retired Fresh card, there is no divergent "fallback" content.
    - **`.chip[hidden] { display: none; }` (v1.11, real bug fix):** `#staleness-chip` keeps `class="chip"` at all times, including while hidden; `.chip`'s own `display: table` (author-origin CSS) unconditionally overrode the browser's default `[hidden] { display: none }` (user-agent-origin CSS) — author styles always win over user-agent styles at equal specificity, regardless of selector order. The hidden chip was never actually disappearing; it sat empty but still consumed its padding/margin box in the default "fresh" case, every load. Fixed with an explicit override, matching the pattern `.panel[hidden] { display: none; }` already used correctly elsewhere in the same stylesheet.
 4a. **Word pronunciation (v1.11):** a 44×44px `<button aria-label="Pronounce <word>">🔊</button>` next to the word title, calling `window.speechSynthesis.speak(new SpeechSynthesisUtterance(word))` with `utterance.lang` set from the entry's `lang` field (§5.1/§5.3.10) — a native browser API, not a dependency (same category as `fetch`/`ResizeObserver`, already used). Rendered only if `"speechSynthesis" in window` (progressive enhancement — never a dead control on an unsupported browser).
+4b. **Pre-09:00 HKT focus mode (v1.16):** `lib.mjs`'s `isFocusWindowHKT(now)` (HKT hour < 9) gates `renderToday`'s output. Inside the window: only the Journal card renders, followed by a `.reveal-rest` disclosure button (`aria-expanded`/`aria-controls`, 44px tap target, mono pill styling matching the staleness chip/theme toggle) and a `#cards-more` wrapper (`hidden` by default) holding Anchor/Kenya/Word. Clicking the button toggles `#cards-more`'s `hidden` state and flips the button's text between "show the rest" / "hide the rest" — a real disclosure, not a one-way reveal, so focus never needs to move off the button. Outside the window: renders exactly as item 3 describes, no button, no wrapper. No new `localStorage` key and no live 09:00 boundary timer — like every other time-gated render in this app (cards, date line, staleness chip), the check runs once per load, and a fresh pre-09:00 load always starts collapsed by design (the daily nudge back to Journal is the point, not a one-time dismissal).
 5. **Values tab:** the 5 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px). **No numbering** — values are not a sequence. (Cut from 10 to 5 in v1.2 — ten read as a checklist; keep only what actually matters.)
 6. **Motion:** the figure is the primary animated element. Card/value-row entrance (v1.9, more noticeable per live feedback: "a small animation when I open up the page ... opening up of the cards") = a 500ms fade/rise/scale-in, staggered per item (90ms between Today's cards, 60ms between Values rows) so they visibly cascade in one after another rather than popping in together; nothing on scroll; respects `prefers-reduced-motion` (animation suppressed, content appears instantly). Hover lift 2px desktop only.
 
