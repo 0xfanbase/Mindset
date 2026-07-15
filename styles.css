@@ -136,6 +136,9 @@ mindset-figure {
   width: 56px;
   height: 64px;
 }
+mindset-figure[role="button"] { cursor: pointer; touch-action: manipulation; }
+mindset-figure[role="button"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+mindset-figure[role="button"]:active { transform: scale(0.97); }
 
 .date-line {
   text-align: left;
@@ -200,9 +203,6 @@ mindset-figure {
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(14px) scale(0.97); }
   to { opacity: 1; transform: none; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .card, .value-row, .reveal-rest { animation: none; }
 }
 
 /* Today's three items read as actual cards (v1.9) -- a surface, a shadow, room to
@@ -406,4 +406,13 @@ footer {
     flex: none;
     min-width: 0;
   }
+}
+
+/* Kept last on purpose: .card/.value-row/.reveal-rest each set their own `animation:
+   cardIn ...` at equal specificity, so this override must win the cascade by source
+   order, not just exist somewhere in the file (a bug found and fixed during v1.18 --
+   this rule previously sat right after @keyframes cardIn, before any of those three
+   base rules, so it silently never took effect). */
+@media (prefers-reduced-motion: reduce) {
+  .card, .value-row, .reveal-rest { animation: none; }
 }

@@ -15,6 +15,7 @@
   // neck, rounded shoulders, straight sides, rounded base.
   const BOX_W = 60, BOX_H = 96;
   const BREATHE_CYCLE = 7000; // one slow brighten-dim breath
+  const RESONANCE_CYCLE = 10500; // 10.5s cycle ≈ 5.7 breaths/min — coherence-breathing range (~5.5 bpm)
   const MOTE_CYCLE = 9000;
   const MOTES = [{ x: 24, delay: 0 }, { x: 36, delay: 3000 }, { x: 30, delay: 6000 }];
 
@@ -24,6 +25,8 @@
       super();
       this._raf = 0; this._running = false; this._ready = false;
       this._resizeTimer = 0; this._w = 0; this._h = 0; this._t0 = 0;
+      this._resonance = false;      // session-only; NEVER persisted to or read from localStorage
+      this._cycleMs = BREATHE_CYCLE;
     }
     connectedCallback() {
       if (!this.style.display) this.style.display = "block";
@@ -43,6 +46,19 @@
       this._ro.observe(this);
       this._ready = true;
       this._setup();
+
+      if (!this._onActivate) {
+        this._onActivate = (e) => {
+          if (e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
+          if (e.type === "keydown") e.preventDefault(); // Space must not scroll the page
+          if (!this._animated) return; // nothing to pace under reduced motion / animate="0"
+          this._resonance = !this._resonance;
+          this._cycleMs = this._resonance ? RESONANCE_CYCLE : BREATHE_CYCLE;
+          this._paintPaceLabel();
+        };
+        this.addEventListener("click", this._onActivate);
+        this.addEventListener("keydown", this._onActivate);
+      }
     }
     disconnectedCallback() {
       this._stop();
@@ -78,6 +94,30 @@
       this._stop();
       if (this._animated && !document.hidden) this._start();
       else this._drawStatic();
+      this._syncInteractivity();
+    }
+    // Grants/revokes real button semantics based on whether there's anything to pace —
+    // called from inside _refresh() so every path that already reaches it (connect,
+    // resize-settle, visibilitychange->visible, reduced-motion change) stays in sync for free.
+    _syncInteractivity() {
+      if (this._animated) {
+        this.removeAttribute("aria-hidden");
+        this.setAttribute("role", "button");
+        this.setAttribute("tabindex", "0");
+        this._paintPaceLabel();
+      } else {
+        this.setAttribute("aria-hidden", "true");
+        this.removeAttribute("role");
+        this.removeAttribute("tabindex");
+        this.removeAttribute("aria-pressed");
+        this.removeAttribute("aria-label");
+      }
+    }
+    _paintPaceLabel() {
+      this.setAttribute("aria-pressed", String(this._resonance));
+      this.setAttribute("aria-label", this._resonance
+        ? "Breathing pace: slow. Tap to return to the normal pace."
+        : "Breathing pace: normal. Tap for a slower, guided pace.");
     }
     // Offscreen radial-gradient sprite for the glow, rendered once per size/color change,
     // then drawn scaled per frame — cheap, with no per-frame gradient/blur recompute.
@@ -136,7 +176,7 @@
       ctx.clip();
 
       // the light itself, breathing slowly — a smooth sine, never a sudden jump
-      const breathe = (Math.sin((elapsed / BREATHE_CYCLE) * Math.PI * 2 - Math.PI / 2) + 1) / 2;
+      const breathe = (Math.sin((elapsed / this._cycleMs) * Math.PI * 2 - Math.PI / 2) + 1) / 2;
       const cx = X(30), cy = Y(62);
       const r = (13 + 7 * breathe) * s;
       ctx.globalAlpha = 0.55 + 0.4 * breathe;

@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.17)
+# MINDSET — Autonomous Build Plan (v1.18)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -536,6 +536,44 @@ and a Fable UI/UX audit before merging.
   fixed above. And the original draft claimed the pill "adds no height to the chip row," which
   Fable measured as false (~8px taller) — corrected above too. Full write-up:
   `audits/v1.17-fable-audit.md`.
+
+**v1.18 changelog (from v1.17, following a deep-research-informed enhancement pass):** a
+lightweight research pass over mindfulness/behavioral-design literature (BJ Fogg's Tiny
+Habits, resonance/coherence-breathing HRV studies, Amber Case's Calm Technology principles)
+surfaced a menu of possible enhancements to make the dashboard more mindful without adding
+scope, tracking, or gamification; the owner picked two for this version — an opt-in slower
+"resonance" breathing pace on the figure, and a small arrival beat before Today's cards
+animate in.
+
+- **`figure.js`:** the figure itself becomes the interactive control (no new button element)
+  — a tap, Enter, or Space slows its breathing cycle from 7000ms to a 10500ms coherence-pace
+  cycle (≈5.7 breaths/min) and back. `role="button"`/`tabindex="0"`/`aria-pressed`/
+  `aria-label` are granted only while the figure is actually animated (`_syncInteractivity()`,
+  called from inside `_refresh()` so every existing code path that reaches it stays in sync
+  automatically); under `prefers-reduced-motion` the figure stays fully inert, `aria-hidden`,
+  and out of the tab order — there is nothing to pace when animation is already frozen. Pace
+  state is a plain in-memory field, reset every page load, and never touches `localStorage`.
+- **`styles.css`:** three new `mindset-figure[role="button"]` rules (cursor, focus-visible
+  ring, active-state scale) — the figure's existing 56×64px box already clears the 44px
+  tap-target floor.
+- **`app.js`:** a small `ARRIVAL_BEAT_S = 0.3` delay applied to Today's card entrance stagger
+  (both the flat and focus-mode layouts) so the figure gets a brief moment of visual
+  precedence before content lands — deliberately not applied to the Values tab's row stagger,
+  since Values re-renders on every tab switch and a baked-in beat there would replay every
+  time, not just on first paint.
+- **A real, pre-existing accessibility bug found and fixed during browser verification:**
+  Playwright's reduced-motion emulation showed `.card`/`.value-row`/`.reveal-rest` still
+  running their full entrance animation despite an existing `@media (prefers-reduced-motion:
+  reduce) { animation: none; }` rule — the rule sat *before* the base rules that set
+  `animation: cardIn ...` on those same selectors, so at equal specificity the later base
+  rules always won the cascade and the override had never actually applied. Fixed by moving
+  the rule to the end of the stylesheet, after every rule it needs to override. See
+  `audits/decisions.md` for the full root-cause writeup.
+- **Verified:** `verify.mjs all` 62/62 (`sw.js`'s Appendix C.2 template amended to match the
+  `mindset-v3`→`mindset-v4` cache bump, per the established convention — no check logic
+  changed). `figure.js` measured 9,554 B (≤12KB cap). Full Playwright pass at 390×844 across
+  both motion-allowed and reduced-motion states — 24/24 assertions passed, including the
+  reduced-motion fix above. See `audits/decisions.md` for the complete verification record.
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
@@ -1311,7 +1349,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v3";
+const CACHE = "mindset-v4";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
