@@ -1,5 +1,5 @@
 // app.js — UI logic: tabs, theme, date, cards, staleness (BUILD-PLAN.md §4/§6)
-import { hktDateParts, staleness, pickToday, isFocusWindowHKT } from "./lib.mjs";
+import { hktDateParts, staleness, pickToday, isFocusWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
 
 const PULSE = { calm: "#7FB0FF", blossom: "#F2A9C6" };
 const BG = { calm: "#FAF9F5", blossom: "#FBF4F6" };
@@ -108,9 +108,25 @@ function renderJournalCard(journal) {
   ]);
 }
 
+// Countdown to the 2026-08-15 flight (v1.17), shown only while the trip is still ahead --
+// a countdown that goes negative the day after departure would read as a bug, not a feature,
+// so the badge simply stops rendering once the trip has passed (kenya-facts content keeps
+// rotating as normal either way).
+function kenyaCountdownText(days) {
+  if (days > 1) return { label: `${days} DAYS`, aria: `${days} days until the Kenya trip` };
+  if (days === 1) return { label: "1 DAY", aria: "1 day until the Kenya trip" };
+  if (days === 0) return { label: "TODAY", aria: "The Kenya trip departs today" };
+  return null;
+}
+
 function renderKenyaCard(kenya) {
+  const top = el("div", { class: "card-top" }, [el("div", { class: "card-chip", text: "KENYA" })]);
+  const countdown = kenyaCountdownText(daysUntilKenyaTrip(new Date()));
+  if (countdown) {
+    top.appendChild(el("div", { class: "kenya-countdown", "aria-label": countdown.aria, text: countdown.label }));
+  }
   return el("article", { class: "card" }, [
-    el("div", { class: "card-chip", text: "KENYA" }),
+    top,
     el("p", { class: "card-body", text: kenya.fact }),
     el("div", { class: "card-attr", text: `— ${kenya.category}` }),
   ]);

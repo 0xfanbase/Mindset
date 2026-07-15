@@ -82,6 +82,18 @@ export function staleness(dailyDateHKT, now = new Date()) {
   return "offline";
 }
 
+// Kenya trip countdown (v1.17) — the flight departs 2026-08-15, HKT-anchored like every
+// other date in this app (invariant 8). Day-number diffing (not ms subtraction) reuses the
+// exact same epoch-day mechanism as hktDayNumber/pickIndex, so it can't drift from a DST edge
+// case or an odd local-clock offset the way `new Date(future) - new Date(now)` could.
+const KENYA_TRIP_DATE_HKT = "2026-08-15";
+
+export function daysUntilKenyaTrip(now = new Date()) {
+  const [y, m, day] = KENYA_TRIP_DATE_HKT.split("-").map(Number);
+  const tripDayNumber = Math.floor(Date.UTC(y, m - 1, day) / 86400000);
+  return tripDayNumber - hktDayNumber(now);
+}
+
 export function pickToday(cards, now = new Date()) {
   const dayNumber = hktDayNumber(now);
   const anchor = cards.anchors[pickIndex(cards.anchors.length, dayNumber, "anchor")];
