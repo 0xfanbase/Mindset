@@ -1,5 +1,5 @@
 // app.js — UI logic: tabs, theme, date, cards, staleness (BUILD-PLAN.md §4/§6)
-import { hktDateParts, staleness, pickToday } from "./lib.mjs";
+import { hktDateParts, staleness, pickToday, isFocusWindowHKT } from "./lib.mjs";
 
 const PULSE = { calm: "#7FB0FF", blossom: "#F2A9C6" };
 const BG = { calm: "#FAF9F5", blossom: "#FBF4F6" };
@@ -152,11 +152,42 @@ function renderErrorCard() {
 
 function paintCards(nodes) {
   const host = document.getElementById("cards");
+  host.classList.remove("focus");
   host.textContent = "";
   nodes.forEach((n, i) => {
     n.style.animationDelay = `${i * 0.09}s`;
     host.appendChild(n);
   });
+}
+
+// Pre-09:00 HKT: Journal stands alone, the other three sit behind a reveal toggle
+// so they don't compete for attention before the morning's actual reflection (v1.16).
+function paintFocusedToday(journalNode, restNodes) {
+  const host = document.getElementById("cards");
+  host.classList.add("focus");
+  host.textContent = "";
+
+  journalNode.style.animationDelay = "0s";
+  host.appendChild(journalNode);
+
+  const toggle = el("button", {
+    type: "button", class: "reveal-rest",
+    "aria-expanded": "false", "aria-controls": "cards-more",
+    text: "show the rest",
+  });
+  const more = el("div", { id: "cards-more" }, restNodes);
+  more.hidden = true;
+  restNodes.forEach((n, i) => { n.style.animationDelay = `${i * 0.09}s`; });
+
+  toggle.addEventListener("click", () => {
+    const revealing = more.hidden;
+    more.hidden = !revealing;
+    toggle.setAttribute("aria-expanded", String(revealing));
+    toggle.textContent = revealing ? "hide the rest" : "show the rest";
+  });
+
+  host.appendChild(toggle);
+  host.appendChild(more);
 }
 
 function renderValues(values) {
@@ -183,16 +214,22 @@ function renderToday(cardsData, dailyData) {
   const mode = staleness(dailyData && dailyData.dateHKT);
   showChip(mode);
 
+  let anchor, journal, kenya, word;
   if (mode === "fresh" || mode === "yesterday") {
-    const anchor = cardsData.anchors.find((a) => a.id === dailyData.anchorId);
-    const journal = cardsData.journal.find((j) => j.id === dailyData.journalId);
-    const kenya = cardsData.kenya.find((k) => k.id === dailyData.kenyaId);
-    const word = cardsData.wordOfDay.find((w) => w.id === dailyData.wordId);
+    anchor = cardsData.anchors.find((a) => a.id === dailyData.anchorId);
+    journal = cardsData.journal.find((j) => j.id === dailyData.journalId);
+    kenya = cardsData.kenya.find((k) => k.id === dailyData.kenyaId);
+    word = cardsData.wordOfDay.find((w) => w.id === dailyData.wordId);
     if (!anchor || !journal || !kenya || !word) { paintCards([renderErrorCard()]); return; }
-    paintCards([renderAnchorCard(anchor), renderJournalCard(journal), renderKenyaCard(kenya), renderWordCard(word)]);
   } else {
-    const { anchor, journal, kenya, word } = pickToday(cardsData, new Date());
-    paintCards([renderAnchorCard(anchor), renderJournalCard(journal), renderKenyaCard(kenya), renderWordCard(word)]);
+    ({ anchor, journal, kenya, word } = pickToday(cardsData, new Date()));
+  }
+
+  const rest = [renderAnchorCard(anchor), renderKenyaCard(kenya), renderWordCard(word)];
+  if (isFocusWindowHKT(new Date())) {
+    paintFocusedToday(renderJournalCard(journal), rest);
+  } else {
+    paintCards([renderJournalCard(journal), ...rest]);
   }
 }
 
