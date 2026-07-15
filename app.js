@@ -166,12 +166,14 @@ function renderErrorCard() {
   ]);
 }
 
+const ARRIVAL_BEAT_S = 0.3;
+
 function paintCards(nodes) {
   const host = document.getElementById("cards");
   host.classList.remove("focus");
   host.textContent = "";
   nodes.forEach((n, i) => {
-    n.style.animationDelay = `${i * 0.09}s`;
+    n.style.animationDelay = `${ARRIVAL_BEAT_S + i * 0.09}s`;
     host.appendChild(n);
   });
 }
@@ -183,7 +185,7 @@ function paintFocusedToday(journalNode, restNodes) {
   host.classList.add("focus");
   host.textContent = "";
 
-  journalNode.style.animationDelay = "0s";
+  journalNode.style.animationDelay = `${ARRIVAL_BEAT_S}s`;
   host.appendChild(journalNode);
 
   const toggle = el("button", {
@@ -193,7 +195,7 @@ function paintFocusedToday(journalNode, restNodes) {
   });
   const more = el("div", { id: "cards-more" }, restNodes);
   more.hidden = true;
-  restNodes.forEach((n, i) => { n.style.animationDelay = `${i * 0.09}s`; });
+  restNodes.forEach((n, i) => { n.style.animationDelay = `${ARRIVAL_BEAT_S + i * 0.09}s`; });
 
   toggle.addEventListener("click", () => {
     const revealing = more.hidden;
