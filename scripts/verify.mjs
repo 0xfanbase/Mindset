@@ -258,6 +258,18 @@ function stage1() {
     assert.equal(lib.isFocusWindowHKT(new Date("2026-07-15T01:00:00Z")), false);
   });
 
+  check("stage1", "lib.mjs: daysUntilKenyaTrip correct at 4 known instants (HKT-anchored, 2026-08-15 trip)", async () => {
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    // 2026-07-14T16:00:00Z = 2026-07-15T00:00 HKT -> 31 days before 2026-08-15
+    assert.equal(lib.daysUntilKenyaTrip(new Date("2026-07-14T16:00:00Z")), 31);
+    // one HKT day later -> exactly one fewer day out
+    assert.equal(lib.daysUntilKenyaTrip(new Date("2026-07-15T16:00:00Z")), 30);
+    // 2026-08-14T16:01:00Z = 2026-08-15T00:01 HKT, the trip's own HKT calendar day -> 0
+    assert.equal(lib.daysUntilKenyaTrip(new Date("2026-08-14T16:01:00Z")), 0);
+    // the day after departure -> negative, so the UI knows to hide the countdown
+    assert.equal(lib.daysUntilKenyaTrip(new Date("2026-08-15T16:01:00Z")), -1);
+  });
+
   check("stage1", "lib.mjs: pickIndex full-cycle uniqueness for pools 120/40/10", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     for (const poolSize of [120, 40, 10]) {

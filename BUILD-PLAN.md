@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.16)
+# MINDSET — Autonomous Build Plan (v1.17)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -484,6 +484,59 @@ before (all four cards, Journal first), with no collapse and no control at all.
   confirmed the page repaints to the full Journal-first four-card layout with no toggle,
   zero console errors.
 
+**v1.17 changelog (from v1.16, live feature request):** the owner and his wife fly out to Kenya
+on 2026-08-15; asked for a day countdown on the Kenya card, top-right, with a beautiful design
+and a Fable UI/UX audit before merging.
+
+- **`lib.mjs`:** new `daysUntilKenyaTrip(now)`, diffing a fixed `KENYA_TRIP_DATE_HKT =
+  "2026-08-15"` day-number against `hktDayNumber(now)` — the same epoch-day mechanism
+  `pickIndex`/`hktDayNumber` already use elsewhere, not `new Date(future) - new Date(now)` ms
+  subtraction, so it's immune to the kind of local-clock/DST edge case that method invites (HKT
+  itself has no DST, but the shared helper keeps the whole app's date math in one consistent
+  idiom per invariant 8).
+- **`app.js`:** `renderKenyaCard` wraps the existing `.card-chip` in a new `.card-top` flex row
+  and, when `daysUntilKenyaTrip` is still >= 0, appends a `.kenya-countdown` pill showing `N
+  DAYS` / `1 DAY` / `TODAY` with a full-sentence `aria-label` (e.g. "31 days until the Kenya
+  trip") for screen readers. Once the trip has passed the pill simply stops rendering — a
+  negative countdown would read as a bug, not a feature — while the Kenya facts keep rotating
+  normally either way, unaffected by the trip date.
+- **`styles.css`:** `.card-top` (flex, `space-between`) plus `.kenya-countdown` (10px IBM Plex
+  Mono 500, `--ink` text on a `--edge` accent-tinted pill, `999px` radius) — both new rules, no
+  changes to any existing selector. Contrast was computed by hand before shipping (not
+  assumed): `--accent` text on the composited `--edge`-over-`--surface` background measured
+  4.46:1 (calm) and 4.07:1 (blossom) — both fail the 4.5:1 AA bar for this pill's 10px text, so
+  `--ink` was used instead once `--accent` was ruled out; `--ink` on the same composited
+  background measures 13.70:1 (calm) / 13.74:1 (blossom), comfortably clearing AA. `verify.mjs`
+  doesn't check this specific pair mechanically (it isn't one of the app's persistent
+  background/text token pairs), so this was verified directly in Node against the exact
+  composited RGB before commit, the same method `verify.mjs`'s own contrast check uses.
+- **`verify.mjs` tightened, not loosened, per the invariant-12 ratchet:** stage1 gained a check
+  pinning `daysUntilKenyaTrip` at four known instants — 31 days out, 30 days out (one HKT day
+  later), the trip's own HKT calendar day (0), and the day after (-1, confirming the sign the
+  UI relies on to hide the pill). Check count rises from 61 to 62.
+- **Fable UI/UX audit (pre-merge, per the request):** see `audits/v1.17-fable-audit.md` for the
+  full write-up.
+- **Verified:** `verify.mjs all` 62/62, `node --check` clean on every touched file. Visually
+  confirmed via Playwright + the pre-installed headless Chromium at a real 390×844 viewport,
+  served from a local static server (this project's established alternative to Playwright's
+  own request interception, used in v1.6/v1.9/v1.15), across five clock-frozen states: 31 days
+  out in both themes, 1 day out, the trip's own HKT day (renders `TODAY`), and the day after
+  (pill absent, rest of the card unaffected) — plus a real-current-time pass confirming zero
+  console errors. `#cards`'s existing entrance-cascade and the `@media (min-width: 900px)`
+  4-across layout are both untouched; the new `.card-top` flex row does add a small amount of
+  height versus the bare `.card-chip` it replaces (measured ~11px → ~19px, the Kenya card runs
+  ~8px taller than its siblings) — an accepted, deliberate tradeoff for the countdown, not an
+  oversight.
+- **Fable's independent recheck (before merge) caught two factual errors in this entry's first
+  draft**, both fixed here rather than left standing: the blossom contrast figures above were
+  originally miscomputed as 13.55:1 / 4.01:1 because the implementer's verification script
+  substituted `--accent`'s hex for `--edge`'s literal `rgba(201, 79, 124, 0.16)` tuple — the two
+  aren't the same color in the blossom theme (unlike calm, where `--edge`'s literal RGB happens
+  to equal `--accent`'s). Recomputed from the actual literal tuple: 13.74:1 / 4.07:1, both
+  fixed above. And the original draft claimed the pill "adds no height to the chip row," which
+  Fable measured as false (~8px taller) — corrected above too. Full write-up:
+  `audits/v1.17-fable-audit.md`.
+
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
 ```
@@ -700,13 +753,14 @@ since it's no longer adjacent to the notch/status bar).
 
 1. **Theme toggle:** pill button top-right, `aria-pressed`, icons ◐/❀ (calm/blossom), 44×44px, `persists mindset.theme`, default `calm`, no flash-of-wrong-theme (inline script reads localStorage before CSS paint).
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Render order is **Journal, Anchor, Kenya, Word** (Journal moved to lead the list in v1.16 — see item 4b for what happens to the other three before 09:00 HKT). Header row = mono category chip (ANCHOR / JOURNAL / KENYA / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Kenya card (added v1.15) is the same minimal shape as Anchor — chip, fact in `.card-body`, category as a small `.card-attr` line (e.g. `— Wildlife`) — no new CSS needed. Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px, italic and centered per v1.13 — live feedback that it "sitting on the left" undersold it as a headline) inside a `.word-title-row` (also centered, v1.13) alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
+3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Render order is **Journal, Anchor, Kenya, Word** (Journal moved to lead the list in v1.16 — see item 4b for what happens to the other three before 09:00 HKT). Header row = mono category chip (ANCHOR / JOURNAL / KENYA / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Kenya card (added v1.15) is the same minimal shape as Anchor — chip, fact in `.card-body`, category as a small `.card-attr` line (e.g. `— Wildlife`) — plus a trip-countdown pill top-right of its chip row as of v1.17 (item 4c). Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px, italic and centered per v1.13 — live feedback that it "sitting on the left" undersold it as a headline) inside a `.word-title-row` (also centered, v1.13) alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 06:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 06:00 HKT, every single day.)
    - `daily.json` unreachable, > 48h stale, or fetch fails → page computes all three cards locally via `lib.mjs` rotation → slate chip `offline rotation`. Since Word of the Day is deterministic (v1.10), this path picks the exact same word as the server would have for that date — unlike the retired Fresh card, there is no divergent "fallback" content.
    - **`.chip[hidden] { display: none; }` (v1.11, real bug fix):** `#staleness-chip` keeps `class="chip"` at all times, including while hidden; `.chip`'s own `display: table` (author-origin CSS) unconditionally overrode the browser's default `[hidden] { display: none }` (user-agent-origin CSS) — author styles always win over user-agent styles at equal specificity, regardless of selector order. The hidden chip was never actually disappearing; it sat empty but still consumed its padding/margin box in the default "fresh" case, every load. Fixed with an explicit override, matching the pattern `.panel[hidden] { display: none; }` already used correctly elsewhere in the same stylesheet.
 4a. **Word pronunciation (v1.11):** a 44×44px `<button aria-label="Pronounce <word>">🔊</button>` next to the word title, calling `window.speechSynthesis.speak(new SpeechSynthesisUtterance(word))` with `utterance.lang` set from the entry's `lang` field (§5.1/§5.3.10) — a native browser API, not a dependency (same category as `fetch`/`ResizeObserver`, already used). Rendered only if `"speechSynthesis" in window` (progressive enhancement — never a dead control on an unsupported browser).
 4b. **Pre-09:00 HKT focus mode (v1.16):** `lib.mjs`'s `isFocusWindowHKT(now)` (HKT hour < 9) gates `renderToday`'s output. Inside the window: only the Journal card renders, followed by a `.reveal-rest` disclosure button (`aria-expanded`/`aria-controls`, 44px tap target, mono pill styling matching the staleness chip/theme toggle) and a `#cards-more` wrapper (`hidden` by default) holding Anchor/Kenya/Word. Clicking the button toggles `#cards-more`'s `hidden` state and flips the button's text between "show the rest" / "hide the rest" — a real disclosure, not a one-way reveal, so focus never needs to move off the button. Outside the window: renders exactly as item 3 describes, no button, no wrapper. No new `localStorage` key and no live 09:00 boundary timer — like every other time-gated render in this app (cards, date line, staleness chip), the check runs once per load, and a fresh pre-09:00 load always starts collapsed by design (the daily nudge back to Journal is the point, not a one-time dismissal).
+4c. **Kenya trip countdown (v1.17):** a small mono pill (`.kenya-countdown`, 10px IBM Plex Mono 500, `--ink` text on a `--edge` accent-tinted background, `999px` border-radius) sits top-right of the Kenya card's chip row, inside a new `.card-top` flex container (`justify-content: space-between`) that wraps the existing `.card-chip`. `lib.mjs`'s `daysUntilKenyaTrip(now)` diffs the fixed trip date (`2026-08-15`, HKT-anchored) against `hktDayNumber(now)` — the same epoch-day mechanism `pickIndex`/`hktDayNumber` already use, not raw millisecond subtraction, so it can't drift on an odd local-clock offset. Renders `N DAYS` (N > 1), `1 DAY`, or `TODAY` (N = 0); once the trip has passed (N < 0) the pill simply doesn't render — a negative countdown would read as a bug, not a feature, and the Kenya facts keep rotating normally either way. `aria-label` on the pill spells out the full sentence (e.g. "31 days until the Kenya trip") for screen readers, since the visible text alone (`31 DAYS`) doesn't say what it's counting down to. No layout change to the other three cards; `.card-chip` itself is unchanged, just now wrapped in a flex row.
 5. **Values tab:** the 5 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px). **No numbering** — values are not a sequence. (Cut from 10 to 5 in v1.2 — ten read as a checklist; keep only what actually matters.)
 6. **Motion:** the figure is the primary animated element. Card/value-row entrance (v1.9, more noticeable per live feedback: "a small animation when I open up the page ... opening up of the cards") = a 500ms fade/rise/scale-in, staggered per item (90ms between Today's cards, 60ms between Values rows) so they visibly cascade in one after another rather than popping in together; nothing on scroll; respects `prefers-reduced-motion` (animation suppressed, content appears instantly). Hover lift 2px desktop only.
 
