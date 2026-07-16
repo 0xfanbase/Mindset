@@ -2246,7 +2246,7 @@
     },
     {
       "id": "journal-14",
-      "prompt": "What's something you did today purely because you wanted to, not because you had to?"
+      "prompt": "Where in your life do you have more freedom to choose than you're currently using?"
     },
     {
       "id": "journal-15",
@@ -2262,7 +2262,7 @@
     },
     {
       "id": "journal-18",
-      "prompt": "If you described today to your future self, what would you want to be proud of?"
+      "prompt": "What's one thing your future self would thank you for starting today?"
     },
     {
       "id": "journal-19",
@@ -2326,7 +2326,7 @@
     },
     {
       "id": "journal-34",
-      "prompt": "What did today ask of you that yesterday didn't?"
+      "prompt": "What is today asking of you that no other day has quite asked before?"
     },
     {
       "id": "journal-35",
@@ -2350,7 +2350,7 @@
     },
     {
       "id": "journal-40",
-      "prompt": "What's the kindest thing you did today, and did you notice it at the time?"
+      "prompt": "Who could use a small kindness from you today, and what would it cost you to offer it?"
     }
   ],
   "kenya": [
@@ -2897,6 +2897,10 @@
     { "id": "closing-27", "prompt": "What would rest look like tonight if it did not have to be earned?" },
     { "id": "closing-28", "prompt": "Which of tonight's racing thoughts would survive being written on paper and left in another room?" },
     { "id": "closing-29", "prompt": "What did your body carry you through today, and have you thanked it yet?" },
-    { "id": "closing-30", "prompt": "As you close this day, what one word describes how you want to meet the next one?" }
+    { "id": "closing-30", "prompt": "As you close this day, what one word describes how you want to meet the next one?" },
+    { "id": "closing-31", "prompt": "What's something you did today purely because you wanted to, not because you had to?" },
+    { "id": "closing-32", "prompt": "If you described today to your future self, what would you want to be proud of?" },
+    { "id": "closing-33", "prompt": "What's one way today quietly tested you, and how did you respond?" },
+    { "id": "closing-34", "prompt": "What's the kindest thing you did today, and did you notice it at the time?" }
   ]
 }
