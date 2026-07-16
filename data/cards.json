@@ -2246,7 +2246,7 @@
     },
     {
       "id": "journal-14",
-      "prompt": "What's something you did today purely because you wanted to, not because you had to?"
+      "prompt": "Where in your life do you have more freedom to choose than you're currently using?"
     },
     {
       "id": "journal-15",
@@ -2262,7 +2262,7 @@
     },
     {
       "id": "journal-18",
-      "prompt": "If you described today to your future self, what would you want to be proud of?"
+      "prompt": "What's one thing your future self would thank you for starting today?"
     },
     {
       "id": "journal-19",
@@ -2282,7 +2282,7 @@
     },
     {
       "id": "journal-23",
-      "prompt": "What's the story you tell yourself about why you can't, and is it still true?"
+      "prompt": "What's the story you tell yourself about why you can't, and where do you think that story first came from?"
     },
     {
       "id": "journal-24",
@@ -2326,7 +2326,7 @@
     },
     {
       "id": "journal-34",
-      "prompt": "What did today ask of you that yesterday didn't?"
+      "prompt": "What opportunity is today offering that you might otherwise let pass by?"
     },
     {
       "id": "journal-35",
@@ -2350,7 +2350,7 @@
     },
     {
       "id": "journal-40",
-      "prompt": "What's the kindest thing you did today, and did you notice it at the time?"
+      "prompt": "Who could use a small kindness from you today, and what would it cost you to offer it?"
     }
   ],
   "kenya": [
@@ -2870,7 +2870,7 @@
   "closing": [
     { "id": "closing-01", "prompt": "What can you set down tonight that you were never meant to carry until tomorrow?" },
     { "id": "closing-02", "prompt": "What is one moment from today you're glad happened, even if it was small?" },
-    { "id": "closing-03", "prompt": "What's still unfinished right now, and can it simply wait until morning?" },
+    { "id": "closing-03", "prompt": "What's still unfinished on your list right now, and what would it feel like to let it wait until morning?" },
     { "id": "closing-04", "prompt": "Where in your body do you feel today's leftover tension, and what would it take to let it go?" },
     { "id": "closing-05", "prompt": "What are you willing to forgive yourself for, just for tonight?" },
     { "id": "closing-06", "prompt": "Which conversation from today is still running in your head, and what would it feel like to let it end here?" },
@@ -2884,19 +2884,23 @@
     { "id": "closing-14", "prompt": "Which worry that you're holding tonight belongs to a version of tomorrow that may never arrive?" },
     { "id": "closing-15", "prompt": "What did you do well enough today, even if not perfectly?" },
     { "id": "closing-16", "prompt": "If you could thank today for one thing before it goes, what would it be?" },
-    { "id": "closing-17", "prompt": "What tension are you keeping alive by retelling it, and could tonight be the last telling?" },
+    { "id": "closing-17", "prompt": "What tension are you keeping alive by retelling it, and what would it take to let tonight be the last telling?" },
     { "id": "closing-18", "prompt": "What part of today would you have missed if you had gotten everything you wanted?" },
     { "id": "closing-19", "prompt": "How would you speak to a friend who had the exact day you just had?" },
-    { "id": "closing-20", "prompt": "What is your breath doing right now, and can you give it three slow rounds before you continue?" },
+    { "id": "closing-20", "prompt": "What is your breath doing right now, and what shifts if you slow it down for three full rounds?" },
     { "id": "closing-21", "prompt": "Which unfinished thing can you name, write down, and formally hand to tomorrow?" },
     { "id": "closing-22", "prompt": "What did you learn today that you didn't have this morning?" },
     { "id": "closing-23", "prompt": "What are you pretending still needs your attention tonight?" },
     { "id": "closing-24", "prompt": "If today never comes back, what about it is worth keeping, and what is safe to release?" },
-    { "id": "closing-25", "prompt": "Where did you fall short today, and can you set that down as a fact instead of a sentence?" },
+    { "id": "closing-25", "prompt": "Where did you fall short today, and what happens when you hold that as a fact instead of a sentence?" },
     { "id": "closing-26", "prompt": "What sound, light, or texture from today deserves a quiet thank you?" },
     { "id": "closing-27", "prompt": "What would rest look like tonight if it did not have to be earned?" },
     { "id": "closing-28", "prompt": "Which of tonight's racing thoughts would survive being written on paper and left in another room?" },
-    { "id": "closing-29", "prompt": "What did your body carry you through today, and have you thanked it yet?" },
-    { "id": "closing-30", "prompt": "As you close this day, what one word describes how you want to meet the next one?" }
+    { "id": "closing-29", "prompt": "What did your body carry you through today, and how might you thank it before you sleep?" },
+    { "id": "closing-30", "prompt": "As you close this day, what one word describes how you want to meet the next one?" },
+    { "id": "closing-31", "prompt": "What's something you did today purely because you wanted to, not because you had to?" },
+    { "id": "closing-32", "prompt": "If you described today to your future self, what would you want to be proud of?" },
+    { "id": "closing-33", "prompt": "What's one way today quietly tested you, and how did you respond?" },
+    { "id": "closing-34", "prompt": "What's the kindest thing you did today, and how did it feel to do it?" }
   ]
 }
