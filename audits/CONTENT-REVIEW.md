@@ -856,16 +856,16 @@ confidence or closeness-to-source risk the way anchors carry.
 - **journal-11**: What's one assumption about your future you've never actually questioned?
 - **journal-12**: Who in your life deserves a thank you they haven't received yet?
 - **journal-13**: What does your ideal ordinary Tuesday actually look like?
-- **journal-14**: What's something you did today purely because you wanted to, not because you had to?
+- **journal-14** (rewritten, see "Journal/Closing tense audit" below): Where in your life do you have more freedom to choose than you're currently using?
 - **journal-15**: Where are you spending energy on something that no longer matters to you?
 - **journal-16**: What would change if you stopped waiting for permission to start?
 - **journal-17**: What's a fear you've been treating as a fact?
-- **journal-18**: If you described today to your future self, what would you want to be proud of?
+- **journal-18** (rewritten, see below): What's one thing your future self would thank you for starting today?
 - **journal-19**: What's one habit that quietly shapes more of your life than you realize?
 - **journal-20**: Who taught you something important without knowing they were teaching you?
 - **journal-21**: What are you tolerating that you have the power to change?
 - **journal-22**: When did you last do something difficult and feel glad afterward?
-- **journal-23**: What's the story you tell yourself about why you can't, and is it still true?
+- **journal-23** (rewritten, see below): What's the story you tell yourself about why you can't, and where do you think that story first came from?
 - **journal-24**: Where do you feel busy but not actually productive?
 - **journal-25**: What would you attempt if failing at it cost you nothing?
 - **journal-26**: What's a conversation you've been putting off, and what's really stopping you?
@@ -876,13 +876,108 @@ confidence or closeness-to-source risk the way anchors carry.
 - **journal-31**: What would you do differently this week if you knew it would be remembered?
 - **journal-32**: What's a small discomfort you've been avoiding that would probably teach you something?
 - **journal-33**: Where in your life do you already have enough, but act like you don't?
-- **journal-34**: What did today ask of you that yesterday didn't?
+- **journal-34** (rewritten twice, see below): What opportunity is today offering that you might otherwise let pass by?
 - **journal-35**: What's something you're proud of that you've never told anyone?
 - **journal-36**: If your stress had a message for you, what would it be trying to say?
 - **journal-37**: What's one thing you can simplify this week without losing anything that matters?
 - **journal-38**: Who do you need to stop comparing yourself to?
 - **journal-39**: What would it look like to trust the process instead of needing the outcome now?
-- **journal-40**: What's the kindest thing you did today, and did you notice it at the time?
+- **journal-40** (rewritten, see below): Who could use a small kindness from you today, and what would it cost you to offer it?
+
+### Journal/Closing tense audit (2026-07-16, post v1.19)
+
+Live feedback: the morning-focus-window Journal card (v1.16, the sole card shown before 09:00
+HKT) surfaced journal-40's original text — "What's the kindest thing you did today, and did you
+notice it at the time?" — which presupposes the day already happened, wrong for something a
+user might read at 6am. Root cause: the 40 Journal entries were written in v1.12, before both
+the pre-09:00 focus window (v1.16) and the dedicated retrospective Closing pool (v1.19) existed,
+so nothing ever re-checked Journal for tense fit once it became the guaranteed-solo morning
+card. Four entries (journal-14/18/34/40) used the same retrospective "what did you do today"
+framing that is Closing's job, not Journal's.
+
+Fix: moved the four original texts into Closing as closing-31..34 (retrospective is correct
+there) and wrote four time-neutral replacements for journal-14/18/34/40. Followed with an
+independent 3-reviewer audit (separate agents, no shared context) of the full updated 40-entry
+Journal + 34-entry Closing pool against: (1) does every Journal entry work read standing alone
+at 6am with no presupposition the day already happened, (2) is every Closing entry correctly
+retrospective, (3) rule compliance (second person, single open-ended question, not yes/no,
+concrete not generic, no platitudes), (4) genuine near-duplicate questions within/across pools
+(the mechanical `verify.mjs` token-overlap check only runs over anchors, not journal/closing).
+
+All 3 reviewers independently flagged the same real problem: the first rewrite of journal-34
+("What is today asking of you that no other day has quite asked before?") still duplicated
+closing-07 ("What did today ask of you that tomorrow will not?") — same "today makes a unique
+demand" question, just tense-flipped, and since Journal/Closing rotate independently the two
+could land on the same calendar day. Rewrote journal-34 again to a genuinely distinct angle
+(opportunity/attention rather than "today's demand"). 2 of 3 reviewers also independently
+flagged that the two newly-moved kindness/body-gratitude Closing entries (closing-34, and its
+neighbor closing-29) ended in a literal yes/no tag ("...and did you notice it at the time?" /
+"...and have you thanked it yet?"), against the project's own no-yes/no-questions rule — fixed
+both. One reviewer's stricter mechanical pass caught the identical yes/no-tail defect in five
+more pre-existing Closing entries (closing-03, 17, 20, 23→skipped as inside a "which" clause
+not applicable, 25); fixed closing-03/17/20/25 for consistency since it's an objective rule
+violation, not a taste call, and the task was to check every entry, not just the new ones.
+
+Three other candidate duplicates were raised by individual reviewers (journal-05~journal-23,
+journal-08~closing-22, closing-03~closing-21) but the majority view across reviewers was that
+these are false positives from a naive token-overlap heuristic keying on shared function words
+("what/today/that/does/look") on questions that are actually asking different things — left
+unchanged rather than over-editing already-shipped, previously-reviewed content on a 1-of-3
+signal. Full reviewer transcripts and reasoning are in this session's workflow run
+`wf_fc99f0d8-857` if a future pass wants to revisit them.
+
+`verify.mjs`'s `closing = 30` exact-count assertion became `closing = 34` (invariant 12
+ratchet — logged in `audits/decisions.md`, this is a count correction tracking real added
+content, not a loosened quality bar). `verify.mjs all` re-run clean (63/63) after every edit
+in this pass.
+
+## Closing prompts (added v1.19, shown only after 20:00 HKT)
+
+An evening "close the day" reflection, mirroring the pre-09:00 HKT Journal focus window on the
+other end of the day (see `BUILD-PLAN.md` v1.19 changelog). Unlike Journal, retrospective
+framing here is correct and expected — every entry may reference "today"/"tonight" as something
+that has already happened. Same authoring rules as Journal otherwise: second person, one
+open-ended question, not answerable yes/no, concrete over generic, no platitudes, ≤25 words
+(`verify.mjs` enforces the word cap/quote-glyph/platitude checks identically across both pools).
+This section was missing from the original v1.19 content review; backfilled here as part of the
+2026-07-16 Journal/Closing tense audit above, which also grew the pool from 30 to 34 entries by
+moving four originally-misplaced-in-Journal prompts in (closing-31..34) and fixed a yes/no-tail
+rule violation found in six entries (closing-03/17/20/25/29/34) during that same audit.
+
+- **closing-01**: What can you set down tonight that you were never meant to carry until tomorrow?
+- **closing-02**: What is one moment from today you're glad happened, even if it was small?
+- **closing-03** (rewritten, see audit above): What's still unfinished on your list right now, and what would it feel like to let it wait until morning?
+- **closing-04**: Where in your body do you feel today's leftover tension, and what would it take to let it go?
+- **closing-05**: What are you willing to forgive yourself for, just for tonight?
+- **closing-06**: Which conversation from today is still running in your head, and what would it feel like to let it end here?
+- **closing-07**: What did today ask of you that tomorrow will not?
+- **closing-08**: If today was just one day among thousands, how tightly do its mistakes deserve to be held?
+- **closing-09**: What small kindness came your way today that you almost didn't notice?
+- **closing-10**: Whose face made today lighter, even briefly?
+- **closing-11**: What went undone today that honestly matters less than the sleep in front of you?
+- **closing-12**: Where are your shoulders right now, and what happens when you let them drop?
+- **closing-13**: What would it mean to end today without a verdict on how you did?
+- **closing-14**: Which worry that you're holding tonight belongs to a version of tomorrow that may never arrive?
+- **closing-15**: What did you do well enough today, even if not perfectly?
+- **closing-16**: If you could thank today for one thing before it goes, what would it be?
+- **closing-17** (rewritten, see audit above): What tension are you keeping alive by retelling it, and what would it take to let tonight be the last telling?
+- **closing-18**: What part of today would you have missed if you had gotten everything you wanted?
+- **closing-19**: How would you speak to a friend who had the exact day you just had?
+- **closing-20** (rewritten, see audit above): What is your breath doing right now, and what shifts if you slow it down for three full rounds?
+- **closing-21**: Which unfinished thing can you name, write down, and formally hand to tomorrow?
+- **closing-22**: What did you learn today that you didn't have this morning?
+- **closing-23**: What are you pretending still needs your attention tonight?
+- **closing-24**: If today never comes back, what about it is worth keeping, and what is safe to release?
+- **closing-25** (rewritten, see audit above): Where did you fall short today, and what happens when you hold that as a fact instead of a sentence?
+- **closing-26**: What sound, light, or texture from today deserves a quiet thank you?
+- **closing-27**: What would rest look like tonight if it did not have to be earned?
+- **closing-28**: Which of tonight's racing thoughts would survive being written on paper and left in another room?
+- **closing-29** (rewritten, see audit above): What did your body carry you through today, and how might you thank it before you sleep?
+- **closing-30**: As you close this day, what one word describes how you want to meet the next one?
+- **closing-31** (added 2026-07-16, moved from journal-14's original text): What's something you did today purely because you wanted to, not because you had to?
+- **closing-32** (added 2026-07-16, moved from journal-18's original text): If you described today to your future self, what would you want to be proud of?
+- **closing-33** (added 2026-07-16, moved from journal-34's original text, reworded to avoid duplicating closing-07): What's one way today quietly tested you, and how did you respond?
+- **closing-34** (added 2026-07-16, moved from journal-40's original text, rewritten, see audit above): What's the kindest thing you did today, and how did it feel to do it?
 
 ## Word of the Day (added v1.10, replaces the Fresh reserve/offline-fallback pool)
 
