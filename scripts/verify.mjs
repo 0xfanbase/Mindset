@@ -359,12 +359,12 @@ function stage3() {
     assert.equal(d.anchors.length, 365, `total anchors = ${d.anchors.length}`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
-  check("stage3", "journal = 40, kenya = 60, wordOfDay = 30, closing = 30", () => {
+  check("stage3", "journal = 40, kenya = 60, wordOfDay = 30, closing = 34", () => {
     const d = readJSON("data/cards.json");
     assert.equal(d.journal.length, 40, `journal = ${d.journal.length}`);
     assert.equal(d.kenya.length, 60, `kenya = ${d.kenya.length}`);
     assert.equal(d.wordOfDay.length, 30, `wordOfDay = ${d.wordOfDay.length}`);
-    assert.equal(d.closing.length, 30, `closing = ${d.closing.length}`);
+    assert.equal(d.closing.length, 34, `closing = ${d.closing.length}`);
   });
   check("stage3", "wordOfDay entries have word/origin/lang/meaning as non-empty strings", () => {
     const d = readJSON("data/cards.json");
