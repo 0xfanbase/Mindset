@@ -29,7 +29,7 @@
       "name": "Lion",
       "swahili": "Simba",
       "photos": [
-        { "src": "assets/mara/lion-hero.jpg", "alt": "A maned male lion lying in grass, looking straight at the camera.", "credit": "Smtunli", "license": "CC BY-SA 4.0" },
+        { "src": "assets/mara/lion-hero.jpg", "alt": "A close-up of a male lion's face, looking directly at the camera.", "credit": "Lee R. Berger", "license": "CC BY 2.5" },
         { "src": "assets/mara/lion-alt.jpg", "alt": "A close-up of a male lion's face, mouth open, teeth visible.", "credit": "Wouter van Vliet", "license": "CC BY 2.0" }
       ],
       "sighting": { "pct": 92, "band": "Almost certain", "note": "Seen on nearly every multi-night August drive" },
