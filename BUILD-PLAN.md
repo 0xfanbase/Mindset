@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.21)
+# MINDSET — Autonomous Build Plan (v1.27)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1361,6 +1361,40 @@ showing mostly its back) plus "etc.," an explicit instruction to look past the n
 - **Verified (final):** `verify.mjs` 73/73. JS total (app+figure+lib+weeks+mara+sw) 58,043 B —
   56.7KB of the 60KB budget; page weight 266,876 B — 260.6KB of the 350KB budget; `assets/mara/`
   3.25MB across 40 files (none over 150KB).
+
+**v1.27 changelog (from v1.26, live feature request): daily refresh boundary moved 06:00 -> 05:00
+HKT — Fable as project director + auditor.** The owner asked, as a follow-up to the
+yesterday's-cards investigation logged in `decisions.md`, to move the whole daily-refresh
+boundary an hour earlier, and explicitly requested a Fable director pass before merge plus an
+auditor sign-off after — see `audits/v1.27-fable-audit.md` for the full two-pass review.
+- **Two things had to move together, not just the cron.** `daily.yml`'s cron (`56 21 * * *` ->
+  `56 20 * * *`, still 4 minutes ahead of its new top-of-hour target) and `lib.mjs`'s
+  `expectedDateHKT` threshold (`hktHour(now) >= 6` -> `>= 5`) are coupled: moving only the cron
+  would have made the client mislabel correctly-fresh 05:00-06:00 HKT cards with the amber
+  "yesterday's cards" chip.
+- **`watchdog.yml`'s own cron (09:00 HKT) deliberately left unmoved** — shifting it earlier
+  would buy nothing (the amber chip already communicates staleness in-app) while narrowing the
+  buffer back toward the top-of-hour congestion slot this repo already avoids. Its buffer
+  against the new 04:56/05:00 HKT target widened from ~3h to ~4h; both places that quantify it
+  now say so.
+- **Every live quote of the old 06:00 figure updated** across `index.html`,
+  `manifest.webmanifest`, `README.md`, and this file (mission summary, §4.3/§4.4/§4.5, both
+  embedded workflow copies in §8, the LOOP-A table, the §13 checklist, Appendix C.1); title
+  header above bumped to match. The v1.16 changelog entry's own "pre-06:00 hours" text was
+  deliberately left alone — true when v1.16 shipped, and editing it would falsify history.
+- **`verify.mjs` gained one new stage1 boundary check** for `expectedDateHKT`/`staleness` at
+  the new cutover, mirroring the existing `isFocusWindowHKT`/`isEveningWindowHKT` tests — a
+  real gap closed, and a legitimate invariant-12 tightening (73 -> 74).
+- **The director pass caught two real misses** in the first cut (a second, non-adjacent "~3h"
+  comment inside `watchdog.yml`'s inline bash script, and an accidental edit to the v1.16
+  historical line above) before requiring them fixed; the auditor pass then independently
+  re-verified everything from scratch — arithmetic, repo sweep, `verify.mjs`, invariant 10 —
+  and signed off clean. Full findings, including two explicitly-reported false alarms, in the
+  audit file.
+- **Operational note:** merging between 04:56-05:56 HKT on any given day skips that day's
+  scheduled cron run outright; merge outside that window or dispatch `daily-cards` manually
+  right after.
+- **Verified:** `verify.mjs` 74/74.
 
 ---
 
