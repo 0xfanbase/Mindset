@@ -27,7 +27,7 @@ jobs:
           # dateHKT alone misses a same-day mismatch (e.g. Pages stuck on an earlier
           # same-day generation because its deploy never fired) -- generatedAtISO also
           # has to match the committed file's, not just the calendar date. By the time
-          # this runs (09:00 HKT, ~3h after the expected refresh) any normal CDN cache
+          # this runs (09:00 HKT, ~4h after the expected refresh) any normal CDN cache
           # lag has long since expired, so this isn't a flaky check.
           if [ "$today" != "$filedate" ] || [ "$today" != "$live" ] || [ "$live_gen" != "$filegen" ]; then
             already_open=$(gh issue list --search "Mindset daily build stale in:title" --state open --json number --jq 'length')

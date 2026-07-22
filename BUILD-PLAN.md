@@ -429,7 +429,7 @@ before (all four cards, Journal first), with no collapse and no control at all.
 - **`lib.mjs`:** the inline HKT-hour `Intl.DateTimeFormat` expression inside `expectedDateHKT`
   was extracted into a new exported `hktHour(d)` (pure refactor, `expectedDateHKT`'s behavior
   unchanged); a new `isFocusWindowHKT(d) = hktHour(d) < 9` drives the gate. 00:00–08:59 HKT
-  counts as the focus window (including the pre-05:00 hours when yesterday's cards are still
+  counts as the focus window (including the pre-06:00 hours when yesterday's cards are still
   showing) — a 5am open should if anything be quieter, not less so.
 - **`app.js`:** `renderToday` now resolves `{anchor, journal, kenya, word}` once regardless of
   staleness mode, then branches on `isFocusWindowHKT(new Date())`: `paintCards([Journal,
