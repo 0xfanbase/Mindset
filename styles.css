@@ -511,14 +511,18 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 /* Entrance reveal (v1.23): the grid is drawn once (instant, correct) and revealed via a
    top-down clip-path sweep with a synced scanline riding the edge -- GPU-composited, no
    per-cell JS animation. Replays on every tab visit for free via the same display:none
-   animation-restart the app already relies on for .card/.value-row (v1.16's audit). */
+   animation-restart the app already relies on for .card/.value-row (v1.16's audit).
+   1400ms cubic-bezier(0.65,0,0.35,1), not the house cardIn easing -- Fable's UX audit found
+   the original 1100ms/cardIn-curve reveal ~70% done by 180ms, rushing past the lived rows
+   (the entire point) and leaving the last second crawling through empty future cells; this
+   symmetric ease-in-out was tested live in the page and reads as a real traveling scan. */
 .weeks-reveal-wrap {
   position: relative;
   display: inline-block;
 }
 .weeks-canvas-clip {
   display: block;
-  animation: weeksClipReveal 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: weeksClipReveal 1400ms cubic-bezier(0.65, 0, 0.35, 1) both;
 }
 .weeks-scanline {
   position: absolute;
@@ -529,7 +533,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   background: linear-gradient(90deg, transparent, var(--accent), transparent);
   opacity: 0.5;
   pointer-events: none;
-  animation: weeksScanline 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: weeksScanline 1400ms cubic-bezier(0.65, 0, 0.35, 1) both;
 }
 @keyframes weeksClipReveal {
   from { clip-path: inset(0 0 100% 0); }
@@ -601,8 +605,15 @@ footer {
     flex: none;
     min-width: 0;
   }
+  /* Same 640px measure as .weeks-card, not just the card itself -- Fable's UX audit caught
+     the stats/zoom rows stretching to the full content width on desktop, stranding J's
+     percent in the far-left corner and running B's active-state underline ~500px past its
+     text. */
+  .weeks-stats,
+  .weeks-zoom-row,
   .weeks-card {
     max-width: 640px;
+    width: 100%;
     margin: 0 auto;
   }
 }

@@ -105,7 +105,9 @@ function makeGlowSprite(hex) {
 function jGlow() { return jGlowSprite || (jGlowSprite = makeGlowSprite(themeColor("--person-j"))); }
 function bGlow() { return bGlowSprite || (bGlowSprite = makeGlowSprite(themeColor("--person-b"))); }
 function stampGlow(ctx, sprite, cx, cy, pitch) {
-  const size = pitch * 1.15; // contained close to the cell itself -- see the alpha note above
+  const size = pitch * 1.35; // wide enough to read as glowing, not just tinted (Fable's UX
+  // audit); still far from the original 2.2x that caused visible neighbor bleed, since the
+  // fix that actually mattered was the alpha drop (0.55 -> 0.28), not the size alone.
   ctx.drawImage(sprite, cx - size / 2, cy - size / 2, size, size);
 }
 
@@ -157,13 +159,18 @@ function drawGrid(pitch) {
   ctx.fillStyle = jColor;
   for (let w = 0; w < Jw; w++) { const [x, y] = xy(w); ctx.fillRect(x, y, dot / 2, dot); }
 
+  // J's current-week outline spans the FULL cell (matching B's), not just her half -- a
+  // half-width sliver read as a rendering glitch next to B's full square (Fable's UX audit,
+  // caught only by actually looking at the rendered grid, not by reading the code) and
+  // silently implied her current week counted for less. The blue right-half fill (drawn
+  // above, since B already lived that age-week) stays visible under the outline's right side.
   const lw = Math.max(1, pitch * 0.08);
   if (Jw < total) {
     const [x, y] = xy(Jw);
     ctx.strokeStyle = jColor;
     ctx.lineWidth = lw;
-    ctx.strokeRect(x + lw / 2, y + lw / 2, Math.max(0, dot / 2 - lw), Math.max(0, dot - lw));
-    stampGlow(ctx, jGlow(), x + dot / 4, y + dot / 2, pitch);
+    ctx.strokeRect(x + lw / 2, y + lw / 2, Math.max(0, dot - lw), Math.max(0, dot - lw));
+    stampGlow(ctx, jGlow(), x + dot / 2, y + dot / 2, pitch);
   }
   if (Bw < total) {
     const [x, y] = xy(Bw);
