@@ -626,35 +626,59 @@ second feature, mirroring the existing pre-09:00 focus window on the other end o
 icon — `assets/favicon.svg` plus the three PNGs it's rasterized to (`apple-touch-icon.png`/
 `icon-192.png`/`icon-512.png`, what iOS/Android actually show once the site is added to a home
 screen) — to become a lion with hearts. This is a different asset from `<mindset-figure>` (the
-on-page animated element, currently the v1.8 glowing bottle; untouched here): the static icon
-had shipped as a plain teardrop mark, unchanged, since Stage 5. A Fable-led project-director
-review was requested alongside the change, per the owner's ask.
+on-page animated element, currently the v1.8 glowing bottle; untouched here). A Fable-led
+project-director review was requested alongside the change, per the owner's ask; its findings
+are folded in below rather than left standing, per the v1.17 convention.
 
-- **`assets/favicon.svg`:** the teardrop replaced with an original geometric mark — an 8-lock
-  radial mane (`#BE7326`, two-tone against a lighter `#EFAE5C` face disc) around two round ears,
-  two eye dots, and a heart-shaped nose in the app's own blossom `--accent` (`#B84870`) rather
-  than an invented pink. The "hearts" half of the request is folded into the face itself (a
-  heart-shaped nose) rather than added as a separate floating glyph, which stays legible at
-  favicon size where two disconnected motifs would not. Mane-tip radius kept at 24.5 of the
-  canvas's 32-unit half-width — inside the 80%-radius safe circle Android's maskable-icon spec
-  recommends (checked by direct coordinate math against all 8 radial tips, not eyeballed); the
-  old drop mark cleared the same margin by a wider, un-measured amount.
-- **PNGs regenerated, not hand-edited:** same pipeline Stage 5 used originally (`audits/
-  decisions.md`, 2026-07-13) — pre-installed headless Chromium screenshots the SVG at each
-  target size, here driven via the globally-installed Playwright package rather than a raw CLI
-  invocation (equivalent rasterizer, zero new dependency — nothing was `npm install`ed into the
-  repo, which still has none). `apple-touch-icon.png` 180×180, `icon-192.png` 192×192,
-  `icon-512.png` 512×512 — dimensions confirmed unchanged via `file`. Icons total 38,335 bytes
-  (was ~16KB before), still well inside the 150KB icon budget.
+- **Headline finding, from Fable's audit, not the original implementation: the Stage-5 PNGs
+  were never valid tiles.** All three inherited PNGs rendered their 64×64 drop artwork
+  top-left on an otherwise fully transparent 180/192/512 canvas (the raw `--headless
+  --screenshot` CLI's SVG document paints at its intrinsic size, not the viewport) — 88%–98.5%
+  transparent per file, center pixel transparent on all three. On a real phone that's a black
+  apple-touch-icon tile with a tiny drop in the corner (iOS composites transparent icons over
+  black) — this shipped at Stage 5 (2026-07-13) and was never caught, since FINAL-AUDIT checked
+  that icons existed and fit the budget, not what they actually contained. This version's
+  regeneration (below) fixes it as a side effect, verified pixel-exact against the new SVG.
+- **`assets/favicon.svg`:** the teardrop replaced with a mane/ears/face layout original to this
+  version — an 8-lock radial mane (`#BE7326`, two-tone against a lighter `#EFAE5C` face disc)
+  around two round ears, two eye dots, and a heart-shaped nose in the app's own blossom
+  `--accent` (`#B84870`) rather than an invented pink. One component is stock, not original:
+  the heart-nose path is Google's Material Design `favorite` glyph, coordinate-for-coordinate
+  (Apache-2.0; a sensible reuse for a near-generic shape, confirmed against the upstream source
+  by the audit). The "hearts" half of the request is folded into the face itself (a heart-shaped
+  nose) rather than added as a separate floating glyph — one heart, not the plural the owner
+  asked for, a deliberate legibility trade-off at favicon size that the owner should knowingly
+  bless (heart-shaped ear-inners are the cheap follow-up if plural hearts matter). Mane-tip
+  radius kept at 24.5 of the canvas's 32-unit half-width (76.56%) — inside the 80%-radius safe
+  circle Android's maskable-icon spec recommends; the audit brute-forced this over the full
+  boundary of all 8 mane locks (not just their tips) and confirmed 24.5 is exact. The old drop
+  mark's own max extent was 22.0 (68.75%), clearing the same margin by a wider margin, as
+  claimed, now measured rather than eyeballed.
+- **PNGs regenerated, not hand-edited — same rasterizer engine as Stage 5, a materially
+  different invocation.** An `<img>` explicitly scaled to each exact target size (180/192/512)
+  on an opaque page, driven via the globally-installed Playwright package rather than the raw
+  CLI (equivalent engine, zero new dependency — nothing was `npm install`ed into the repo, which
+  still has none) — this explicit-scaling difference is what produces correct full-bleed tiles
+  where Stage 5's invocation did not. Dimensions via `file`: 180×180, 192×192, 512×512, unchanged
+  as claimed. Icons total 38,335 bytes; the parent commit's three PNGs summed to 7,902 bytes, not
+  the "~16KB" the Stage-5 decisions/FINAL-AUDIT records claimed (a `du`-without-`-b` block-size
+  artifact, not a byte count — real growth is 4.9×). Still well inside the 150KB icon budget.
 - **`sw.js`:** `CACHE` bumped `"mindset-v5"` → `"mindset-v6"` (Appendix C.2 updated to match,
-  verbatim requirement) — see the updated rationale note under C.2 for why a content-only change
-  to an already-listed `ASSETS` entry still warranted a bump here.
+  verbatim requirement). Right call per the audit, for a sharper reason than the original
+  rationale gave: Chromium-family browsers fetch tab favicons outside the page's service-worker
+  fetch handler, so network-first can't be relied on to self-heal `favicon.svg`'s cached copy —
+  install-time `addAll` under the new cache name is the only reliable refresh.
 - **No `verify.mjs` changes** — a static-asset swap, not new app behavior; the existing
   byte-identity-modulo-`ASSETS`, budget, and manifest checks cover it unchanged.
-- **Verified:** `verify.mjs all` 63/63 (unchanged count — no check added or removed, invariant
-  12 doesn't require a `decisions.md` entry for an unchanged ratchet). `node --check` clean.
-  Icon budget and page-weight checks both green at the new byte counts.
-- **Fable's project-director review:** see `audits/v1.20-fable-audit.md`.
+- **Verified:** `verify.mjs all` 63/63, independently reproduced by the audit at both this
+  commit and the parent via a temporary worktree, with byte-identical check-name lists on both
+  sides (unchanged count is genuinely the same 63 checks, not a coincidence). `node --check`
+  clean. Icon budget and page-weight checks both green at the new byte counts.
+- **Fable's project-director review: Ship**, unconditionally — see `audits/v1.20-fable-audit.md`
+  for the full write-up (independent pixel-diff of the PNGs against fresh renders: zero
+  differing pixels; independent safe-zone brute force; independent verifier re-run; the
+  headline finding above). No blocking issues; the two corrections above were the only findings
+  that changed this entry's text.
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
