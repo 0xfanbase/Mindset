@@ -18,10 +18,36 @@ function read(p) { return fs.readFileSync(abs(p), "utf8"); }
 function sizeOf(p) { return fs.statSync(abs(p)).size; }
 function readJSON(p) { return JSON.parse(read(p)); }
 
+// Plain `node --check <path>` on a bare .js file is unreliable here: this repo has no
+// package.json to declare "type":"module", so a .js file's CommonJS-vs-ESM handling is
+// sniffed rather than explicit, and that sniffing can silently under-report real syntax
+// errors once a top-level import/export is present (found empirically during a v1.22 audit:
+// a file with a leading `import` plus a later stray invalid token parsed clean under plain
+// `--check <path>`, but the identical bytes correctly failed both `--check
+// --input-type=module` and a real `import()`). .mjs files are unaffected -- the extension
+// alone is unambiguous -- but every browser-facing .js file in this repo uses import/export,
+// so piping content through stdin with an explicit --input-type=module is the only reliable
+// syntax-only check (no top-level execution, so app.js/figure.js/weeks.js's browser-global
+// references never need to actually resolve).
+function nodeCheckSyntax(p) {
+  require("node:child_process").execFileSync(
+    process.execPath, ["--input-type=module", "--check"], { input: read(p), stdio: ["pipe", "pipe", "pipe"] }
+  );
+}
+
 function check(stage, name, fn) {
   try {
     const detail = fn();
-    results.push({ stage, name, pass: true, detail: detail === undefined ? "ok" : String(detail) });
+    // Store the raw value, NOT String(detail) -- an async fn() returns a pending Promise
+    // here (it hasn't rejected yet even if it eventually will), and stringifying it
+    // immediately collapses it to the literal text "[object Promise]", a plain string with
+    // no .then method. The tail-loop below exists specifically to await promise-returning
+    // checks after the stage runners return, but it can only find them by duck-typing
+    // .then -- if this line coerces to a string first, that duck-type check always misses
+    // and the tail loop's re-await never fires, silently passing every async check
+    // regardless of what it actually asserts (found by Fable's pre-merge audit, confirmed
+    // by mutation: a deliberately-broken invariant still reported green before this fix).
+    results.push({ stage, name, pass: true, detail: detail === undefined ? "ok" : detail });
   } catch (e) {
     results.push({ stage, name, pass: false, detail: e.message });
   }
@@ -220,9 +246,8 @@ function stage1() {
   });
 
   check("stage1", "node --check passes on all JS/MJS files", () => {
-    const { execFileSync } = require("node:child_process");
     const jsFiles = fs.readdirSync(ROOT).filter((f) => f.endsWith(".js") || f.endsWith(".mjs"));
-    for (const f of jsFiles) execFileSync(process.execPath, ["--check", abs(f)], { stdio: "pipe" });
+    for (const f of jsFiles) nodeCheckSyntax(f);
   });
 
   check("stage1", "WCAG contrast pairs pass at corrected thresholds", () => {
@@ -320,6 +345,40 @@ function stage1() {
     assert.equal(lib.percentLifeSpent(J, new Date("2189-12-01T04:00:00Z")), 100);
   });
 
+  check("stage1", "lib.mjs: the B-minus-J age-week gap stays within {56, 57} (v1.23 combined-grid invariant)", async () => {
+    // The combined Weeks-tab grid (v1.23) relies on B always being AT LEAST as far along in
+    // age-weeks as J, with no "J-only-lived" cell ever existing. The two birth months are a
+    // fixed 395 real days apart (56 whole weeks + 3 days), so floor-division age-week gap
+    // is not a constant 57 -- it alternates with the weekday phase, confirmed by an exhaustive
+    // 40-year daily sweep during implementation (only ever 56 or 57, never anything else).
+    // These 5 fixed instants are pinned samples of that sweep, not the whole guarantee.
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    const J = lib.LIFE_PEOPLE.find((p) => p.id === "J").birthMonthHKT;
+    const B = lib.LIFE_PEOPLE.find((p) => p.id === "B").birthMonthHKT;
+    const instants = [
+      "2026-07-22T04:00:00Z", "2024-01-01T04:00:00Z", "2020-06-15T04:00:00Z",
+      "2015-03-10T04:00:00Z", "1998-11-05T04:00:00Z",
+    ];
+    for (const iso of instants) {
+      const now = new Date(iso);
+      const gap = lib.weeksLived(B, now) - lib.weeksLived(J, now);
+      assert.ok(gap === 56 || gap === 57, `gap at ${iso} was ${gap}, expected 56 or 57`);
+    }
+  });
+
+  check("stage1", "weeks.js: no quotation-mark glyphs in user-facing copy (CAPTION, legend labels)", () => {
+    if (!exists("weeks.js")) return;
+    const src = read("weeks.js");
+    const problems = [];
+    const captionMatch = src.match(/const CAPTION\s*=\s*"((?:[^"\\]|\\.)*)"/);
+    if (captionMatch && hasQuoteGlyph(captionMatch[1])) problems.push(`CAPTION: ${captionMatch[1]}`);
+    for (const m of src.matchAll(/label:\s*"((?:[^"\\]|\\.)*)"/g)) {
+      if (hasQuoteGlyph(m[1])) problems.push(`legend label: ${m[1]}`);
+    }
+    assert.ok(captionMatch, "could not locate CAPTION in weeks.js -- check the check itself, not just weeks.js");
+    assert.equal(problems.length, 0, problems.join(" | "));
+  });
+
   check("stage1", "lib.mjs: pickIndex full-cycle uniqueness for pools 120/40/10", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     for (const poolSize of [120, 40, 10]) {
@@ -349,9 +408,7 @@ function stage1() {
 function stage2() {
   check("stage2", "figure.js exists", () => assert.ok(exists("figure.js"), "missing"));
   const src = () => read("figure.js");
-  check("stage2", "node --check figure.js", () => {
-    require("node:child_process").execFileSync(process.execPath, ["--check", abs("figure.js")], { stdio: "pipe" });
-  });
+  check("stage2", "node --check figure.js", () => nodeCheckSyntax("figure.js"));
   for (const [name, re] of [
     ["requestAnimationFrame present", /requestAnimationFrame/],
     ["visibilitychange present", /visibilitychange/],

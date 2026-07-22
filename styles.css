@@ -392,32 +392,68 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   margin-top: 3px;
 }
 
-/* Weeks tab (v1.22) — two life-in-weeks grids (J, B), canvas-rendered by weeks.js. Panel
-   content deliberately exceeds one screen and scrolls within .panel's existing overflow-y
-   (the same mechanism Values already relies on) — see audits/decisions.md for why this tab
-   is a deliberate exception to §4.4's single-screen framing. */
+/* Weeks tab (v1.23) — one combined life-in-weeks grid for J and B, canvas-rendered by
+   weeks.js. Panel content deliberately exceeds one screen and scrolls within .panel's
+   existing overflow-y (the same mechanism Values already relies on) — see
+   audits/decisions.md for why this tab is a deliberate exception to §4.4's single-screen
+   framing, and for the full combined-cell-state / hover-focus / entrance-animation
+   rationale (v1.22 shipped two separate grids; this redesign combines them). */
 .weeks-root {
   display: flex;
   flex-direction: column;
   gap: 14px;
 }
 .weeks-stats {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-.weeks-stat-col {
+/* Each stat is also the hover/tap focus control (v1.23) -- a real <button>, not a bare
+   :hover rule, so it works identically by tap on iOS. */
+.weeks-stat {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  align-items: flex-start;
+  gap: 3px;
+  min-height: 44px;
+  padding: 6px 4px 10px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-align: left;
 }
-.weeks-stat-line {
+.weeks-stat[data-person="J"] { color: var(--person-j); }
+.weeks-stat[data-person="B"] { color: var(--person-b); }
+.weeks-stat.is-active { border-bottom-color: currentColor; }
+.weeks-stat:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) {
+  .weeks-stat:hover { opacity: 0.85; }
+}
+.weeks-stat-meta {
   font-family: "IBM Plex Mono", monospace;
-  font-size: 12px;
+  font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.02em;
-  color: var(--ink);
+  letter-spacing: 0.03em;
+  color: var(--muted);
+}
+/* The percent figure: Fraunces italic, the app's own "artistic" voice (already used for the
+   wordmark and Word of the Day's headline), not a bigger mono digit -- a dashboard would use
+   the latter. Large enough to clear WCAG's large-text 3:1 bar; both person colors clear the
+   stricter 4.5:1 normal-text bar anyway on every background this app can show, hand-verified
+   the same way as every other color in this codebase -- see audits/decisions.md. */
+.weeks-stat-pct {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 34px;
+  line-height: 1.1;
+  color: inherit;
+}
+.weeks-zoom-row {
+  display: flex;
+  justify-content: flex-end;
 }
 .weeks-zoom {
   display: flex;
@@ -442,20 +478,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 @media (hover: hover) {
   .weeks-zoom-btn:not(:disabled):hover { border-color: var(--ink); }
 }
-.weeks-cards {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
 .weeks-card { padding: 14px 16px; }
-.weeks-swatch {
-  display: inline-block;
-  width: 8px;
-  height: 8px;
-  border-radius: 999px;
-  margin-right: 6px;
-  vertical-align: middle;
-}
 .weeks-frame {
   display: flex;
   align-items: flex-start;
@@ -485,7 +508,63 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   -webkit-overflow-scrolling: touch;
 }
 .weeks-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.weeks-scroll canvas { display: block; }
+/* Entrance reveal (v1.23): the grid is drawn once (instant, correct) and revealed via a
+   top-down clip-path sweep with a synced scanline riding the edge -- GPU-composited, no
+   per-cell JS animation. Replays on every tab visit for free via the same display:none
+   animation-restart the app already relies on for .card/.value-row (v1.16's audit). */
+.weeks-reveal-wrap {
+  position: relative;
+  display: inline-block;
+}
+.weeks-canvas-clip {
+  display: block;
+  animation: weeksClipReveal 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.weeks-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
+  pointer-events: none;
+  animation: weeksScanline 1100ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+@keyframes weeksClipReveal {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0% 0); }
+}
+@keyframes weeksScanline {
+  0% { top: 0%; opacity: 0.5; }
+  85% { opacity: 0.5; }
+  100% { top: 100%; opacity: 0; }
+}
+.weeks-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9.5px;
+  color: var(--muted);
+}
+.weeks-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.weeks-swatch {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.weeks-swatch.split { background: linear-gradient(90deg, var(--person-j) 50%, var(--person-b) 50%); }
+.weeks-swatch.b { background: var(--person-b); }
+.weeks-swatch.outline-j { border: 1.5px solid var(--person-j); }
+.weeks-swatch.outline-b { border: 1.5px solid var(--person-b); }
+.weeks-swatch.future { background: var(--week-future); }
 .weeks-caption { text-align: center; margin: 4px 0 0; }
 
 footer {
@@ -522,12 +601,9 @@ footer {
     flex: none;
     min-width: 0;
   }
-  .weeks-cards {
-    flex-direction: row;
-  }
   .weeks-card {
-    flex: 1 1 0;
-    max-width: 560px;
+    max-width: 640px;
+    margin: 0 auto;
   }
 }
 
@@ -538,4 +614,10 @@ footer {
    base rules, so it silently never took effect). */
 @media (prefers-reduced-motion: reduce) {
   .card, .value-row, .reveal-rest { animation: none; }
+  /* Cancelling the animation alone is not enough here (unlike the rule above): the reveal's
+     `from` state is fully clipped/invisible, so a reduced-motion viewer must also get the
+     resting "fully visible" state explicitly, not just an animation-free freeze on frame
+     one, which would hide the grid entirely. */
+  .weeks-canvas-clip { animation: none; clip-path: none; }
+  .weeks-scanline { display: none; }
 }
