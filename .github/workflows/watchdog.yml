@@ -1,7 +1,7 @@
 name: watchdog
 on:
   schedule:
-    - cron: "0 1 * * *"   # 09:00 HKT — a wider ~3h buffer after the 05:56/06:00 HKT daily
+    - cron: "0 1 * * *"   # 09:00 HKT — a wider ~4h buffer after the 04:56/05:00 HKT daily
                           # run than a top-of-hour slot would give, so a merely-delayed
                           # (not dead) daily run doesn't trigger a false alarm
   workflow_dispatch: {}
