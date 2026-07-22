@@ -1,5 +1,6 @@
 // app.js — UI logic: tabs, theme, date, cards, staleness (BUILD-PLAN.md §4/§6)
 import { hktDateParts, staleness, pickToday, isFocusWindowHKT, isEveningWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
+import { initWeeksTab, refreshWeeksIfStale, redrawWeeksForTheme } from "./weeks.js";
 
 const PULSE = { calm: "#7FB0FF", blossom: "#F2A9C6" };
 const BG = { calm: "#FAF9F5", blossom: "#FBF4F6" };
@@ -27,6 +28,7 @@ function applyThemeSideEffects(theme) {
     figure.setAttribute("color", PULSE[theme]);
     figure.setAttribute("glow", PULSE[theme]);
   }
+  redrawWeeksForTheme();
 }
 
 function initTheme() {
@@ -59,30 +61,35 @@ function initDateLine() {
     `${p.weekday} · ${p.day} ${p.month} ${p.year}`.toUpperCase();
 }
 
+// Ordered array, not a hardcoded boolean toggle -- the Weeks tab (v1.22) made a two-way
+// today/values flip insufficient. Arrow keys roll with wraparound, matching the standard
+// ARIA tablist roving-focus pattern.
 function initTabs() {
-  const tabToday = document.getElementById("tab-today");
-  const tabValues = document.getElementById("tab-values");
-  const panelToday = document.getElementById("panel-today");
-  const panelValues = document.getElementById("panel-values");
+  const tabs = ["today", "values", "weeks"].map((name) => ({
+    name,
+    btn: document.getElementById(`tab-${name}`),
+    panel: document.getElementById(`panel-${name}`),
+  }));
 
-  function show(which) {
-    const isToday = which === "today";
-    tabToday.setAttribute("aria-selected", String(isToday));
-    tabValues.setAttribute("aria-selected", String(!isToday));
-    panelToday.hidden = !isToday;
-    panelValues.hidden = isToday;
+  function show(index) {
+    tabs.forEach((t, i) => {
+      const active = i === index;
+      t.btn.setAttribute("aria-selected", String(active));
+      t.panel.hidden = !active;
+    });
+    if (tabs[index].name === "weeks") initWeeksTab();
   }
-  tabToday.addEventListener("click", () => show("today"));
-  tabValues.addEventListener("click", () => show("values"));
 
-  function keyNav(e) {
-    if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-    const goingToday = tabValues.getAttribute("aria-selected") === "true";
-    show(goingToday ? "today" : "values");
-    (goingToday ? tabToday : tabValues).focus();
-  }
-  tabToday.addEventListener("keydown", keyNav);
-  tabValues.addEventListener("keydown", keyNav);
+  tabs.forEach((t, i) => {
+    t.btn.addEventListener("click", () => show(i));
+    t.btn.addEventListener("keydown", (e) => {
+      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
+      const dir = e.key === "ArrowRight" ? 1 : -1;
+      const next = (i + dir + tabs.length) % tabs.length;
+      show(next);
+      tabs[next].btn.focus();
+    });
+  });
 }
 
 function showChip(mode) {
@@ -302,11 +309,12 @@ async function boot() {
 // user only switched apps and came back — re-check the boundary (not the network)
 // whenever the tab becomes visible again, and only repaint if it actually flipped.
 document.addEventListener("visibilitychange", () => {
-  if (document.visibilityState !== "visible" || !bootedToday) return;
-  if (windowMode(new Date()) !== paintedWindowMode) {
+  if (document.visibilityState !== "visible") return;
+  if (bootedToday && windowMode(new Date()) !== paintedWindowMode) {
     initDateLine();
     renderToday(bootedToday.cardsData, bootedToday.dailyData);
   }
+  refreshWeeksIfStale();
 });
 
 boot();
