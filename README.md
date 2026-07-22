@@ -2,7 +2,7 @@
 
 A personal mindset dashboard. One page, no backend, no dependencies — a small bottle of light
 breathing slowly, the day's date in Hong Kong time, and four short cards
-that refresh themselves every morning at 06:00 HKT: an **Anchor** (a timeless principle),
+that refresh themselves every morning at 05:00 HKT: an **Anchor** (a timeless principle),
 a **Journal** prompt (a mindful reflection question), a **Kenya** fact (one fact about Kenya —
 geography, wildlife, history, culture, and more), and a **Word of the Day** (one word
 worth knowing, its origin, and a one-line meaning). A quiet **Values** tab sits alongside it.
@@ -42,7 +42,7 @@ theme you last used.
 
 ## What the chips mean
 
-- **No chip** — today's cards, generated within the last 06:00 HKT refresh window.
+- **No chip** — today's cards, generated within the last 05:00 HKT refresh window.
 - **`yesterday's cards`** (amber) — the daily refresh hasn't landed yet or briefly failed;
   showing the most recent successful day's cards (≤ 48h old).
 - **`offline rotation`** (slate) — `data/daily.json` couldn't be reached at all (offline, or
@@ -81,7 +81,7 @@ daily run but also "the commit landed but Pages didn't redeploy."
 ## Platform caveats (real, not bugs)
 
 - GitHub Actions cron can fire several minutes late under scheduler load — the daily job is
-  scheduled at 05:56 HKT (not top-of-hour) and the watchdog waits until 09:00 HKT before
+  scheduled at 04:56 HKT (not top-of-hour) and the watchdog waits until 09:00 HKT before
   alerting, specifically to absorb that.
 - Scheduled workflows auto-disable after ~60 days with no repository activity. The daily
   bot commit keeps the repo active *while the daily job is actually succeeding* — if it

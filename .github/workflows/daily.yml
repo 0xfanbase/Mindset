@@ -1,8 +1,8 @@
 name: daily-cards
 on:
   schedule:
-    - cron: "56 21 * * *"   # 21:56 UTC = 05:56 HKT next day — a few minutes before the
-                            # 06:00 HKT target and off the top-of-hour scheduler-congestion
+    - cron: "56 20 * * *"   # 20:56 UTC = 04:56 HKT next day — a few minutes before the
+                            # 05:00 HKT target and off the top-of-hour scheduler-congestion
                             # slot GitHub Actions cron is most likely to delay
   workflow_dispatch: {}
 permissions:

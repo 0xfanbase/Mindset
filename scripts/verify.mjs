@@ -308,6 +308,16 @@ function stage1() {
     assert.ok(d1 >= 0, "dayNumber must be non-negative for real post-epoch HKT dates");
   });
 
+  check("stage1", "lib.mjs: expectedDateHKT/staleness correct at the 05:00 HKT boundary", async () => {
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    // 2026-07-15T20:59:00Z = 2026-07-16T04:59 HKT — before the boundary, still expects yesterday's date
+    assert.equal(lib.expectedDateHKT(new Date("2026-07-15T20:59:00Z")), "2026-07-15");
+    // 2026-07-15T21:00:00Z = 2026-07-16T05:00 HKT — boundary crossed, expects today's date
+    assert.equal(lib.expectedDateHKT(new Date("2026-07-15T21:00:00Z")), "2026-07-16");
+    assert.equal(lib.staleness("2026-07-15", new Date("2026-07-15T20:59:00Z")), "fresh");
+    assert.equal(lib.staleness("2026-07-15", new Date("2026-07-15T21:00:00Z")), "yesterday");
+  });
+
   check("stage1", "lib.mjs: isFocusWindowHKT correct at the 09:00 HKT boundary", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     // 2026-07-15T00:59:00Z = 2026-07-15T08:59 HKT — inside the pre-09:00 focus window
