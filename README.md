@@ -8,10 +8,12 @@ geography, wildlife, history, culture, and more), and a **Word of the Day** (one
 worth knowing, its origin, and a one-line meaning). A quiet **Values** tab sits alongside it.
 Two themes — `calm` (cream/blue, default) and `blossom` (soft pink).
 
-A third tab, **Weeks**, is a life-in-weeks chart for J and B — two 90-year grids of small
-squares, one square per week, filled as each week passes, zoomable and independently
-scrollable, with the percent of each grid filled shown at the top. It advances on its own:
-since it's computed from today's date on every load, no daily-pipeline step is involved.
+A third tab, **Weeks**, is a combined life-in-weeks chart for J and B — one 90-year grid of
+small squares, one square per week, filled pink-and-blue as each week passes (split cells
+where both have lived a week, solid blue where only B has so far — he's older), zoomable and
+scrollable, with a big percent-of-life-spent figure for each person at the top and a tap/hover
+toggle to highlight just one person's weeks. It advances on its own: since it's computed from
+today's date on every load, no daily-pipeline step is involved.
 
 Zero build step, zero runtime dependencies. The only personal data anywhere in this repo is
 two initials and two birth months (for the Weeks tab above) — never full names, never an exact
