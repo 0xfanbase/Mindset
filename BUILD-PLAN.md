@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.20)
+# MINDSET — Autonomous Build Plan (v1.21)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -630,6 +630,13 @@ on-page animated element, currently the v1.8 glowing bottle; untouched here). A 
 project-director review was requested alongside the change, per the owner's ask; its findings
 are folded in below rather than left standing, per the v1.17 convention.
 
+**Superseded within the same session, before ever shipping:** immediately after this review
+completed, the owner asked for a real photo of their two cats instead of an illustrated mark —
+see v1.21 below, which is what's actually live. This entry is kept accurate rather than deleted
+(nothing here was ever pushed to `main`) because the audit's headline finding — the Stage-5 PNGs
+were broken — is real history independent of which mark replaced them, and because v1.21 reuses
+this version's rasterization pipeline and safe-zone method directly.
+
 - **Headline finding, from Fable's audit, not the original implementation: the Stage-5 PNGs
   were never valid tiles.** All three inherited PNGs rendered their 64×64 drop artwork
   top-left on an otherwise fully transparent 180/192/512 canvas (the raw `--headless
@@ -679,6 +686,66 @@ are folded in below rather than left standing, per the v1.17 convention.
   differing pixels; independent safe-zone brute force; independent verifier re-run; the
   headline finding above). No blocking issues; the two corrections above were the only findings
   that changed this entry's text.
+
+**v1.21 changelog (from v1.20, live feature request, same session):** before the lion mark ever
+shipped, the owner asked instead for the app/shortcut icon to be a real photo of their two cats
+(one orange tabby, one white/grey tabby) together — replacing the illustrated mark entirely.
+
+- **Two separate source photos, not one of both cats together, so this is a composite, not a
+  crop.** Built as an HTML/CSS layout (two `<img>` halves, `object-fit: cover` with a tuned
+  `object-position` centering each cat's face, a 6px `--bg`-colored divider) screenshotted by
+  the same headless-Chromium/Playwright pipeline v1.20 used and Fable verified — reused directly
+  rather than re-derived, including the explicit-target-size scaling that pipeline depends on.
+  Framing iterated visually the same way as v1.20's mane geometry: rendered at 512/192/96/48/32/
+  16px plus simulated iOS-squircle-on-dark and Android-circle-on-dark tiles, actually inspected
+  (multimodal read of the rendered PNGs/JPEGs) before finalizing — one round was enough; both
+  faces read clearly at every size down to 32px, degrading to "two warm blurs" at 16px (the same
+  floor v1.20's mark hit, and for the same reason: browser tabs use `favicon.svg` at 2×, so the
+  16px raster PNGs/JPEGs are never actually seen that small on any surface the owner asked about).
+- **Format switched from PNG to JPEG for the two manifest icons — the budget forced it, not a
+  preference.** A photographic composite is incompressible as flat-color PNG the way a vector
+  mark is: the 512px composite alone was 355,512 B losslessly, versus a 150KB budget for all
+  three files combined. Chromium's own built-in JPEG encoder (`page.screenshot({type:"jpeg",
+  quality})`, no new dependency, same zero-npm-install constraint as always) at quality 90 shows
+  no visible artifacting at any inspected size and comes in far smaller: `icon-192.jpg` 10,915 B,
+  `icon-512.jpg` 51,573 B. `manifest.webmanifest`'s two icon entries renamed `.png`→`.jpg` with
+  `"type"` corrected to `image/jpeg` to match (a mismatched declared type risks stricter
+  browsers ignoring the icon); `"purpose": "any maskable"` on `icon-512.jpg` carried over
+  unchanged from v1.20's accepted single-icon pattern (FINAL-AUDIT §5) — both cat faces sit
+  within the vertical-center band the maskable safe-zone check cares about, even though the
+  photo backgrounds themselves run full-bleed to every edge, which is normal for a photo icon
+  and not the same claim v1.20's brute-forced vector safe-zone math made.
+- **`apple-touch-icon.png` stays true PNG, deliberately not JPEG, unlike the other two.** iOS's
+  historical handling of non-PNG apple-touch-icons is inconsistent across versions, and this
+  file is what the owner's own original bug report was about — not worth the risk for one file
+  that's cheap anyway at its size (180px PNG: 51,038 B). `index.html`'s `<link rel=
+  "apple-touch-icon">` href is untouched (same filename, same format, new content only).
+- **`assets/favicon.svg` restructured, not just recolored** — an SVG can't natively hold a
+  photo as vector paths the way the lion mark could, so it now wraps a small (128px, JPEG
+  quality 78, 4,744 B → 6,328 B base64) crop of the same composite behind an `xMidYMid slice`
+  `preserveAspectRatio` and a rounded `clipPath`, keeping `index.html`'s `<link rel="icon"
+  href="./assets/favicon.svg" type="image/svg+xml">` reference completely unchanged. Total
+  6,618 B — not counted against the 150KB icon budget (that check sums `assets/icons/` only,
+  same as v1.20) or the 350KB page-weight budget (`favicon.svg` isn't in that check's file list
+  either, same as before this version) but kept small on its own merits regardless.
+- **`sw.js`:** `CACHE` bumped `"mindset-v6"` → `"mindset-v7"` (Appendix C.2 updated to match) —
+  same justification v1.20 established and Fable sharpened: `favicon.svg`'s content changed
+  again, and tab-favicon fetches bypass the service worker's `fetch` handler in Chromium-family
+  browsers, so only an `install`-time `addAll` under a new cache name reliably refreshes it.
+- **No PII concern:** the two source photos are the owner's own pets, photographed at home: not
+  a name, employer, DOB, location, or financial detail — none of invariant 1's enumerated
+  categories — and this is the owner's own choice for their own `noindex`, non-indexed personal
+  app. Backgrounds in both source photos were checked directly and contain no identifying text,
+  documents, or addresses.
+- **No `verify.mjs` changes** — another static-asset swap; the icons-budget check already sums
+  whatever's in `assets/icons/` regardless of extension, so `.jpg` files needed no check change,
+  confirmed by the check passing green rather than assumed.
+- **Verified:** `verify.mjs all` 63/63. `apple-touch-icon.png` 180×180, `icon-192.jpg` 192×192,
+  `icon-512.jpg` 512×512 confirmed via `file`; icons total 113,526 B ≤ 150KB. `node --check`
+  clean on `sw.js`. No `max-width` query, no `localStorage` touch, `.nojekyll`/`noindex`
+  untouched.
+- **Fable's project-director review:** requested for this version too; see
+  `audits/v1.21-fable-audit.md` once complete.
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
@@ -1454,7 +1521,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v6";
+const CACHE = "mindset-v7";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
@@ -1490,7 +1557,7 @@ self.addEventListener("fetch", (e) => {
 });
 ```
 
-Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request.
+Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request. Fable's audit sharpened the reasoning: Chromium-family browsers fetch tab favicons outside the page's service-worker `fetch` handler entirely, so network-first was never actually going to self-heal `favicon.svg` — the bump is the only reliable path. Bumped again to `"mindset-v7"` in v1.21 for the same reason: `favicon.svg`'s content changed again (lion mark → cat-photo mark) when the owner redirected mid-session, before v1.20's lion ever shipped.
 
 ### C.3 Registration (last lines of `app.js`)
 
