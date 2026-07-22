@@ -1122,6 +1122,160 @@ multi-audit protocol v1.22/v1.23 used):
   and single-line, `word-24`'s corrected content confirmed live via `fetch("/data/cards.json")`
   in-page: 7/7 passed, zero console errors.
 
+**v1.25 changelog (from v1.24, live feature request, same session): Mara tab — animal
+reference + Great Migration facts, Fable as project director, UI/UX designer and auditor
+across two rounds.** The owner asked for a fourth tab ahead of the August 2026 Masai Mara
+trip: a "Wikipedia, but easy" reference per animal (name, photos, age, characteristics, diet,
+facts, where spotted, habits, a sighting-likelihood percentage) plus general park facts and an
+explanation of the Great Migration, with a side dropdown to pick an animal that gets out of the
+way once you're looking at one.
+- **Design direction (Fable):** tab labeled "Mara." Schema reorganized from the owner's nine
+  fields into `{id, name, swahili, photos[2], sighting{pct,band,note}, stats{lifespan,size,
+  eats}, intro, whereToLook, fieldNotes[3-4]}` — `swahili` added as "the single most trip-useful
+  line on the card" (guides say Simba/Chui/Duma/Tembo/Twiga all week), "where spotted" and "best
+  time" merged into one `whereToLook` field since on safari they're one answer, "interesting
+  facts" and "fun habits" merged into one capped `fieldNotes` list rather than two competing
+  trivia lists. UX: "a drop-down on the side" translated for a single-column mobile-first app
+  with no persistent sidebar anywhere else — a 2-column index grid of tappable tiles doubles as
+  both the picker and the "what will we see" overview; tapping swaps to a focused detail view
+  with one back pill, no filter left showing, matching the owner's explicit ask. Desktop
+  (`min-width:900px`) honors the literal request: same DOM, the index becomes a persistent
+  ~260px sidebar beside the detail panel — the only width where a side exists. Roster: the
+  owner's proposed ~20 minus African wild dog (genuinely rare in the Mara proper since a 1990s
+  rabies outbreak, cut to a one-line mention rather than a card that near-promises a no-show)
+  plus Grant's gazelle folded into Thomson's gazelle as a tell-them-apart field note rather than
+  a near-duplicate second card, plus common ostrich added ("the one non-mammal that earns a
+  card"). Photo curation rule: every photo in a fixed 3:2 frame, hero = full-body recognition
+  shot, alternate = face or signature behavior, natural light, no people/vehicles/zoo signage —
+  imposing this geometry in CSS is what makes twenty different photographers "read as one
+  system," not literal studio consistency across real wild-animal photography.
+- **The sighting-percentage visual treatment, on direct owner instruction mid-build:** the
+  owner asked, separately from the design-direction pass, for the sighting score to be "the
+  central piece right below the name and photo... large and bold and italics," with "an
+  animation to count up from zero very quickly." Fable's draft had already placed the score
+  correctly (right after photo+name); this changed its visual weight, not its position — from a
+  modest hairline meter to a single point figure in Fraunces italic 600 at 52px (bigger than
+  Weeks' 34px hero percent, deliberately, since the owner named this the number the whole tab
+  exists to answer), counting up 0→target over 700ms via `requestAnimationFrame` on every
+  detail-view entry, gated on `prefers-reduced-motion`. A count-up animation needs one target,
+  not a range, so each animal's `sighting.pct` is a single representative point value drawn from
+  its researched range (e.g. lion 92% from a researched 90-95%); the qualitative `band` ("Almost
+  certain") and `note` still carry the "this is an estimate, not a published statistic" honesty
+  the research demanded — only which piece is visually loudest changed, not the underlying
+  substance. Fable's audit later confirmed the final size/weight as correct once a separate
+  photo bug (below) stopped pushing it off the first screen.
+- **Fact-checking discipline:** every animal's content came from four parallel research passes
+  this round, each explicitly instructed to cite sources and flag disputes rather than resolve
+  them silently — not carried from memory, the same discipline the v1.24 Word-of-Day rework
+  established. Two live scientific disputes were surfaced rather than papered over: the total
+  migratory wildebeest population (traditional aerial counts of ~1.3-1.5 million vs. a 2025
+  AI/satellite-imagery study suggesting under 600,000, with the researchers themselves calling
+  the two methods unreconciled) and the Mara's current black rhino population (sources ranged
+  from ~25 to ~70; shipped as "only a few dozen," the conservative end anchored to the Mara
+  Conservancy's own on-the-ground figure, rather than asserting a specific disputed number). A
+  commonly-miscited statistic was traced back to its actual primary source and corrected: the
+  widely repeated "~250,000 wildebeest die in the migration every year" describes whole-year,
+  all-cause mortality across the entire circuit, not river-crossing deaths specifically — the
+  real river-drowning figure, from the actual peer-reviewed study (Subalusky et al., *PNAS*,
+  2017), is ~6,250/year, about 0.5% of the population, and that is the number that shipped.
+- **Photo sourcing:** all 40 photos (2 per animal) sourced from Wikimedia Commons, restricted to
+  Public Domain/CC0/CC BY/CC BY-SA — CC BY-ND rejected outright (no-derivatives forbids the
+  cropping every photo needs) and CC BY-NC avoided for a clean chain of title, each license
+  verified per-file against Commons' own API metadata, not assumed from a category page or
+  filename. Compressed via the same headless-Chromium-canvas pipeline this repo's own app-icon
+  work (v1.20/v1.21) already established, requiring `--allow-file-access-from-files` to avoid
+  Chromium's file-origin canvas tainting when a `file://` document loads a sibling `file://`
+  image — confirmed by reproducing the exact "Tainted canvases may not be exported" error before
+  fixing it, not assumed. **A real problem self-caught before Fable ever saw this tab:** the
+  first-pass lion hero and both black-rhino photos turned out to be monochrome as uploaded (one
+  photographer's stylistic choice across several of their Commons uploads), which would have
+  broken "twenty photographers reading as one system" far more than any crop/angle variance —
+  found by actually viewing the processed images (not trusting filenames/descriptions), fixed by
+  re-sourcing three color replacements through the same license-verification process, confirmed
+  by viewing every hero shot and roughly half the full set directly before shipping. One
+  Commons-side data error caught along the way and discarded: a file titled "Elands grazing in
+  Maasai Mara" visually depicted a topi/hartebeest, not an eland — mislabeled at the source.
+- **Build:** `mara.js`, lazy-init on first tab activation like Weeks (fetches `data/mara.json`
+  only then). Plain DOM, not canvas — no `ResizeObserver`/redraw-on-theme-change plumbing needed,
+  since CSS custom properties alone keep photos-and-text in sync with the theme toggle. Desktop's
+  persistent two-column layout reuses the mobile markup unchanged: the mobile hiding rules
+  (`#mara-root[data-view="detail"] .mara-index { display:none }` etc.) and the desktop override
+  are written at equal CSS specificity, with the desktop block simply appearing later in the
+  file so normal cascade tie-breaking (not `!important`, unused anywhere else in this stylesheet)
+  lets it win only once the `min-width:900px` query actually matches.
+- **`verify.mjs` tightened, not loosened, per the invariant-12 ratchet:** six new stage3 checks
+  — `data/mara.json` shape (park object + exactly 20 animals, unique ids); every animal has
+  non-empty name/swahili/intro/whereToLook plus valid stats and a `sighting.pct` integer 0-100
+  with `band` in the known set; every animal has exactly 2 photos with non-empty
+  src/alt/credit/license *and* the file verified to exist on disk (Fable's explicit ask, so a
+  future edit can't silently reference a photo that was never added); `fieldNotes` entries
+  ≤20 words each (the house convention already applied to `wordOfDay`); zero quote-mark glyphs
+  and no banned platitudes across every animal/park text field; a new photo-budget check
+  (`assets/mara/` ≤4096KB total, no single file >150KB) — genuinely new territory for this
+  ratchet, since no prior version shipped binary image assets at this scale. All six mutation-
+  tested: a broken photo path, an over-length field note, an injected quote glyph, and a wrong
+  animal count were each deliberately introduced and confirmed to fail their respective check,
+  then reverted and confirmed to pass clean again — the same discipline applied to every
+  `verify.mjs` change since the v1.23 async-check bug taught this repo not to trust a new check
+  without watching it actually catch something. `mara.js` added to the JS-budget file list,
+  `node --check` sweep (automatic, any `.js`/`.mjs` in the repo root), and bare-timeZone sweep;
+  `data/mara.json` added to the page-weight file list.
+- **Fable's pre-merge audit, round one: ship after two required fixes, both real, both found by
+  measuring the live render rather than reading the source diff.** (1) Every detail photo was
+  rendering as a 350×600 portrait crop, not the intended 3:2 landscape — root cause: the `<img>`
+  `height="600"` attribute (kept deliberately, for the pre-load size hint) maps to a
+  presentational height hint that CSS never explicitly countermanded, so it stood unopposed and
+  `aspect-ratio`'s auto-height computation never engaged (aspect-ratio only auto-computes a
+  dimension left otherwise unset). Fixed with an explicit `height: auto` on `.mara-photo-img`,
+  confirmed by measuring the rendered box directly (350×233.3, ratio 1.500) rather than trusting
+  the CSS text. (2) The mobile scroll container is the *document*, not `.panel` (`.panel`'s own
+  `overflow-y` never engages since `body` grows to fit content — pre-existing, app-wide, not new
+  to this tab), so tapping any tile below the ~1,300px park card opened its detail view wherever
+  the index happened to be scrolled to, not the top — every screenshot the audit took landed
+  mid-scroll, off the name/photo/sighting-score entirely. Fixed in `selectAnimal()`: save
+  `window.scrollY` and scroll to 0 on entering a detail view, restore the saved value on return
+  (the second half was volunteered as a side benefit — "index position preserved" becomes true
+  by design, not accident). Both fixes re-verified against the live render: photo box measured
+  directly; scroll-to-top confirmed via fresh detail entries; scroll-restore confirmed
+  pixel-exact via raw coordinate clicks (`page.mouse.click` / DOM `element.click()`), after two
+  earlier attempts at a Playwright `page.click(selector)`-based regression test gave false
+  failures — Playwright's own click-actionability check auto-scrolls its target into view before
+  the click fires, which is real, useful behavior for a generic test but confounds a test that
+  specifically wants to know what scroll position the *app* itself leaves in place, most visibly
+  when the target was the 20th/last tile and Playwright had to scroll far past any position the
+  test had manually set. Logged here since it cost real debugging time and will recur for any
+  future scroll-position regression test in this repo. One optional fix applied too: `.mara-index`
+  gained the `70svh` fallback line, matching the house svh-with-vh-fallback convention.
+- **Fable's second-round audit: independently reproduced, confirmed good to go, unconditionally.**
+  Re-measured both fixes live rather than taking the fix descriptions on faith (photo ratio
+  1.500 exactly; scroll 1613-in/0-on-entry/1613-restored, using a DOM `element.click()` — a
+  second, independent method of avoiding Playwright's auto-scroll, corroborating this session's
+  own raw-mouse-click finding). Checked and cleared one theoretical edge case unprompted:
+  `selectAnimal`'s re-save of the index scroll position on every detail-entry could in principle
+  overwrite it on a detail-to-detail switch, but that path is unreachable in the shipped UX —
+  mobile has no detail-to-detail navigation (back-only), and desktop never calls the restore
+  branch at all (the back pill is hidden there; the sidebar keeps its own scroll independently).
+  Confirmed the final 52px sighting-score treatment needed no further change now that the photo
+  bug no longer pushes it off-screen.
+- **`sw.js`:** `CACHE` bumped `"mindset-v10"` → `"mindset-v11"` (Appendix C.2 updated to match)
+  — `mara.js` and `data/mara.json` added to the precached app shell (small, needed for the tab
+  to function at all); the 40 photos deliberately stay lazy-loaded, not precached, so installing
+  the PWA doesn't eagerly download ~3.2MB of wildlife photography nobody may ever view.
+- **Verified (final):** `verify.mjs all` 73/73 (67 prior + 6 new, all mutation-tested). Full
+  Playwright pass covering lazy-init, the park card, all 20 tiles, tap-to-detail, back-to-index,
+  the count-up genuinely animating and landing on the true value, the persistent desktop
+  two-column layout, `aria-current` sidebar sync, and `prefers-reduced-motion`: 31/31, zero
+  console errors at 390px and 1100px. A real accessibility-tree pass (`page.accessibility.
+  snapshot()`, not DOM-attribute reading) caught one genuine bug before Fable's audit ever saw
+  it: the animal name in the detail view was a plain styled `<div>`, not a heading, which would
+  have broken heading-based jump-to-content navigation for a screen-reader user landing on a
+  fresh detail view — fixed to a real `<h2>`, reverified correctly ordered ahead of the "WHERE TO
+  LOOK"/"FIELD NOTES" `<h3>`s: 8/8. A final targeted pass reverifying both of Fable's round-one
+  fixes against the live render: 4/4, zero console errors. JS total (app+figure+lib+weeks+
+  mara+sw) 55,455 B — 54.2KB of the 60KB budget; page weight 261,251 B — 255.1KB of the 350KB
+  budget; `assets/mara/` 3.2MB across 40 files (none over 150KB), lazy-loaded and outside both
+  budgets by design.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -1214,17 +1368,20 @@ The three daily cards:
 ├── styles.css
 ├── app.js                  # UI logic: tabs, theme, date, cards, staleness
 ├── figure.js               # canvas glowing-bottle animation (the signature element — was drop.js/brain.js)
-├── weeks.js                # Weeks tab: two canvas life-in-weeks grids (J, B), zoom, stats (v1.22)
+├── weeks.js                # Weeks tab: combined canvas life-in-weeks grid (J, B), zoom, stats (v1.22-1.24)
+├── mara.js                 # Mara tab: animal reference + Great Migration facts, index/detail views (v1.25)
 ├── lib.mjs                 # SHARED pure functions: HKT date, day number, rotation (imported by browser AND node)
 ├── manifest.webmanifest    # home-screen installability (Appendix C)
 ├── sw.js                   # offline shell, network-first (Appendix C, verbatim)
 ├── assets/
 │   ├── fonts/              # self-hosted woff2 + OFL.txt licences
 │   ├── icons/              # icon-192.png, icon-512.png, apple-touch-icon.png (180)
+│   ├── mara/                # 40 Wikimedia Commons wildlife photos, PD/CC0/CC BY/CC BY-SA only (v1.25)
 │   └── favicon.svg
 ├── data/
 │   ├── cards.json          # anchors[365], journal[40], kenya[60], wordOfDay[30]
 │   ├── values.json         # 5 values
+│   ├── mara.json           # park facts + Great Migration + 20 animals (v1.25)
 │   └── daily.json          # written by the pipeline daily
 ├── scripts/
 │   ├── generate-daily.mjs
@@ -1899,7 +2056,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v10";
+const CACHE = "mindset-v11";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",

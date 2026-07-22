@@ -15,10 +15,19 @@ scrollable, with a big percent-of-life-spent figure for each person at the top a
 toggle to highlight just one person's weeks. It advances on its own: since it's computed from
 today's date on every load, no daily-pipeline step is involved.
 
+A fourth tab, **Mara**, is a reference for the August 2026 Masai Mara trip: a 2-column grid of
+20 animals (Big Five, migration species, and other commonly-spotted wildlife) doubles as the
+picker — tap one and it opens to a focused profile (real photos, lifespan/size/diet, where to
+look, field notes, and a sighting-likelihood score for an August safari) with no filter left
+showing, exactly as asked. A park-facts and Great Migration card leads the list. On a wide
+screen the animal list becomes a persistent side column next to whichever animal is open.
+
 Zero build step, zero runtime dependencies. The only personal data anywhere in this repo is
 two initials and two birth months (for the Weeks tab above) — never full names, never an exact
 day, never anyone else's data; everything else traces to public thinkers already credited by
-name. See `BUILD-PLAN.md` for the full specification this site was built from.
+name, or — for the Mara tab's photos — to the Wikimedia Commons photographers credited in each
+photo's own caption, under Public Domain/CC0/CC BY/CC BY-SA licenses. See `BUILD-PLAN.md` for
+the full specification this site was built from.
 
 ## Add to Home Screen
 

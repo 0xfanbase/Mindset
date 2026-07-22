@@ -1,0 +1,488 @@
+{
+  "park": {
+    "name": "Masai Mara National Reserve",
+    "stats": [
+      { "label": "RESERVE AREA", "value": "1,510 km²" },
+      { "label": "ESTABLISHED", "value": "1961" },
+      { "label": "ON THE MOVE", "value": "~1.3–1.5M wildebeest" },
+      { "label": "PEAK CROSSINGS", "value": "Jul–Oct, peaking in Aug" }
+    ],
+    "about": "Mara means spotted or mottled in the Maa language, for how acacia trees and thorn bush dot the grassland when seen from a distance. The reserve is a National Reserve, not a national park — managed by Narok County and the nonprofit Mara Conservancy, ringed by community conservancies rather than fenced off from them. It is also the northernmost stretch of one continuous ecosystem shared with Tanzania's much larger Serengeti National Park, an unfenced border wildlife crosses freely. August sits in the long dry season: sunny days near 25–28°C, surprisingly cold mornings near 12°C thanks to the reserve's elevation, and thinning grass that makes wildlife easier to spot.",
+    "migration": {
+      "title": "The crossing, and why",
+      "paragraphs": [
+        "It isn't a single event but a year-round circuit. Traditional aerial counts put the number at roughly 1.3 to 1.5 million wildebeest, moving together with hundreds of thousands of zebra and gazelle in a rough clockwise loop between the Serengeti's southern plains and the Mara's grassland — though a 2025 satellite study suggested a far lower figure, and scientists have not yet reconciled the two.",
+        "The herds move for one plain reason: grass and water. Rain falls on different parts of the ecosystem at different times of year, and the animals simply follow it, arriving in the Mara specifically because this is the part of the ecosystem that still holds water once the south has dried out.",
+        "The famous river crossings happen because the Mara River is the one obstacle on the route the herds cannot simply walk around. Most deaths there come from drowning and the crush of the herd itself, not the waiting crocodiles — though crocodiles are real, and feed well on what the crossing leaves behind."
+      ],
+      "facts": [
+        "An average season sees roughly 6,250 wildebeest drown at the river each year — about 0.5% of the population, far less than the crossings' drama suggests.",
+        "A wildebeest carcass can take up to seven years to fully break down in the river, feeding the ecosystem long after the crossing itself.",
+        "Roughly 500,000 calves are born within a three-week window on the southern plains each year — so many at once that predators cannot possibly take them all.",
+        "The African wild dog, once common here, was wiped from the Mara's open plains by a 1990s rabies outbreak and now survives only in small numbers in the northern conservancies — the rarest sight of all."
+      ]
+    }
+  },
+  "animals": [
+    {
+      "id": "lion",
+      "name": "Lion",
+      "swahili": "Simba",
+      "photos": [
+        { "src": "assets/mara/lion-hero.jpg", "alt": "A maned male lion sleeping in dry grass at the edge of a thicket.", "credit": "Weldon Kennedy", "license": "CC BY 2.0" },
+        { "src": "assets/mara/lion-alt.jpg", "alt": "A lioness in a low stalking crouch, moving through golden grassland.", "credit": "Laika ac", "license": "CC BY-SA 2.0" }
+      ],
+      "sighting": { "pct": 92, "band": "Almost certain", "note": "Seen on nearly every multi-night August drive" },
+      "stats": {
+        "lifespan": "10–18 years in the wild — females often outlive males",
+        "size": "Males 150–250 kg, females 120–180 kg; ~1.2 m at the shoulder",
+        "eats": "Wildebeest, zebra, buffalo — lionesses make most of the kills"
+      },
+      "intro": "The only big cat that lives and hunts in groups. A maned male lazing in the grass is unmistakable; listen at dusk for a roar that carries up to 8 km.",
+      "whereToLook": "Musiara Marsh and the Bila Shaka lugga (the Marsh Pride's territory since the 1990s), Paradise Plains, and Rhino Ridge — mostly resting in shade by midday, hunting near dusk and dawn.",
+      "fieldNotes": [
+        "Lionesses do 85–90% of the hunting, though males often eat first.",
+        "Both sexes roar — not just males — audible for miles across the plains.",
+        "Cubs are raised communally; a female will nurse cubs that are not her own.",
+        "The Marsh Pride has held the same territory since nature documentaries began filming it in 1996."
+      ]
+    },
+    {
+      "id": "leopard",
+      "name": "Leopard",
+      "swahili": "Chui",
+      "photos": [
+        { "src": "assets/mara/leopard-hero.jpg", "alt": "A leopard standing alert in tall grass, its rosette coat blending with the dry vegetation.", "credit": "Sumeet Moghe", "license": "CC BY-SA 4.0" },
+        { "src": "assets/mara/leopard-alt.jpg", "alt": "A leopard resting in a tree beside a warthog carcass it has hoisted out of reach.", "credit": "Zammerman", "license": "CC BY-SA 4.0" }
+      ],
+      "sighting": { "pct": 72, "band": "Likely", "note": "Solitary and elusive — longer stays raise the odds" },
+      "stats": {
+        "lifespan": "10–12 years in the wild, rarely past 12",
+        "size": "Males ~60 kg, females ~35 kg; built for strength, not speed",
+        "eats": "Whatever it can catch — antelope, warthog, baboon, even fish"
+      },
+      "intro": "A solitary, mostly nocturnal cat known for dragging kills into trees, safe from lions and hyenas. Look for dark rosettes, not solid spots — that is a cheetah — draped across a low branch.",
+      "whereToLook": "Riverine forest along the Talek, Mara and Sand Rivers, and rocky outcrops like Leopard Gorge — resting in trees by day, hunting at dusk.",
+      "fieldNotes": [
+        "Can hoist a carcass heavier than its own body weight into a tree.",
+        "Each leopard's rosette pattern is unique, like a fingerprint.",
+        "Marks a large home range with scent and claw marks rather than defending one spot.",
+        "The Mara's riverine forest is rated among the best leopard habitat in Africa."
+      ]
+    },
+    {
+      "id": "black-rhino",
+      "name": "Black rhinoceros",
+      "swahili": "Kifaru",
+      "photos": [
+        { "src": "assets/mara/black-rhino-hero.jpg", "alt": "A black rhino grazing on open grassland, with two elephants visible in the distance.", "credit": "Ninara", "license": "CC BY 2.0" },
+        { "src": "assets/mara/black-rhino-alt.jpg", "alt": "A black rhino facing the camera directly, its long horn and hooked lip clearly visible.", "credit": "Peter Steinberg", "license": "CC BY 3.0" }
+      ],
+      "sighting": { "pct": 18, "band": "Long shot", "note": "The Mara's rarest large mammal — a real bonus sighting" },
+      "stats": {
+        "lifespan": "30–40 years in the wild",
+        "size": "900–1,350 kg; two horns of solid keratin",
+        "eats": "Leaves, twigs and bark, gripped with a hooked upper lip"
+      },
+      "intro": "A browser, not a grazer — distinguished from the far rarer-here white rhino by its pointed, prehensile lip. Poor eyesight but sharp hearing and smell, which can make a charge look unprovoked.",
+      "whereToLook": "The Mara Triangle and Rhino Ridge, inside closely protected zones with fewer vehicles — your best odds are an itinerary that specifically covers the Triangle.",
+      "fieldNotes": [
+        "Its horns are compressed keratin — the same material as hair and fingernails.",
+        "Poaching nearly wiped out the Mara's rhinos: about 120 in 1971, just 18 by 1984.",
+        "Wallows in mud to cool down and shed ticks, since it cannot sweat.",
+        "Only a few dozen remain in the Mara today, among the most closely protected animals in Kenya."
+      ]
+    },
+    {
+      "id": "elephant",
+      "name": "African elephant",
+      "swahili": "Tembo",
+      "photos": [
+        { "src": "assets/mara/elephant-hero.jpg", "alt": "An elephant walking through green grassland with scattered acacia trees on the horizon.", "credit": "Daniel Case", "license": "CC BY-SA 4.0" },
+        { "src": "assets/mara/elephant-alt.jpg", "alt": "An elephant calf standing close beside its mother.", "credit": "Bett Duncan", "license": "CC BY-SA 4.0" }
+      ],
+      "sighting": { "pct": 93, "band": "Almost certain", "note": "Abundant near rivers, especially in the dry season" },
+      "stats": {
+        "lifespan": "60–70 years in the wild",
+        "size": "Up to 6,000 kg; unmistakable at any distance",
+        "eats": "Up to 136 kg of grass, bark and fruit a day"
+      },
+      "intro": "The world's largest land animal, led by a matriarch whose memory of water and food sources can span decades. Family herds of related females and calves are common; older males often wander alone.",
+      "whereToLook": "Along the Mara and Talek Rivers, marsh edges and shaded woodland — herds cluster tighter around permanent water as the dry season deepens through August.",
+      "fieldNotes": [
+        "Drinks up to 190 liters of water a day and eats around 136 kg of food.",
+        "Communicates in infrasonic rumbles too low for human ears, detectable for miles.",
+        "The Mara ecosystem's elephant count rose from about 1,450 to nearly 2,500 between 2014 and 2021.",
+        "Herds have been seen standing vigil over a sick or dead family member."
+      ]
+    },
+    {
+      "id": "buffalo",
+      "name": "African buffalo",
+      "swahili": "Nyati",
+      "photos": [
+        { "src": "assets/mara/buffalo-alt.jpg", "alt": "A buffalo bull coated in dried mud from wallowing, horns raised.", "credit": "KatamReu", "license": "CC BY-SA 4.0" },
+        { "src": "assets/mara/buffalo-hero.jpg", "alt": "A close-up of a buffalo's face and curved horn, grass caught in its mouth.", "credit": "Esin Üstün", "license": "CC BY 2.0" }
+      ],
+      "sighting": { "pct": 96, "band": "Almost certain", "note": "Large herds are one of the most dependable sightings" },
+      "stats": {
+        "lifespan": "11–22 years in the wild",
+        "size": "300–835 kg; heavy fused horns form a shield-like boss on old bulls",
+        "eats": "Coarse grass, grazed mostly at night and early morning"
+      },
+      "intro": "A massive, unpredictable bovine often rated one of the most dangerous animals to encounter on foot in Africa. Herds decide where to move together — resting females each gaze in one direction until a majority forms.",
+      "whereToLook": "Near-permanent water — riverine grassland along the Mara and Talek Rivers and the edges of Musiara Marsh — usually in herds of a hundred or more.",
+      "fieldNotes": [
+        "Herds vote on direction: females stand, stare one way, then sit — the majority wins.",
+        "Old bulls pushed out of the herd are nicknamed dagga boys, from the mud they wallow in.",
+        "Often seen carrying oxpecker birds, which pick ticks from their hide.",
+        "Buffalo herds have been known to mob and even kill a lion threatening a calf."
+      ]
+    },
+    {
+      "id": "wildebeest",
+      "name": "Blue wildebeest",
+      "swahili": "Nyumbu",
+      "photos": [
+        { "src": "assets/mara/wildebeest-hero.jpg", "alt": "A wildebeest standing side-on in open grassland.", "credit": "Benh LIEU SONG", "license": "CC BY-SA 2.0" },
+        { "src": "assets/mara/wildebeest-alt.jpg", "alt": "A large herd of wildebeest crossing a muddy river, spray and dust rising around them.", "credit": "Eric Inafuku", "license": "CC BY 2.0" }
+      ],
+      "sighting": { "pct": 98, "band": "Almost certain", "note": "August is the peak of the migration itself" },
+      "stats": {
+        "lifespan": "~20 years in the wild",
+        "size": "180–275 kg; sloping back, curved horns, a shaggy grey-brown coat",
+        "eats": "Short, new-growth grass — follows the rain to find it"
+      },
+      "intro": "A cattle-like antelope with a scruffy mane and beard, best known for the vast herds that cross the Mara River each dry season. The Mara's population has a whitish beard, unlike the black-bearded wildebeest further south.",
+      "whereToLook": "Open plains reserve-wide, thickest around the Mara Triangle and central plains as herds arrive from the south — the single most numerous animal in the reserve come August.",
+      "fieldNotes": [
+        "Herds move with no single leader, yet reliably find water and fresh grass together.",
+        "Traditionally counted at 1.3–1.5 million, though a 2025 satellite study suggests far fewer — scientists have not yet settled it.",
+        "Zebras crop the tall grass first, exposing the short grass wildebeest prefer.",
+        "Known to graze and travel by moonlight, not just in daylight."
+      ]
+    },
+    {
+      "id": "zebra",
+      "name": "Plains zebra",
+      "swahili": "Punda milia",
+      "photos": [
+        { "src": "assets/mara/zebra-hero.jpg", "alt": "A zebra standing in golden-lit tall grass, its stripes sharply defined.", "credit": "Benh LIEU SONG", "license": "CC BY-SA 2.0" },
+        { "src": "assets/mara/zebra-alt.jpg", "alt": "Two zebras resting their heads on each other's necks.", "credit": "Bett Duncan", "license": "CC BY-SA 4.0" }
+      ],
+      "sighting": { "pct": 96, "band": "Almost certain", "note": "Migrates alongside the wildebeest, just as easy to spot" },
+      "stats": {
+        "lifespan": "20–25 years in the wild",
+        "size": "175–385 kg; every stripe pattern is unique to the individual",
+        "eats": "Tall, coarse grass — clears the way for shorter grazers"
+      },
+      "intro": "Unmistakable black-and-white stripes, no two alike — used by researchers to identify individuals like a fingerprint. Travels in tight family harems that merge into huge herds during migration season.",
+      "whereToLook": "The same open grassland as wildebeest, usually mixed right in with them, especially dense in the Mara Triangle and central plains through August.",
+      "fieldNotes": [
+        "A zebra's kick can be forceful enough to break a lion's jaw or ribs.",
+        "Sleeps standing up, knees locked, with one animal always on watch.",
+        "Scientists still do not fully agree on why zebras evolved stripes at all.",
+        "Grazes ahead of wildebeest, clearing tough grass and exposing the shorter growth they prefer."
+      ]
+    },
+    {
+      "id": "thomsons-gazelle",
+      "name": "Thomson's gazelle",
+      "swahili": "Swala Tomi",
+      "photos": [
+        { "src": "assets/mara/thomsons-gazelle-hero.jpg", "alt": "A Thomson's gazelle walking through green grass, its black side-stripe clearly visible.", "credit": "Simone Salvatori", "license": "CC BY-SA 3.0" },
+        { "src": "assets/mara/thomsons-gazelle-alt.jpg", "alt": "A Thomson's gazelle mother nuzzling her newborn calf, still lying in the grass.", "credit": "Esin Üstün", "license": "CC BY 2.0" }
+      ],
+      "sighting": { "pct": 93, "band": "Almost certain", "note": "One of the most abundant antelope on the plains, year-round" },
+      "stats": {
+        "lifespan": "~10–15 years in the wild",
+        "size": "~20 kg; a bold black stripe divides tan flank from white belly",
+        "eats": "Very short, tender grass shoots — grazes what bigger herds leave behind"
+      },
+      "intro": "A small, quick gazelle with a tail in constant motion, easy to tell apart from its larger cousin Grant's gazelle by its bold black side-stripe (Grant's has little to none) and a smaller white rump patch that stops at the tail.",
+      "whereToLook": "Open, recently grazed or burned short-grass plains reserve-wide, often in large mixed herds with zebra and wildebeest.",
+      "fieldNotes": [
+        "Can run 80–90 km/h, among the fastest antelope in Africa.",
+        "Its stiff-legged jump display (stotting) genuinely signals fitness to a watching predator.",
+        "Grant's gazelle is bigger, paler, and can go without water far longer — it barely overlaps with Thomson's range needs.",
+        "Follows the grazing wave left behind by wildebeest and zebra to find the freshest shoots."
+      ]
+    },
+    {
+      "id": "cheetah",
+      "name": "Cheetah",
+      "swahili": "Duma",
+      "photos": [
+        { "src": "assets/mara/cheetah-hero.jpg", "alt": "A cheetah walking through short grass, its slender body and spotted coat in full view.", "credit": "Byrdyak (Volodymyr Burdiak)", "license": "CC BY-SA 4.0" },
+        { "src": "assets/mara/cheetah-alt.jpg", "alt": "A close-up of a cheetah's face, its black tear-mark stripes clearly visible.", "credit": "KatamReu", "license": "CC BY-SA 4.0" }
+      ],
+      "sighting": { "pct": 62, "band": "Likely", "note": "Open plains help, but the resident population is small" },
+      "stats": {
+        "lifespan": "Females up to ~14 years, males around 10",
+        "size": "35–65 kg; built purely for speed, with non-retracting claws",
+        "eats": "Thomson's gazelle and impala — hunts by sight, in daylight"
+      },
+      "intro": "The fastest land animal, reaching 95–120 km/h in short bursts of barely 20–30 seconds before overheating. Black tear-marks run from the eyes to the mouth. Hunts by day, unlike most Mara predators.",
+      "whereToLook": "Open short-grass plains with clear sightlines — Paradise Plains, Rhino Ridge, and the surrounding conservancies — often scanning from a termite mound or fallen log.",
+      "fieldNotes": [
+        "Cannot roar — it chirps like a bird and purrs like a housecat instead.",
+        "A famous coalition of five Mara males, Tano Bora, hunted prey ten times their own weight.",
+        "Only about 5% of cubs survive to adulthood, mostly lost to lions and hyenas.",
+        "The Mara's resident population is small — recent counts put it at around 30 to 40 adults."
+      ]
+    },
+    {
+      "id": "hyena",
+      "name": "Spotted hyena",
+      "swahili": "Fisi",
+      "photos": [
+        { "src": "assets/mara/hyena-hero.jpg", "alt": "A spotted hyena moving through long grass near a bush.", "credit": "Kandukuru Nagarjun", "license": "CC BY 2.0" },
+        { "src": "assets/mara/hyena-alt.jpg", "alt": "A close-up of a spotted hyena's head and shoulder after feeding.", "credit": "Zammerman", "license": "CC BY-SA 4.0" }
+      ],
+      "sighting": { "pct": 91, "band": "Almost certain", "note": "Common on nearly every drive, especially around dawn" },
+      "stats": {
+        "lifespan": "Up to 20 years in the wild",
+        "size": "35–80 kg; sloping back, bone-crushing bite",
+        "eats": "Hunts about 70% of its own food — not just a scavenger"
+      },
+      "intro": "A skilled and underrated hunter, not merely a scavenger — clans are led entirely by females, and even the lowest-ranking female outranks every adult male. The famous laugh signals submission or excitement, not amusement.",
+      "whereToLook": "Open plains and dry watercourses reserve-wide; den sites cluster near the Bila Shaka lugga and Rhino Ridge, most visible returning from a night's hunt at dawn.",
+      "fieldNotes": [
+        "Clans of up to 80–100 animals are strictly led by females.",
+        "Its whooping call can carry up to 5 km across open ground.",
+        "Studied continuously by the same research project in the Mara since 1988.",
+        "Jaws strong enough to crush and digest bone, horn included."
+      ]
+    },
+    {
+      "id": "giraffe",
+      "name": "Maasai giraffe",
+      "swahili": "Twiga",
+      "photos": [
+        { "src": "assets/mara/giraffe-hero.jpg", "alt": "A giraffe standing on open grassland with hills in the distance.", "credit": "Renvoy", "license": "CC BY-SA 4.0" },
+        { "src": "assets/mara/giraffe-alt.jpg", "alt": "A close-up of a giraffe's head and neck, showing its distinctive jagged coat pattern.", "credit": "William Warby", "license": "CC BY 2.0" }
+      ],
+      "sighting": { "pct": 93, "band": "Almost certain", "note": "Easily spotted year-round in open woodland" },
+      "stats": {
+        "lifespan": "~20–26 years in the wild",
+        "size": "Up to 5.5 m tall — the world's tallest land animal",
+        "eats": "Acacia leaves, stripped with an 18–20 inch dark-blue tongue"
+      },
+      "intro": "Unmistakable for its height, with jagged, star-shaped patches unlike any other giraffe subspecies. Needs only a few minutes of standing, broken sleep a day. Both sexes carry skin-covered horns called ossicones.",
+      "whereToLook": "Open acacia woodland and savanna reserve-wide, especially around Musiara Marsh and the Mara Triangle, usually in small, loose groups.",
+      "fieldNotes": [
+        "Settles disputes by swinging its neck to slam its head into a rival — called necking.",
+        "Sleeps only 5 to 30 minutes a day, standing, in short snatches.",
+        "Population has fallen by roughly half in three decades and is now classed Endangered.",
+        "Favors one side in a necking fight and mostly respects a rival's preferred side too."
+      ]
+    },
+    {
+      "id": "hippo",
+      "name": "Hippopotamus",
+      "swahili": "Kiboko",
+      "photos": [
+        { "src": "assets/mara/hippo-hero.jpg", "alt": "A hippo silhouetted in grass at sunset, an acacia tree and glowing sky behind it.", "credit": "Daniel Case", "license": "CC BY-SA 4.0" },
+        { "src": "assets/mara/hippo-alt.jpg", "alt": "A hippo with its mouth wide open in a threat display, standing in shallow water.", "credit": "Charles J. Sharp", "license": "CC BY-SA 3.0" }
+      ],
+      "sighting": { "pct": 96, "band": "Almost certain", "note": "Reliable at river pools on nearly every drive near water" },
+      "stats": {
+        "lifespan": "25–50 years in the wild, sources vary widely",
+        "size": "Up to 1,500 kg; eyes, ears and nose all on top of the head",
+        "eats": "Grass, grazed on land at night — not while in the water"
+      },
+      "intro": "Spends daylight hours submerged in rivers and pools to stay cool, emerging at night to walk miles inland grazing on grass. Cannot actually swim or float — it walks along the riverbed instead.",
+      "whereToLook": "Mara and Talek River pools, including the well-known Hippo Pool stretch — visible basking, submerged, or sparring through the day.",
+      "fieldNotes": [
+        "Its reddish skin secretion, sometimes called blood sweat, is a natural sunscreen, not blood.",
+        "Can hold its breath over 5 minutes and even surfaces to breathe while asleep.",
+        "Marks territory by flinging dung with a rapidly spinning tail.",
+        "Widely considered one of Africa's most dangerous large animals to encounter on foot."
+      ]
+    },
+    {
+      "id": "crocodile",
+      "name": "Nile crocodile",
+      "swahili": "Mamba",
+      "photos": [
+        { "src": "assets/mara/crocodile-hero.jpg", "alt": "A Nile crocodile resting on a riverbank with its mouth closed, trees behind it.", "credit": "CT Cooper", "license": "CC BY 3.0" },
+        { "src": "assets/mara/crocodile-alt.jpg", "alt": "The same crocodile resting with its mouth open, in the same riverside spot.", "credit": "CT Cooper", "license": "CC BY 3.0" }
+      ],
+      "sighting": { "pct": 92, "band": "Almost certain", "note": "Reliable basking at crossing points — an actual crossing is far less certain" },
+      "stats": {
+        "lifespan": "Commonly cited 45–60+ years, figures vary widely",
+        "size": "Up to 5–6 m and 1,000 kg in large males",
+        "eats": "Mostly fish day-to-day — ambushes larger prey at the water's edge"
+      },
+      "intro": "Africa's largest crocodilian, lying almost fully submerged with only eyes and nostrils showing. Waits at narrow river crossings where the current is manageable but the exit bank is steep — exactly where crossing herds struggle most.",
+      "whereToLook": "Known Mara River crossing points — Lookout Point, Paradise Plains, and the Purungat Bridge area — basking on sandbanks or lying in wait along the bank.",
+      "fieldNotes": [
+        "Despite its reputation, crocodiles cause only a small share of crossing deaths — most die from drowning or trampling.",
+        "Can launch 1.5–2 m from a standstill and uses a death roll to break apart large prey.",
+        "Its bite is among the strongest of any living animal, though the jaw-opening muscles are surprisingly weak.",
+        "Can fast for months between large meals while waiting for the herds to arrive."
+      ]
+    },
+    {
+      "id": "topi",
+      "name": "Topi",
+      "swahili": "Nyamera",
+      "photos": [
+        { "src": "assets/mara/topi-hero.jpg", "alt": "A topi standing in grassland, grass in its mouth, with an acacia tree in the background.", "credit": "Kandukuru Nagarjun", "license": "CC BY 2.0" },
+        { "src": "assets/mara/topi-alt.jpg", "alt": "A topi and her calf standing close together in short grass.", "credit": "Fabiola Leyton and Carlos Castillo", "license": "CC0 1.0" }
+      ],
+      "sighting": { "pct": 87, "band": "Very likely", "note": "A genuine Mara stronghold for the species" },
+      "stats": {
+        "lifespan": "Up to 15 years in the wild, though few live that long",
+        "size": "100–150 kg; a glossy reddish-purple coat with dark leg patches",
+        "eats": "Medium-height, leafy grass — very selective about which blades it takes"
+      },
+      "intro": "A sleek antelope with an oddly mournful, long-muzzled face and a coat that looks almost bruised-purple in good light. Frequently stands sentinel on termite mounds, scanning for predators.",
+      "whereToLook": "Topi Plains in the reserve's southwest is literally named for the species and holds some of the highest topi densities in Kenya; also common on Paradise Plains.",
+      "fieldNotes": [
+        "Among the fastest antelope in Africa, capable of outlasting a cheetah over a long chase.",
+        "Breeding males cluster into tight territories just meters apart, and females fight over the best ones.",
+        "Standing on a termite mound is not just a male habit — females and young do it too.",
+        "Often mixes with wildebeest and zebra herds for shared predator lookout."
+      ]
+    },
+    {
+      "id": "eland",
+      "name": "Common eland",
+      "swahili": "Pofu",
+      "photos": [
+        { "src": "assets/mara/eland-hero.jpg", "alt": "A small group of eland standing together at a woodland edge.", "credit": "Esin Üstün", "license": "CC BY 2.0" },
+        { "src": "assets/mara/eland-alt.jpg", "alt": "An eland walking through tall grass with two oxpecker birds perched on its back.", "credit": "Katie Hunt", "license": "CC BY 2.0" }
+      ],
+      "sighting": { "pct": 40, "band": "Even odds", "note": "Prefers bushier terrain — less predictable than the open-plains grazers" },
+      "stats": {
+        "lifespan": "Commonly cited 15–20 years, sources vary",
+        "size": "Up to 942 kg — the world's bulkiest antelope",
+        "eats": "Leaves and shrubs mostly, shifting to grass when it's fresh"
+      },
+      "intro": "The largest antelope species, ox-like and heavy-set, with a pronounced dewlap and tightly spiraled horns on both sexes. Despite its bulk it can jump nearly 3 meters from a standing start.",
+      "whereToLook": "Bushed grassland, hillier terrain, and scrub margins rather than the open plains — often more reliable in the private conservancies than the reserve's central plains.",
+      "fieldNotes": [
+        "Bulls make an audible knee-clicking sound while walking, used to size up rivals from a distance.",
+        "Can raise its own body temperature on hot days instead of sweating, to save water.",
+        "One of the slowest antelope species at a run, topping out around 40 km/h.",
+        "More shy of vehicles than the plains species, and often most active at dawn or dusk."
+      ]
+    },
+    {
+      "id": "impala",
+      "name": "Impala",
+      "swahili": "Swala Pala",
+      "photos": [
+        { "src": "assets/mara/impala-hero.jpg", "alt": "A male impala walking at the edge of the bush, its lyre-shaped horns visible.", "credit": "shankar s.", "license": "CC BY 2.0" },
+        { "src": "assets/mara/impala-alt.jpg", "alt": "Two male impalas with horns locked together in a sparring match.", "credit": "Kandukuru Nagarjun", "license": "CC BY 2.0" }
+      ],
+      "sighting": { "pct": 96, "band": "Almost certain", "note": "The most abundant antelope in Africa — expect it everywhere" },
+      "stats": {
+        "lifespan": "12–15 years in the wild",
+        "size": "40–75 kg; only males carry the long lyre-shaped horns",
+        "eats": "Grass in the wet season, shifting to leaves and shrubs when dry"
+      },
+      "intro": "A glossy, three-toned antelope — chestnut back, tan flanks, white belly — with a black M-shaped mark on the rump. Famous for scattering explosively in different directions when startled, confusing a predator's aim.",
+      "whereToLook": "Woodland-grassland edges and riverine bush along the Mara and Talek Rivers, often near camps and acacia groves.",
+      "fieldNotes": [
+        "Can leap 3 m high and 10 m in one bound when startled.",
+        "About 90% of lambs are born within a tight three-to-five-week window, overwhelming predators.",
+        "Rutting males roar loudly enough to be mistaken for a big cat by first-time visitors.",
+        "Guides nickname it the McDonald's of the bush — for its M-shaped rump mark and its role as everyone's prey."
+      ]
+    },
+    {
+      "id": "warthog",
+      "name": "Common warthog",
+      "swahili": "Ngiri",
+      "photos": [
+        { "src": "assets/mara/warthog-hero.jpg", "alt": "An adult warthog with three piglets standing together in dry grass.", "credit": "Thomas Fuhrmann", "license": "CC BY-SA 4.0" },
+        { "src": "assets/mara/warthog-alt.jpg", "alt": "A warthog grazing on its knees, the posture it uses to reach short grass.", "credit": "Wayne77", "license": "CC BY-SA 3.0" }
+      ],
+      "sighting": { "pct": 96, "band": "Almost certain", "note": "Commonly seen darting through the grass" },
+      "stats": {
+        "lifespan": "Commonly cited up to 15 years, real-world survival often shorter",
+        "size": "50–150 kg; two pairs of curved tusks, tail held up like a flagpole",
+        "eats": "Grass, plus roots and bulbs dug up with its snout"
+      },
+      "intro": "An easily recognized wild pig that runs with its thin tail held straight up. Its facial warts are not warts at all but fatty, cushioning pads used in head-butting contests between males.",
+      "whereToLook": "Open grassland throughout the reserve, often near marshy edges like Musiara Marsh and old burrows it has adopted as dens.",
+      "fieldNotes": [
+        "Grazes kneeling on calloused wrists, close to the ground.",
+        "Backs tail-first into a burrow when threatened, tusks facing the entrance.",
+        "Can sprint up to 55 km/h despite its stubby-legged look.",
+        "Runs in family file with tails raised so young can keep the group in sight through tall grass."
+      ]
+    },
+    {
+      "id": "baboon",
+      "name": "Olive baboon",
+      "swahili": "Nyani",
+      "photos": [
+        { "src": "assets/mara/baboon-hero.jpg", "alt": "Baboons walking across grassland, one pausing to look back toward the camera.", "credit": "Leo Li", "license": "CC BY 2.0" },
+        { "src": "assets/mara/baboon-alt.jpg", "alt": "Two olive baboons grooming, one lying back while the other picks through its fur.", "credit": "Kandukuru Nagarjun", "license": "CC BY 2.0" }
+      ],
+      "sighting": { "pct": 92, "band": "Almost certain", "note": "Resident troops live near rivers and camps" },
+      "stats": {
+        "lifespan": "Commonly cited 25–30 years, though field studies suggest real-world figures are often lower",
+        "size": "Males up to 25 kg, females smaller; dog-like muzzle",
+        "eats": "Grass, fruit, seeds and bark — opportunistically insects and small animals"
+      },
+      "intro": "A highly social primate living in large troops with a strict, matrilineally inherited female rank order — a daughter outranks the daughters of lower-ranking mothers for life. Males must leave home and fight their way into a new troop.",
+      "whereToLook": "Riverine forest and acacia woodland along the Mara and Talek Rivers, often in large resident troops near camps.",
+      "fieldNotes": [
+        "Rank passes directly from mother to daughter, shaping lifetime access to food and safe spots.",
+        "Troops post tree-top lookouts and have been seen mobbing eagles that threaten them.",
+        "Dominant animals feed first even if a lower-ranking troop member found the food.",
+        "Young males leaving their birth troop face a genuinely dangerous fight for a place in a new one."
+      ]
+    },
+    {
+      "id": "jackal",
+      "name": "Black-backed jackal",
+      "swahili": "Mbweha",
+      "photos": [
+        { "src": "assets/mara/jackal-hero.jpg", "alt": "A black-backed jackal standing alert in grass, its dark saddle marking visible.", "credit": "Simyre", "license": "Public Domain" },
+        { "src": "assets/mara/jackal-alt.jpg", "alt": "A close-up of a black-backed jackal's face, its fur still wet from rain.", "credit": "Bernard DUPONT", "license": "CC BY-SA 2.0" }
+      ],
+      "sighting": { "pct": 77, "band": "Very likely", "note": "Common but easily missed without a guide pointing it out" },
+      "stats": {
+        "lifespan": "~7–10 years in the wild",
+        "size": "6–10 kg; a black-and-silver saddle across reddish-tan flanks",
+        "eats": "Small prey and fruit, plus scavenging from lion and hyena kills"
+      },
+      "intro": "A small, fox-like canid readily identified by the dark saddle across its back. Mated pairs bond for life, jointly defending a territory and cooperating cleverly when scavenging.",
+      "whereToLook": "Open plains and grassland reserve-wide, usually alone or in bonded pairs, often lingering near a carcass being fed on by lions or hyenas.",
+      "fieldNotes": [
+        "One partner distracts a lion or hyena at a kill while the other darts in to grab scraps.",
+        "Among the most evolutionarily ancient canids alive, little changed since the last ice age.",
+        "Mated pairs stay together for life, defending the same territory year after year.",
+        "Its eerie yipping call at dawn and dusk carries across open grassland."
+      ]
+    },
+    {
+      "id": "ostrich",
+      "name": "Common ostrich",
+      "swahili": "Mbuni",
+      "photos": [
+        { "src": "assets/mara/ostrich-hero.jpg", "alt": "A pair of ostriches, one black-plumed male and one grey-brown female, walking through grass.", "credit": "Diego Delso", "license": "CC BY-SA 4.0" },
+        { "src": "assets/mara/ostrich-alt.jpg", "alt": "A close-up of an ostrich's head, showing its oversized eye.", "credit": "Daniel Aufgang", "license": "CC BY 3.0" }
+      ],
+      "sighting": { "pct": 96, "band": "Almost certain", "note": "A year-round resident of the open plains" },
+      "stats": {
+        "lifespan": "30–40 years in the wild",
+        "size": "Up to 2.8 m tall — the world's largest living bird",
+        "eats": "Grasses, seeds and shrubs, swallowing pebbles to help grind its food"
+      },
+      "intro": "The tallest and heaviest bird alive, flightless but capable of sprinting at 70 km/h. Males are bold black with white wingtips; females and young are dull grey-brown for camouflage while nesting.",
+      "whereToLook": "Wide-open short-grass plains reserve-wide, often mixed in with zebra and wildebeest herds for shared lookout.",
+      "fieldNotes": [
+        "Its eye is bigger than its brain — the largest eye of any land animal.",
+        "Never actually buries its head; the myth likely comes from a nesting hen flattening her neck to the ground.",
+        "Several females lay eggs in one shared nest, but the dominant hen can recognize and protect only her own.",
+        "A booming courtship call is deep enough that visitors sometimes mistake it for a distant lion."
+      ]
+    }
+  ]
+}
