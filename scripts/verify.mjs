@@ -381,16 +381,20 @@ function stage1() {
     }
   });
 
-  check("stage1", "weeks.js: no quotation-mark glyphs in user-facing copy (CAPTION, legend labels)", () => {
+  check("stage1", "weeks.js: no quotation-mark glyphs in user-facing copy (EPIGRAPH text/attr)", () => {
+    // v1.24: CAPTION (a flat string) became EPIGRAPH (an array of {text, attr} lines); the
+    // legend this check also used to scan was removed entirely (see decisions.md). Updated to
+    // match rather than left checking a constant that no longer exists -- a verify.mjs check
+    // silently going stale exactly like this was the async-check bug this ratchet exists to
+    // catch (v1.23).
     if (!exists("weeks.js")) return;
     const src = read("weeks.js");
     const problems = [];
-    const captionMatch = src.match(/const CAPTION\s*=\s*"((?:[^"\\]|\\.)*)"/);
-    if (captionMatch && hasQuoteGlyph(captionMatch[1])) problems.push(`CAPTION: ${captionMatch[1]}`);
-    for (const m of src.matchAll(/label:\s*"((?:[^"\\]|\\.)*)"/g)) {
-      if (hasQuoteGlyph(m[1])) problems.push(`legend label: ${m[1]}`);
-    }
-    assert.ok(captionMatch, "could not locate CAPTION in weeks.js -- check the check itself, not just weeks.js");
+    const textMatches = [...src.matchAll(/text:\s*"((?:[^"\\]|\\.)*)"/g)];
+    const attrMatches = [...src.matchAll(/attr:\s*"((?:[^"\\]|\\.)*)"/g)];
+    for (const m of textMatches) if (hasQuoteGlyph(m[1])) problems.push(`EPIGRAPH text: ${m[1]}`);
+    for (const m of attrMatches) if (hasQuoteGlyph(m[1])) problems.push(`EPIGRAPH attr: ${m[1]}`);
+    assert.ok(textMatches.length >= 2, `expected >=2 EPIGRAPH text lines, found ${textMatches.length} -- check the check itself, not just weeks.js`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
 

@@ -1027,6 +1027,101 @@ feel, and — the explicit gate before merge — multiple independent UX and cod
   full 35-check pixel/behavior suite still passes after every fix. Zero console/page errors
   across every test run this round.
 
+**v1.24 changelog (from v1.23, live feature request, same session):** live feedback on v1.23's
+shipped Weeks tab plus a separate content request for the unrelated Word of the Day feature,
+both from the owner directly (one line, Joyce's feedback relayed by the owner, on the word
+pool). Four changes, one Fable audit pass (single round, as explicitly requested — not the
+multi-audit protocol v1.22/v1.23 used):
+- **Epigraph reposition + restyle.** The single caption ("An average human life is about four
+  thousand weeks. — after Oliver Burkeman") moved from the bottom of the tab to directly under
+  the Tabs row, before the J/B stat buttons — the owner's ask was that this framing "is clear"
+  before anything else. New `.weeks-epigraph` block: centered, 340px max-width, Fraunces italic
+  15px/1.5 line-height text with a `--accent`-colored attribution beneath each line (the one
+  accent use this tab was otherwise missing — person colors `--person-j/b` are deliberately
+  *not* used here, since those are data-identity colors and putting them on prose would leak
+  the grid's own color encoding into copy that isn't about either person specifically), a 24×2px
+  `--accent` divider rule closing the block before the stats row begins.
+- **Second epigraph line: a scarcity-of-time reminder.** The owner asked for "a quote on the
+  scarcity of time... fact check to ensure it is the most meaningful one and famous — and truly
+  from that person." Independently researched and fact-checked several scarcity-of-time
+  passages from historical figures before landing on Seneca's *De Brevitate Vitae* (On the
+  Shortness of Life) as the strongest fit for fame, meaning, and thematic pairing with the
+  Burkeman line. Per invariant 2 (zero verbatim quotation marks), shipped as a paraphrase with
+  attribution, matching the existing Burkeman line's pattern exactly: "Life is long, if you
+  know how to spend it. — after Seneca" — independently verified as distinct wording from the
+  commonly published "if you know how to use it" translation, so it reads as this app's own
+  paraphrase rather than a lightly-reworded lift. Both lines pass the same zero-quote-glyph
+  gate stage1 already enforces on `weeks.js`.
+- **Bottom legend removed.** The five-item color-swatch legend ("lived by both / only B, so
+  far / J now / B now / to come") is gone — the owner's words: "too obvious and need not be
+  there taking up pixels." The grid's visual states (filled dots, empty future cells, outlined
+  current-week markers) were always self-explanatory to a sighted user; the one substantive
+  fact the legend carried for a screen-reader user — that B has roughly a 13-month age head
+  start on J — was folded into the canvas's existing dynamic `aria-label` instead of silently
+  dropped, so no information was actually lost, only the redundant-for-sighted-users visual
+  chrome.
+- **Word of the Day pool fully reworked** (`data/cards.json`, all 30 `wordOfDay` entries —
+  unrelated to the Weeks tab itself, shipped in the same round because it arrived in the same
+  feedback message). Joyce's feedback, relayed by the owner: the old pool of foreign
+  "untranslatable feeling" loanwords (wabi-sabi, ikigai, hygge, saudade, dharma, and 26 more,
+  each tagged with its own language locale like `ja-JP`/`da-DK`) didn't meet the bar of "words
+  we would see in life... more phrases or words that are meaningful and we would see them in
+  daily life." Replaced entirely with 20 ordinary English words and 10 idioms, each carrying a
+  fact-checked hidden-history angle instead of a dictionary gloss — e.g. *deadline* (a literal
+  line in Civil War prison camps, cross it and be shot), *bury the hatchet* (a real Iroquois
+  peace-making practice), *gossip* (originally meant godparent, only turned unkind centuries
+  later), *saved by the bell* (genuinely 1890s boxing — not the popular safety-coffin legend,
+  which independent research found unsupported and which the shipped copy explicitly
+  disclaims). Every entry was freshly fact-checked via web research this round rather than
+  carried over from memory, specifically to avoid the false-etymology trap a candidate
+  ("sincere" from "sine cera," a known-false folk etymology) would have been if trusted on
+  recall alone. `lang` changed from each entry's old source-locale tag to `en-US` uniformly —
+  functionally correct, not cosmetic: `app.js`'s pronounce button feeds `word.lang` straight
+  into `SpeechSynthesisUtterance.lang`, so this now actually selects an American English voice
+  for American English text instead of the old mismatched locale tags. `origin` was repurposed
+  from "source language" to "source culture/era" (e.g. "Iroquois tradition," "British law,
+  1714") to keep the hidden-history angle visible in the card's attribution line. All existing
+  schema gates continue to apply unchanged (exactly 30 entries, non-empty word/origin/lang/
+  meaning, meaning ≤20 words, zero quote-mark glyphs, no banned platitudes, unique ids) — this
+  is a pure content swap, no schema or rendering-code change, so `data/daily.json`'s existing
+  pinned `wordId` values resolve to new content automatically with no regeneration needed.
+- **Fable's single audit pass** (explicitly requested as one round, not the multi-audit
+  protocol): reviewed the epigraph's visual weight against the stats row below it, whether two
+  stacked epigraph lines read as too much before the chart, the Seneca line's tone/rhythm next
+  to Burkeman's, and whether the reworked word pool actually delivers on "meaningful, seen in
+  daily life." Verdict: ship, pending three small fixes, all applied and reverified —
+  1. `.weeks-divider` was stranded at the flex-start edge (`left: 20px`, the panel's own
+     padding) under a horizontally centered epigraph, a fixed-width flex child with no
+     alignment override — fixed with `align-self: center`, reverified by measuring the
+     divider's actual center against `#weeks-root`'s actual center (195px vs 195px), not eyeballed.
+  2. The Seneca attribution wrapped mid-phrase ("— after" / "Seneca" orphaned alone on the next
+     line) because `.weeks-epigraph-attr` was an inline span; fixed with `display: block` (plus
+     a small `margin-top`), matching how every other card's attribution line in this app
+     already renders, reverified via `getClientRects().length === 1` on the live Seneca
+     attribution (was wrapping across two boxes, now renders as one).
+  3. `word-24` ("Break the ice")'s origin overstated a "medieval seafaring / icebreaker ships"
+     story; the idiom is actually first attested in the 1500s (Thomas North, 1579) in the
+     "opening a frozen passage so travel could begin" sense, centuries before actual icebreaker
+     ships existed — the one entry among 30 that wouldn't have cleared the same fact-check bar
+     the other 29 were held to. Corrected to `origin: "English, 1500s"`,
+     `meaning: "First recorded in the 1500s — opening a frozen passage so travel could begin;
+     now it starts the conversation."` (19 words, zero quote glyphs, re-verified against the
+     schema gates).
+  Full write-up: `audits/decisions.md`, entries dated 2026-07-22 tagged v1.24.
+- **`sw.js`:** `CACHE` bumped `"mindset-v9"` → `"mindset-v10"` (Appendix C.2 updated to match)
+  — both `weeks.js` (epigraph/legend restructuring) and `data/cards.json` (full word-pool
+  replacement) are precached `ASSETS` entries whose content changed substantially this round,
+  same reasoning as every prior content-driven bump.
+- **Verified (final):** `verify.mjs all` 67/67 (check count unchanged — this round changed
+  content and two CSS rules, not the shape of any check). Fresh Playwright pass covering the
+  epigraph position/styling, the removed legend, the aria-label head-start text, the new word
+  card's rendering and pronounce-button `lang` wiring, and all 30 `wordOfDay` entries'
+  schema/quote/platitude validity: 12/12 passed, zero console errors. A second, targeted
+  Playwright pass reverifying Fable's three fixes against the live render (not just the source
+  diff): divider centering measured in pixels, both epigraph attributions confirmed block-level
+  and single-line, `word-24`'s corrected content confirmed live via `fetch("/data/cards.json")`
+  in-page: 7/7 passed, zero console errors.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -1804,7 +1899,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v9";
+const CACHE = "mindset-v10";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",

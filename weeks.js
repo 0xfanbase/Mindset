@@ -14,13 +14,17 @@ const ZOOM_MULT = [1, 2, 3]; // multipliers of the dynamically-fit base pitch
 const DOT_FRACTION = 0.7; // dot size as a fraction of the cell pitch; remainder is gap
 const MIN_PITCH = 4;
 const PALE_ALPHA = 0.25; // focus-mode de-emphasis for the non-focused person
-const CAPTION = "An average human life is about four thousand weeks. — after Oliver Burkeman";
-const LEGEND_ITEMS = [
-  { cls: "split", label: "lived by both" },
-  { cls: "b", label: "only B, so far" },
-  { cls: "outline-j", label: "J now" },
-  { cls: "outline-b", label: "B now" },
-  { cls: "future", label: "to come" },
+// v1.24: the epigraph (fact, then reminder) -- moved to the top of the panel and given real
+// display weight per live feedback. Both lines share one treatment (see styles.css) rather
+// than being differentiated; they're one thought, ~2,000 years apart, not a hierarchy.
+// Seneca's line is an ORIGINAL paraphrase, not a lifted translation -- the commonly published
+// English rendering (Penguin/Costa; it's literally that edition's own subtitle) says "if you
+// know how to USE it," confirmed via source lookup before landing here. "Spend" was chosen
+// deliberately over "use": it's this tab's own established vocabulary (percent spent, filled
+// squares = spent weeks), tying the epigraph and the instrument below it into one language.
+const EPIGRAPH = [
+  { text: "An average human life is about four thousand weeks.", attr: "— after Oliver Burkeman" },
+  { text: "Life is long, if you know how to spend it.", attr: "— after Seneca" },
 ];
 
 function commas(n) {
@@ -111,8 +115,11 @@ function stampGlow(ctx, sprite, cx, cy, pitch) {
   ctx.drawImage(sprite, cx - size / 2, cy - size / 2, size, size);
 }
 
+// The removed legend (v1.24 -- see audits/decisions.md) explained the solid-blue "lead band"
+// as "only B, so far"; that information still needs to survive for a screen-reader user even
+// though the visible key is gone, so it's folded into the one label that was already dynamic.
 function ariaLabelFor(Jw, Bw, total, focus) {
-  const base = `Life in weeks: J ${commas(Jw)} of ${commas(total)}, B ${commas(Bw)} of ${commas(total)}.`;
+  const base = `Life in weeks: J ${commas(Jw)} of ${commas(total)}, B ${commas(Bw)} of ${commas(total)}. B has about a 13-month head start on J.`;
   if (focus === "J") return `${base} Highlighting J.`;
   if (focus === "B") return `${base} Highlighting B.`;
   return base;
@@ -296,6 +303,27 @@ function build() {
   const root = document.getElementById("weeks-root");
   root.className = "weeks-root";
 
+  // Epigraph first -- the frame you read before the instrument (v1.24: moved here from the
+  // bottom, per live feedback that it needed to be seen up front, not discovered after
+  // scrolling past the whole grid).
+  const epigraph = document.createElement("div");
+  epigraph.className = "weeks-epigraph";
+  for (const line of EPIGRAPH) {
+    const p = document.createElement("p");
+    p.textContent = `${line.text} `;
+    const attr = document.createElement("span");
+    attr.className = "weeks-epigraph-attr";
+    attr.textContent = line.attr;
+    p.appendChild(attr);
+    epigraph.appendChild(p);
+  }
+  root.appendChild(epigraph);
+
+  const divider = document.createElement("div");
+  divider.className = "weeks-divider";
+  divider.setAttribute("aria-hidden", "true");
+  root.appendChild(divider);
+
   const statsRow = document.createElement("div");
   statsRow.className = "weeks-stats";
   jStat = buildStatButton(LIFE_PEOPLE.find((p) => p.id === "J"), "--person-j");
@@ -360,24 +388,6 @@ function build() {
   root.appendChild(card);
 
   chart = { canvas, ctx: canvas.getContext("2d"), scroller, gutter };
-
-  const legend = document.createElement("div");
-  legend.className = "weeks-legend";
-  for (const item of LEGEND_ITEMS) {
-    const span = document.createElement("span");
-    span.className = "weeks-legend-item";
-    const sw = document.createElement("span");
-    sw.className = `weeks-swatch ${item.cls}`;
-    sw.setAttribute("aria-hidden", "true");
-    span.append(sw, document.createTextNode(item.label));
-    legend.appendChild(span);
-  }
-  root.appendChild(legend);
-
-  const caption = document.createElement("p");
-  caption.className = "card-attr weeks-caption";
-  caption.textContent = CAPTION;
-  root.appendChild(caption);
 
   redrawAll();
 
