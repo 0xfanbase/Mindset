@@ -1,10 +1,17 @@
 // mara.js — Mara tab: animal reference + Great Migration facts (BUILD-PLAN.md v1.25)
 const DATA_URL = "./data/mara.json";
+const BIG_FIVE = new Set(["lion", "leopard", "black-rhino", "elephant", "buffalo"]);
+const SORT_OPTIONS = [
+  ["featured", "Featured"],
+  ["name", "Name"],
+  ["likelihood", "Likelihood"],
+];
 
 let built = false;
 let data = null;
 let selectedId = null;
-let root, indexEl, detailEl;
+let sortMode = "featured";
+let root, indexEl, detailEl, gridEl;
 
 function el(tag, props = {}, children = []) {
   const node = document.createElement(tag);
@@ -63,34 +70,86 @@ function renderParkCard() {
 }
 
 function renderTile(animal) {
+  const isBigFive = BIG_FIVE.has(animal.id);
+  const labelParts = [animal.name];
+  if (isBigFive) labelParts.push("Big Five");
+  labelParts.push(`${animal.sighting.pct}% likelihood, ${animal.sighting.band.toLowerCase()}`);
+
   const btn = el("button", {
     type: "button",
     class: "mara-tile",
     "data-id": animal.id,
-    "aria-label": `${animal.name}, ${animal.sighting.band.toLowerCase()} to see`,
+    "aria-label": labelParts.join(", "),
   });
   if (animal.id === selectedId) btn.setAttribute("aria-current", "true");
+
   const img = el("img", {
     src: `./${animal.photos[0].src}`,
     alt: "",
     loading: "lazy",
     class: "mara-tile-photo",
   });
+  const photoWrap = el("div", { class: "mara-tile-photo-wrap" }, [img]);
+  if (isBigFive) photoWrap.appendChild(el("div", { class: "mara-tile-big5", text: "Big Five" }));
+
   const nameRow = el("div", { class: "mara-tile-name" }, [
     el("span", { text: animal.name }),
   ]);
   const swahili = el("div", { class: "mara-tile-swahili", text: animal.swahili });
-  const pill = el("div", { class: `mara-tile-pill ${bandClass(animal.sighting.band)}`, text: animal.sighting.band });
-  btn.append(img, nameRow, swahili, pill);
+  const pill = el("div", {
+    class: `mara-tile-pill ${bandClass(animal.sighting.band)}`,
+    text: `${animal.sighting.band} · ${animal.sighting.pct}%`,
+  });
+  btn.append(photoWrap, nameRow, swahili, pill);
   btn.addEventListener("click", () => selectAnimal(animal.id));
   return btn;
+}
+
+function sortedAnimals() {
+  if (sortMode === "name") return [...data.animals].sort((a, b) => a.name.localeCompare(b.name));
+  if (sortMode === "likelihood") return [...data.animals].sort((a, b) => b.sighting.pct - a.sighting.pct);
+  return data.animals;
+}
+
+function renderSortControl() {
+  const group = el("div", { class: "mara-sort", role: "group", "aria-label": "Sort animals" });
+  const buttons = SORT_OPTIONS.map(([mode, label]) =>
+    el("button", {
+      type: "button",
+      class: "mara-sort-btn",
+      "aria-pressed": String(mode === sortMode),
+      text: label,
+    })
+  );
+  buttons.forEach((btn, i) => {
+    const [mode] = SORT_OPTIONS[i];
+    btn.addEventListener("click", () => {
+      if (sortMode === mode) return;
+      sortMode = mode;
+      buttons.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+      renderGrid();
+    });
+    group.appendChild(btn);
+  });
+  return group;
+}
+
+// Rebuilds only the tile grid, leaving the park card and sort row's own button elements
+// in place -- a sort click's focus stays on the button the keyboard user just activated,
+// rather than the whole index being wiped and rebuilt out from under it (a real bug Fable's
+// audit caught by checking document.activeElement after Enter, not just reading the diff).
+function renderGrid() {
+  const grid = el("div", { class: "mara-index-grid" }, sortedAnimals().map(renderTile));
+  gridEl.replaceWith(grid);
+  gridEl = grid;
 }
 
 function renderIndex() {
   indexEl.textContent = "";
   indexEl.appendChild(renderParkCard());
-  const grid = el("div", { class: "mara-index-grid" }, data.animals.map(renderTile));
-  indexEl.appendChild(grid);
+  indexEl.appendChild(renderSortControl());
+  gridEl = el("div", { class: "mara-index-grid" }, sortedAnimals().map(renderTile));
+  indexEl.appendChild(gridEl);
 }
 
 function animateSightingCount(numEl, target) {
