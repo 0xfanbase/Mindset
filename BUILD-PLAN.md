@@ -622,6 +622,100 @@ second feature, mirroring the existing pre-09:00 focus window on the other end o
   instant) — all composed correctly with zero console errors. 24/24 assertions passed. Full
   record in `audits/decisions.md`.
 
+**v1.22 changelog (from v1.21, live feature request):** the owner asked for a third tab: a
+"life in weeks" chart (referencing an attached physical "4K WEEKS" poster) for J (wife, born
+December 1989) and B (owner, born November 1988) — pink dots for J, blue for B, zoomable,
+scrollable, mobile-iOS-friendly, showing percent-of-life-spent for both at the top, updating
+automatically week over week alongside the existing daily refresh, with Fable as project
+director and designer per the owner's explicit request.
+
+- **Design direction requested and followed, not skipped:** per the owner's ask, a Fable-model
+  pass ran BEFORE implementation (not just the usual pre-merge audit) as project director/
+  designer, given the reference poster image, the live request verbatim, and this app's
+  existing design tokens/constraints — mirroring the v1.16 collapse-vs-dim precedent of a
+  reasoned director pass ahead of code. Its concrete recommendations (90-year/4,680-week grid
+  sized for headroom against Hong Kong's life expectancy rather than the literal 4,000/77; two
+  separate stacked per-person grids, J then B; squares over circles; three discrete zoom levels
+  via pill buttons rather than a slider or pinch gesture; J-pink/B-blue reusing the app's own
+  two existing theme accents as fixed identity colors; a factual Oliver-Burkeman-attributed
+  caption) were independently checked, not taken on faith — every contrast ratio and week-count
+  claim was recomputed by hand against the real shipped `lib.mjs`/`styles.css` before being
+  relied on, and all matched exactly. Full design rationale in `audits/decisions.md`.
+- **`lib.mjs`:** new `weeksLived(birthMonthHKT, now)`/`percentLifeSpent(...)`, month-anchored
+  (day-level precision was never given and isn't needed at week granularity) via the same
+  `Date.UTC` epoch-day idiom `daysUntilKenyaTrip` already established, clamped to a new
+  `LIFE_WEEKS_TOTAL` (90 years × 52 weeks = 4,680) so a life that outruns the grid just stops
+  advancing rather than indexing past it. New `LIFE_PEOPLE` holds exactly two entries,
+  `{id, birthMonthHKT}` — initials only (`J`/`B`), month+year only, never a real name or exact
+  day, per invariant 1 and the owner's own explicit instruction (see the PII-scope decision
+  entry in `audits/decisions.md`).
+- **`weeks.js`** (new, well under the 60KB total-JS budget): two canvas-rendered grids, one per
+  person, following `figure.js`'s established canvas idiom (`devicePixelRatio` capped at 2,
+  batched-by-color draw calls). Each cell is one of three states — solid person color (lived), a
+  theme-following faint tint (future), or an outline in person color with a transparent center
+  (the current week, being lived right now) — confirmed correct not just by code review but by
+  sampling actual canvas pixel data at the computed cell coordinates before merge. Lazily built
+  on the tab's first activation rather than at boot, since a `<canvas>` inside a `hidden` panel
+  has zero layout size to measure at connect time — `figure.js`'s retry-via-
+  `requestAnimationFrame`-until-real-size pattern would spin forever if reused naively here.
+- **Zoom:** three discrete levels (fit / 2x / 3x of a dynamically viewport-measured base pitch)
+  via two 44px pill buttons reusing the `.theme-toggle`/`.reveal-rest` visual idiom, disabling
+  correctly at both range ends; stepping zoom re-centers each grid's horizontal scroll position
+  rather than resetting it. Deliberately no pinch gesture and no slider — see
+  `audits/decisions.md` for why.
+- **Scroll:** vertical scroll stays with the existing `.panel` mechanism (the same one Values
+  already relies on); each grid gets its own horizontal-only (`overflow-x`, never `overflow-y`)
+  scroller so panning at high zoom never creates a nested vertical-scroll region, a known source
+  of iOS jank.
+- **Stats:** a two-line mono stat block ("J · week 1,912 of 4,680 · 40.8%" style) at the very
+  top of the panel, per the owner's "at the top" ask — real, accessible DOM text, not canvas
+  pixels, doubling as the screen-reader-accessible summary for the (otherwise `role="img"`)
+  canvases below it.
+- **Third tab wiring:** `index.html` gains `tab-weeks`/`panel-weeks`; `app.js`'s `initTabs()`
+  was rewritten from a hardcoded two-way boolean toggle to an ordered-array pattern with
+  wraparound arrow-key roving focus, since the prior implementation had no way to represent a
+  third tab at all. The existing `visibilitychange` handler (originally added in v1.16 for the
+  iOS-PWA-background-freeze class of bug) is extended to also repaint the Weeks chart if the
+  HKT date has advanced since its last paint, and the theme-toggle handler now also triggers a
+  Weeks redraw (future-cell tint and year labels follow the active theme; person colors
+  deliberately never do).
+- **Styles:** two new fixed identity tokens (`--person-j`, `--person-b`, declared once on
+  `:root`, never overridden per theme) plus a `--week-future` token that IS themed (derived from
+  each theme's own `--ink`). Year-axis labels (every 5th year, matching the reference poster)
+  render as real positioned DOM text sized by the same `--pitch` custom property the canvas
+  uses, not as canvas-drawn text — a deliberate implementation improvement over the design-
+  direction draft that fully avoids a font-loading race it had flagged as a risk, not just
+  mitigates it. No `max-width` query added, no fixed width ≥400px in `styles.css` (both
+  mechanically verified).
+- **This tab is a deliberate, logged exception to §4.4's single-screen framing:** its content is
+  substantially taller than one viewport by design and scrolls within `.panel`'s existing
+  `overflow-y`, per the owner's explicit "make... scrollable" ask.
+- **`sw.js`:** `CACHE` bumped `"mindset-v7"` → `"mindset-v8"` (Appendix C.2 updated to match,
+  verbatim requirement outside the `ASSETS` array itself) so `weeks.js` is part of the offline
+  shell from first install.
+- **`verify.mjs` tightened, not loosened, per the invariant-12 ratchet:** `weeks.js` added to
+  the JS-budget and page-weight file lists (both were fixed enumerations that would otherwise
+  have silently under-counted a new top-level JS file) and to the bare-`timeZone` sweep; two new
+  stage1 checks — pinned `weeksLived`/`percentLifeSpent` assertions (month-start, +6 HKT days
+  unchanged, +7 HKT days increments by exactly 1 — the weekly-advance mechanism itself, under
+  test) plus a 200-years-later clamp, and a mechanical initials-only/month-precision-only check
+  on `LIFE_PEOPLE`. Check count: 63 → 65.
+- **No `generate-daily.mjs`/`daily.json` change, and none was needed:** the chart is a pure
+  function of today's HKT date, recomputed on every load exactly like the existing Kenya
+  countdown already is — "one more dot per week" happens automatically at each personal week
+  boundary without any server-side state, more reliably than a pipeline-generated approach would
+  (no dependency on the daily bot workflow succeeding).
+- **Verified:** `verify.mjs all` 65/65, `node --check` clean on every touched/new file. Full
+  Playwright pass (no local dev server, per this project's established request-interception
+  convention) at 390×844 in both themes plus a 1100px desktop pass — lazy tab-init, correct
+  canvas sizing, zoom button behavior and range-end disabling, no page-level horizontal overflow
+  at max zoom despite the intentional inner-scroller overflow, theme-toggle-invariant person
+  colors, wraparound keyboard tab navigation. Beyond DOM assertions, actual canvas pixel data
+  was sampled at the computed current-week cell: confirmed opaque person color one cell before
+  it, a fully transparent (outlined-only) center at the current-week cell with the stroke
+  visible at its edge, and the faint future tint one cell after — the three-state render logic
+  confirmed correct at the pixel level. Zero console errors throughout.
+
 **v1.20 changelog (from v1.19, live feature request):** the owner asked for the app/shortcut
 icon — `assets/favicon.svg` plus the three PNGs it's rasterized to (`apple-touch-icon.png`/
 `icon-192.png`/`icon-512.png`, what iOS/Android actually show once the site is added to a home
@@ -852,6 +946,7 @@ The three daily cards:
 ├── styles.css
 ├── app.js                  # UI logic: tabs, theme, date, cards, staleness
 ├── figure.js               # canvas glowing-bottle animation (the signature element — was drop.js/brain.js)
+├── weeks.js                # Weeks tab: two canvas life-in-weeks grids (J, B), zoom, stats (v1.22)
 ├── lib.mjs                 # SHARED pure functions: HKT date, day number, rotation (imported by browser AND node)
 ├── manifest.webmanifest    # home-screen installability (Appendix C)
 ├── sw.js                   # offline shell, network-first (Appendix C, verbatim)
@@ -1536,7 +1631,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v7";
+const CACHE = "mindset-v8";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
@@ -1572,7 +1667,7 @@ self.addEventListener("fetch", (e) => {
 });
 ```
 
-Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request. Fable's audit sharpened the reasoning: Chromium-family browsers fetch tab favicons outside the page's service-worker `fetch` handler entirely, so network-first was never actually going to self-heal `favicon.svg` — the bump is the only reliable path. Bumped again to `"mindset-v7"` in v1.21 for the same reason: `favicon.svg`'s content changed again (lion mark → cat-photo mark) when the owner redirected mid-session, before v1.20's lion ever shipped.
+Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request. Fable's audit sharpened the reasoning: Chromium-family browsers fetch tab favicons outside the page's service-worker `fetch` handler entirely, so network-first was never actually going to self-heal `favicon.svg` — the bump is the only reliable path. Bumped again to `"mindset-v7"` in v1.21 for the same reason: `favicon.svg`'s content changed again (lion mark → cat-photo mark) when the owner redirected mid-session, before v1.20's lion ever shipped. Bumped again to `"mindset-v8"` in v1.22: `weeks.js` (the new Weeks tab's module) was added to `ASSETS` so it's part of the offline shell from first install, same reasoning as every prior content-driven bump.
 
 ### C.3 Registration (last lines of `app.js`)
 

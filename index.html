@@ -41,12 +41,16 @@
   <nav class="tabs" role="tablist" aria-label="Sections">
     <button type="button" role="tab" id="tab-today" aria-selected="true" aria-controls="panel-today" class="tab">Today</button>
     <button type="button" role="tab" id="tab-values" aria-selected="false" aria-controls="panel-values" class="tab">Values</button>
+    <button type="button" role="tab" id="tab-weeks" aria-selected="false" aria-controls="panel-weeks" class="tab">Weeks</button>
   </nav>
   <div role="tabpanel" id="panel-today" aria-labelledby="tab-today" class="panel">
     <div id="cards"></div>
   </div>
   <div role="tabpanel" id="panel-values" aria-labelledby="tab-values" class="panel" hidden>
     <div id="values-list"></div>
+  </div>
+  <div role="tabpanel" id="panel-weeks" aria-labelledby="tab-weeks" class="panel" hidden>
+    <div id="weeks-root"></div>
   </div>
 </main>
 <footer>

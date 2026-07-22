@@ -110,3 +110,37 @@ export function pickToday(cards, now = new Date()) {
   const closing = cards.closing[pickIndex(cards.closing.length, dayNumber, "closing")];
   return { anchor, journal, kenya, word, closing, dayNumber };
 }
+
+// Weeks-of-life chart (v1.22) -- a "life in weeks" grid for J and B (initials only, never
+// real names, per invariant 1). Anchored to each person's birth MONTH-START only -- no exact
+// day was given or is needed at week-level granularity -- via the same epoch-day idiom as
+// daysUntilKenyaTrip/hktDayNumber, so it can't drift on a DST/local-clock edge case. 90 years
+// (not the literal 4,000-week/77-year average) so the grid has real headroom against Hong
+// Kong life expectancy rather than risk "completing" while its subject is alive -- see
+// audits/decisions.md.
+export const LIFE_WEEKS_YEARS = 90;
+export const LIFE_WEEKS_PER_ROW = 52;
+export const LIFE_WEEKS_TOTAL = LIFE_WEEKS_YEARS * LIFE_WEEKS_PER_ROW;
+
+export const LIFE_PEOPLE = [
+  { id: "J", birthMonthHKT: "1989-12" },
+  { id: "B", birthMonthHKT: "1988-11" },
+];
+
+function monthStartDayNumber(monthHKT) {
+  const [y, m] = monthHKT.split("-").map(Number);
+  return Math.floor(Date.UTC(y, m - 1, 1) / 86400000);
+}
+
+// Weeks fully lived (0-indexed count) as of `now`, clamped to the grid so a life that
+// outruns 90 years just stops advancing rather than indexing past the array.
+export function weeksLived(birthMonthHKT, now = new Date()) {
+  const w = Math.floor((hktDayNumber(now) - monthStartDayNumber(birthMonthHKT)) / 7);
+  return Math.max(0, Math.min(LIFE_WEEKS_TOTAL, w));
+}
+
+// Percent of the grid's own total filled -- deliberately not percent-of-4000, so this can
+// never nonsensically exceed 100% and always matches the grid's own visual fill ratio.
+export function percentLifeSpent(birthMonthHKT, now = new Date()) {
+  return (weeksLived(birthMonthHKT, now) / LIFE_WEEKS_TOTAL) * 100;
+}
