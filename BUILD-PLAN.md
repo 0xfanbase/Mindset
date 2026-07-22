@@ -972,8 +972,8 @@ feel, and — the explicit gate before merge — multiple independent UX and cod
   395 real days apart, 56 whole weeks + 3 days, so floor-division age-week gap legitimately
   alternates with weekday phase rather than holding at a constant 57 as first assumed from
   weekly-only sampling), plus the quote-glyph sweep extension above. Check count: 65 → 67.
-- **Verified:** `verify.mjs all` 67/67, genuinely (not just nominally — see above). Full
-  Playwright pass at 390×844 (touch-emulated) and 375×667 (iPhone SE width) plus a 1100px
+- **Verified pre-audit:** `verify.mjs all` 67/67, genuinely (not just nominally — see above).
+  Full Playwright pass at 390×844 (touch-emulated) and 375×667 (iPhone SE width) plus a 1100px
   desktop pass: exactly one combined canvas, correct stat/legend copy and formatting, one-tap
   toggle (not two-tap) on touch, real hover preview on desktop that never sets `aria-pressed`,
   zoom still resizes/disables correctly at both ends, no page-level horizontal overflow at any
@@ -982,6 +982,50 @@ feel, and — the explicit gate before merge — multiple independent UX and cod
   person colors pixel-identical. Pixel-sampled all 5 cell states plus both focus states at their
   exact (freshly recomputed) boundary cells — 35/35 automated checks passed, zero console errors
   across every pass.
+- **Three independent pre-merge audits, per the owner's explicit request for "multiple UX and
+  code audits":** run in parallel, each blind to the others' findings.
+  1. **Fable's UX/design audit — Ship with changes**, three required and one recommended, all
+     applied: J's current-week outline widened from a half-width sliver (read as a rendering
+     glitch once actually seen, and quietly implied her week counted for less) to the same
+     full-cell width as B's; the desktop stats/zoom rows constrained to the card's own 640px
+     measure instead of stretching full-width; the entrance sweep retimed 1100ms/`cardIn`-curve
+     → 1400ms `cubic-bezier(0.65,0,0.35,1)` after the original was found ~70% done by 180ms,
+     rushing past the lived rows; the glow widened 1.15x → 1.35x pitch (alpha unchanged) to
+     read as glowing rather than merely tinted.
+  2. **The accessibility audit — one real bug, six checks independently confirmed correct.**
+     The stat buttons' `aria-label` was fully replacing their own visible percent/week-count
+     content in the accessible name (confirmed via a real `page.accessibility.snapshot()`, not
+     spec reasoning alone) — a screen-reader user never heard the tab's own headline stat.
+     Fixed by folding the live figures into the label, regenerated every redraw so it can't
+     drift from the visible text. iOS hover-gating, keyboard navigation, canvas labels, tap
+     targets, contrast, reduced-motion, and touch-scrolling all independently reverified
+     correct with measured evidence.
+  3. **The code-correctness audit — two real bugs plus one real pre-existing `verify.mjs`
+     gap, rest confirmed correct.** A focus-state desync (clicking a stat button a second time
+     to un-toggle it while the mouse was still hovering, so no `mouseleave` fired, left the
+     visual highlight and grid rendering stuck on even though `aria-pressed` correctly
+     cleared) — fixed by syncing the hover state to the click, verified via a 6-step
+     interaction test plus a regression check. A display edge case (`weeksLived()`'s 90-year
+     clamp could produce "week 4,681 of 4,680") — fixed with a display-side cap, verified with
+     a frozen year-2200 clock. And, independent of this feature, `hasQuoteGlyph()` (shared
+     infrastructure since Stage 3) never actually matched a plain ASCII apostrophe used as a
+     quote delimiter despite its own comment's claim — the naive fix regressed on real,
+     already-shipped content (English plural possessives share the exact same trailing-
+     apostrophe shape as a closing quote mark), so it was replaced with a paired-apostrophe
+     detector instead, tested clean against the entire real content corpus. `drawGrid()`'s
+     full cell-state coverage (simulated against 4,362 date pairs spanning 1988–2185), the
+     zoom scroll-anchor math, glow theme-independence, and the hidden-tab redraw guard were
+     all independently confirmed correct.
+  Full findings and fixes for all three: `audits/decisions.md`, entries dated 2026-07-22
+  tagged v1.23.
+- **Verified post-audit (final):** `verify.mjs all` 67/67 (check count unchanged from the
+  pre-audit total — the quote-glyph fix changed `hasQuoteGlyph`'s internal logic, not the
+  number of `check()` calls). `weeks.js` 18,372 B; JS total (app+figure+lib+weeks+sw) 46,912 B
+  — 45.8KB of the 60KB budget; page weight 206,325 B — 201.5KB of the 350KB budget. Dedicated
+  regression tests for both code-audit bug fixes (6/6 interaction steps; a frozen-clock clamp
+  check) both pass, the accessibility-tree verification of the aria-label fix passes, and the
+  full 35-check pixel/behavior suite still passes after every fix. Zero console/page errors
+  across every test run this round.
 
 ---
 
