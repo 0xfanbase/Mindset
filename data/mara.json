@@ -29,8 +29,8 @@
       "name": "Lion",
       "swahili": "Simba",
       "photos": [
-        { "src": "assets/mara/lion-hero.jpg", "alt": "A maned male lion sleeping in dry grass at the edge of a thicket.", "credit": "Weldon Kennedy", "license": "CC BY 2.0" },
-        { "src": "assets/mara/lion-alt.jpg", "alt": "A lioness in a low stalking crouch, moving through golden grassland.", "credit": "Laika ac", "license": "CC BY-SA 2.0" }
+        { "src": "assets/mara/lion-hero.jpg", "alt": "A close-up of a male lion's face, looking directly at the camera.", "credit": "Lee R. Berger", "license": "CC BY 2.5" },
+        { "src": "assets/mara/lion-alt.jpg", "alt": "A close-up of a male lion's face, mouth open, teeth visible.", "credit": "Wouter van Vliet", "license": "CC BY 2.0" }
       ],
       "sighting": { "pct": 92, "band": "Almost certain", "note": "Seen on nearly every multi-night August drive" },
       "stats": {
@@ -75,8 +75,8 @@
       "name": "Black rhinoceros",
       "swahili": "Kifaru",
       "photos": [
-        { "src": "assets/mara/black-rhino-hero.jpg", "alt": "A black rhino grazing on open grassland, with two elephants visible in the distance.", "credit": "Ninara", "license": "CC BY 2.0" },
-        { "src": "assets/mara/black-rhino-alt.jpg", "alt": "A black rhino facing the camera directly, its long horn and hooked lip clearly visible.", "credit": "Peter Steinberg", "license": "CC BY 3.0" }
+        { "src": "assets/mara/black-rhino-hero.jpg", "alt": "A black rhino facing the camera directly, its long horn and hooked lip clearly visible.", "credit": "Peter Steinberg", "license": "CC BY 3.0" },
+        { "src": "assets/mara/black-rhino-alt.jpg", "alt": "A black rhino grazing on open grassland, with two elephants visible in the distance.", "credit": "Ninara", "license": "CC BY 2.0" }
       ],
       "sighting": { "pct": 18, "band": "Long shot", "note": "The Mara's rarest large mammal — a real bonus sighting" },
       "stats": {
@@ -98,8 +98,8 @@
       "name": "African elephant",
       "swahili": "Tembo",
       "photos": [
-        { "src": "assets/mara/elephant-hero.jpg", "alt": "An elephant walking through green grassland with scattered acacia trees on the horizon.", "credit": "Daniel Case", "license": "CC BY-SA 4.0" },
-        { "src": "assets/mara/elephant-alt.jpg", "alt": "An elephant calf standing close beside its mother.", "credit": "Bett Duncan", "license": "CC BY-SA 4.0" }
+        { "src": "assets/mara/elephant-hero.jpg", "alt": "A close side view of an elephant's head and tusks as it walks through grassland.", "credit": "flowcomm", "license": "CC BY 2.0" },
+        { "src": "assets/mara/elephant-alt.jpg", "alt": "An elephant facing the camera with ears spread wide, trunk curled.", "credit": "flowcomm", "license": "CC BY 2.0" }
       ],
       "sighting": { "pct": 93, "band": "Almost certain", "note": "Abundant near rivers, especially in the dry season" },
       "stats": {
@@ -236,8 +236,8 @@
       "name": "Spotted hyena",
       "swahili": "Fisi",
       "photos": [
-        { "src": "assets/mara/hyena-hero.jpg", "alt": "A spotted hyena moving through long grass near a bush.", "credit": "Kandukuru Nagarjun", "license": "CC BY 2.0" },
-        { "src": "assets/mara/hyena-alt.jpg", "alt": "A close-up of a spotted hyena's head and shoulder after feeding.", "credit": "Zammerman", "license": "CC BY-SA 4.0" }
+        { "src": "assets/mara/hyena-hero.jpg", "alt": "A close-up of a spotted hyena's head and shoulder after feeding.", "credit": "Zammerman", "license": "CC BY-SA 4.0" },
+        { "src": "assets/mara/hyena-alt.jpg", "alt": "A spotted hyena moving through long grass near a bush.", "credit": "Kandukuru Nagarjun", "license": "CC BY 2.0" }
       ],
       "sighting": { "pct": 91, "band": "Almost certain", "note": "Common on nearly every drive, especially around dawn" },
       "stats": {
@@ -259,8 +259,8 @@
       "name": "Maasai giraffe",
       "swahili": "Twiga",
       "photos": [
-        { "src": "assets/mara/giraffe-hero.jpg", "alt": "A giraffe standing on open grassland with hills in the distance.", "credit": "Renvoy", "license": "CC BY-SA 4.0" },
-        { "src": "assets/mara/giraffe-alt.jpg", "alt": "A close-up of a giraffe's head and neck, showing its distinctive jagged coat pattern.", "credit": "William Warby", "license": "CC BY 2.0" }
+        { "src": "assets/mara/giraffe-hero.jpg", "alt": "A close-up of a giraffe's head and neck, showing its distinctive jagged coat pattern.", "credit": "William Warby", "license": "CC BY 2.0" },
+        { "src": "assets/mara/giraffe-alt.jpg", "alt": "A giraffe standing on open grassland with hills in the distance.", "credit": "Renvoy", "license": "CC BY-SA 4.0" }
       ],
       "sighting": { "pct": 93, "band": "Almost certain", "note": "Easily spotted year-round in open woodland" },
       "stats": {
@@ -282,8 +282,8 @@
       "name": "Hippopotamus",
       "swahili": "Kiboko",
       "photos": [
-        { "src": "assets/mara/hippo-hero.jpg", "alt": "A hippo silhouetted in grass at sunset, an acacia tree and glowing sky behind it.", "credit": "Daniel Case", "license": "CC BY-SA 4.0" },
-        { "src": "assets/mara/hippo-alt.jpg", "alt": "A hippo with its mouth wide open in a threat display, standing in shallow water.", "credit": "Charles J. Sharp", "license": "CC BY-SA 3.0" }
+        { "src": "assets/mara/hippo-hero.jpg", "alt": "A hippo with its mouth wide open in a threat display, standing in shallow water.", "credit": "Charles J. Sharp", "license": "CC BY-SA 3.0" },
+        { "src": "assets/mara/hippo-alt.jpg", "alt": "A hippo silhouetted in grass at sunset, an acacia tree and glowing sky behind it.", "credit": "Daniel Case", "license": "CC BY-SA 4.0" }
       ],
       "sighting": { "pct": 96, "band": "Almost certain", "note": "Reliable at river pools on nearly every drive near water" },
       "stats": {
@@ -305,8 +305,8 @@
       "name": "Nile crocodile",
       "swahili": "Mamba",
       "photos": [
-        { "src": "assets/mara/crocodile-hero.jpg", "alt": "A Nile crocodile resting on a riverbank with its mouth closed, trees behind it.", "credit": "CT Cooper", "license": "CC BY 3.0" },
-        { "src": "assets/mara/crocodile-alt.jpg", "alt": "The same crocodile resting with its mouth open, in the same riverside spot.", "credit": "CT Cooper", "license": "CC BY 3.0" }
+        { "src": "assets/mara/crocodile-hero.jpg", "alt": "A close-up of a Nile crocodile's head and eye, resting at the water's edge.", "credit": "Esin Üstün", "license": "CC BY 2.0" },
+        { "src": "assets/mara/crocodile-alt.jpg", "alt": "A Nile crocodile in water with its mouth open, teeth visible.", "credit": "Bernard DUPONT", "license": "CC BY-SA 2.0" }
       ],
       "sighting": { "pct": 92, "band": "Almost certain", "note": "Reliable basking at crossing points — an actual crossing is far less certain" },
       "stats": {
@@ -420,7 +420,7 @@
       "name": "Olive baboon",
       "swahili": "Nyani",
       "photos": [
-        { "src": "assets/mara/baboon-hero.jpg", "alt": "Baboons walking across grassland, one pausing to look back toward the camera.", "credit": "Leo Li", "license": "CC BY 2.0" },
+        { "src": "assets/mara/baboon-hero.jpg", "alt": "An olive baboon standing on all fours, looking directly at the camera.", "credit": "Jorge Láscar", "license": "CC BY 2.0" },
         { "src": "assets/mara/baboon-alt.jpg", "alt": "Two olive baboons grooming, one lying back while the other picks through its fur.", "credit": "Kandukuru Nagarjun", "license": "CC BY 2.0" }
       ],
       "sighting": { "pct": 92, "band": "Almost certain", "note": "Resident troops live near rivers and camps" },
@@ -443,8 +443,8 @@
       "name": "Black-backed jackal",
       "swahili": "Mbweha",
       "photos": [
-        { "src": "assets/mara/jackal-hero.jpg", "alt": "A black-backed jackal standing alert in grass, its dark saddle marking visible.", "credit": "Simyre", "license": "Public Domain" },
-        { "src": "assets/mara/jackal-alt.jpg", "alt": "A close-up of a black-backed jackal's face, its fur still wet from rain.", "credit": "Bernard DUPONT", "license": "CC BY-SA 2.0" }
+        { "src": "assets/mara/jackal-hero.jpg", "alt": "A close-up of a black-backed jackal's face, its fur still wet from rain.", "credit": "Bernard DUPONT", "license": "CC BY-SA 2.0" },
+        { "src": "assets/mara/jackal-alt.jpg", "alt": "A black-backed jackal standing alert in grass, its dark saddle marking visible.", "credit": "Simyre", "license": "Public Domain" }
       ],
       "sighting": { "pct": 77, "band": "Very likely", "note": "Common but easily missed without a guide pointing it out" },
       "stats": {

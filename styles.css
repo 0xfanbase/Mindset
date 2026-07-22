@@ -639,6 +639,40 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   line-height: 1.5;
 }
 
+/* Sort control: reorders the grid below in place -- "Featured" is the hand-curated order
+   (park facts card's species mix), the other two are plain comparators. Group of native
+   buttons + aria-pressed matches the existing .theme-toggle pattern rather than introducing
+   a radiogroup, since only one is ever "on" and a toggle button reads fine either way. */
+.mara-sort {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.mara-sort-btn {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.mara-sort-btn:active { transform: scale(0.99); }
+.mara-sort-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) {
+  .mara-sort-btn:hover { color: var(--ink); border-color: var(--ink); }
+}
+.mara-sort-btn[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--ink);
+  background: var(--edge);
+}
+
 /* Index grid: a 2-column grid of tappable tiles is both the "pick an animal" control and
    the "what will we see" overview, replacing a persistent dropdown/filter the owner
    explicitly wanted out of the way once inside an animal. */
@@ -666,6 +700,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   .mara-tile:hover { border-color: var(--ink); }
 }
 .mara-tile[aria-current="true"] { border-color: var(--accent); }
+.mara-tile-photo-wrap { position: relative; }
 .mara-tile-photo {
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -673,6 +708,24 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   border-radius: 10px;
   margin-bottom: 8px;
   background: var(--edge);
+}
+/* Badge sits on the photo itself, so its background must stand on its own -- a solid
+   near-black regardless of theme or the photo's own colors underneath is the only way to
+   guarantee the AA contrast a translucent tint (like the sighting pills use) can't promise
+   against an arbitrary image. */
+.mara-tile-big5 {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  background: #1C1B17;
+  padding: 3px 7px;
+  border-radius: 999px;
 }
 .mara-tile-name {
   font-family: "Fraunces", Georgia, serif;
@@ -701,6 +754,14 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
    the neutral --edge tint, which is the expected case, not something to highlight. */
 .mara-band-long-shot { background: rgba(180, 72, 112, 0.14); }
 .mara-band-even-odds { background: rgba(180, 120, 26, 0.14); }
+
+/* The 1:1 tile crop's default centered object-position can amputate the subject when it
+   sits off-center in the wider 3:2 source photo -- confirmed by measuring these two source
+   photos directly (hyena's face and the gazelle's head both fall outside the center 600px
+   of a 900px-wide frame). Per-animal overrides, not a general fix, since most photos are
+   already centered well enough. */
+.mara-tile[data-id="hyena"] .mara-tile-photo { object-position: left center; }
+.mara-tile[data-id="thomsons-gazelle"] .mara-tile-photo { object-position: right center; }
 
 /* Detail view: one animal, full focus, exactly one navigation affordance -- matching the
    owner's explicit ask that no filter or picker show once inside an animal. */
@@ -943,6 +1004,9 @@ footer {
   /* The back pill is a mobile-only affordance -- the index sidebar is always visible at
      this width, so "return to the list" is meaningless when the list never left. */
   .mara-back { display: none; }
+  /* The 260px sidebar is narrower than the three sort buttons' mobile padding allows for --
+     tighten just enough that "Featured/Name/Likelihood" fits on one row instead of wrapping. */
+  .mara-sort-btn { padding: 0 10px; }
 }
 
 /* Kept last on purpose: .card/.value-row/.reveal-rest each set their own `animation:
