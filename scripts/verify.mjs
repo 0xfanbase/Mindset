@@ -206,7 +206,17 @@ function stage1() {
   check("stage1", "no bare locale-date calls without timeZone (app.js)", () => {
     const offenders = exists("app.js") ? localeDateWithoutTZ(appjs()) : [];
     if (exists("figure.js")) offenders.push(...localeDateWithoutTZ(read("figure.js")));
+    if (exists("weeks.js")) offenders.push(...localeDateWithoutTZ(read("weeks.js")));
     assert.equal(offenders.length, 0, offenders.join(" | "));
+  });
+
+  check("stage1", "weeks-chart people are initials only, never real names (invariant 1)", async () => {
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    assert.equal(lib.LIFE_PEOPLE.length, 2, `expected exactly 2 people, found ${lib.LIFE_PEOPLE.length}`);
+    for (const p of lib.LIFE_PEOPLE) {
+      assert.match(p.id, /^[A-Z]$/, `id "${p.id}" is not a single initial`);
+      assert.match(p.birthMonthHKT, /^\d{4}-\d{2}$/, `birthMonthHKT "${p.birthMonthHKT}" is not YYYY-MM (day-level precision is not permitted)`);
+    }
   });
 
   check("stage1", "node --check passes on all JS/MJS files", () => {
@@ -283,6 +293,31 @@ function stage1() {
     assert.equal(lib.daysUntilKenyaTrip(new Date("2026-08-14T16:01:00Z")), 0);
     // the day after departure -> negative, so the UI knows to hide the countdown
     assert.equal(lib.daysUntilKenyaTrip(new Date("2026-08-15T16:01:00Z")), -1);
+  });
+
+  check("stage1", "lib.mjs: weeksLived/percentLifeSpent correct at month-start, +6d, +7d, and clamped far-future (J and B)", async () => {
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    const J = lib.LIFE_PEOPLE.find((p) => p.id === "J").birthMonthHKT;
+    const B = lib.LIFE_PEOPLE.find((p) => p.id === "B").birthMonthHKT;
+    assert.equal(J, "1989-12", "J's anchor month changed -- confirm this is deliberate, not a slip");
+    assert.equal(B, "1988-11", "B's anchor month changed -- confirm this is deliberate, not a slip");
+
+    // Month-start HKT (04:00 UTC = 12:00 HKT, unambiguous) -> the very first week, 0 lived.
+    assert.equal(lib.weeksLived(J, new Date("1989-12-01T04:00:00Z")), 0);
+    assert.equal(lib.weeksLived(B, new Date("1988-11-01T04:00:00Z")), 0);
+    // +6 HKT days: still inside the first week.
+    assert.equal(lib.weeksLived(J, new Date("1989-12-07T04:00:00Z")), 0);
+    assert.equal(lib.weeksLived(B, new Date("1988-11-07T04:00:00Z")), 0);
+    // +7 HKT days: exactly one week has now elapsed -- the weekly boundary the owner asked for.
+    assert.equal(lib.weeksLived(J, new Date("1989-12-08T04:00:00Z")), 1);
+    assert.equal(lib.weeksLived(B, new Date("1988-11-08T04:00:00Z")), 1);
+    // 200 years later: clamps to the grid total rather than indexing past it or going negative.
+    assert.equal(lib.weeksLived(J, new Date("2189-12-01T04:00:00Z")), lib.LIFE_WEEKS_TOTAL);
+    assert.equal(lib.weeksLived(B, new Date("2188-11-01T04:00:00Z")), lib.LIFE_WEEKS_TOTAL);
+    // percentLifeSpent is always weeksLived/LIFE_WEEKS_TOTAL -- never independently wrong,
+    // and never exceeds 100 since weeksLived is itself clamped.
+    assert.equal(lib.percentLifeSpent(J, new Date("1989-12-01T04:00:00Z")), 0);
+    assert.equal(lib.percentLifeSpent(J, new Date("2189-12-01T04:00:00Z")), 100);
   });
 
   check("stage1", "lib.mjs: pickIndex full-cycle uniqueness for pools 120/40/10", async () => {
@@ -526,7 +561,7 @@ function stage5() {
     assert.match(read("app.js"), /serviceWorker\.register\(["']\.\/sw\.js["']\)/);
   });
   check("stage5", "byte budgets: JS <= 60KB, icons <= 150KB, fonts <= 300KB", () => {
-    const jsFiles = ["app.js", "figure.js", "lib.mjs", "sw.js"].filter(exists);
+    const jsFiles = ["app.js", "figure.js", "lib.mjs", "weeks.js", "sw.js"].filter(exists);
     const jsTotal = jsFiles.reduce((sum, f) => sum + sizeOf(f), 0);
     assert.ok(jsTotal <= 60 * 1024, `JS total ${jsTotal} bytes > 60KB (${jsFiles.join(",")})`);
     const iconsDir = abs("assets/icons");
@@ -541,7 +576,7 @@ function stage5() {
     }
   });
   check("stage5", "page weight (index.html+styles.css+data jsons) <= 350KB excl. fonts", () => {
-    const files = ["index.html", "styles.css", "app.js", "figure.js", "lib.mjs", "manifest.webmanifest", "sw.js",
+    const files = ["index.html", "styles.css", "app.js", "figure.js", "lib.mjs", "weeks.js", "manifest.webmanifest", "sw.js",
       "data/cards.json", "data/values.json", "data/daily.json"].filter(exists);
     const total = files.reduce((sum, f) => sum + sizeOf(f), 0);
     assert.ok(total <= 350 * 1024, `total ${total} bytes > 350KB (${files.join(",")})`);

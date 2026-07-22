@@ -11,6 +11,16 @@
   --edge: rgba(43, 95, 217, 0.16);
   --hairline: rgba(28, 27, 23, 0.10);
   --shadow: rgba(28, 27, 23, 0.07);
+  --week-future: rgba(28, 27, 23, 0.12);
+  /* Weeks-tab identity colors (v1.22) -- J pink / B blue, fixed regardless of the calm/
+     blossom toggle (identity, not mood) -- deliberately NOT redeclared inside
+     [data-theme="blossom"] below. Reuse the app's own two existing accents (blossom's
+     --accent for J, calm's --accent for B) rather than inventing new ones; both
+     independently hand-verified (verify.mjs's own relLuminance/contrastRatio math, not
+     eyeballed) at >=4.5:1 against every background the app can show (--surface, both
+     themes' --bg, evening's --bg) -- see audits/decisions.md. */
+  --person-j: #B84870;
+  --person-b: #2B5FD9;
 }
 [data-theme="blossom"] {
   --bg: #FBF4F6;
@@ -22,6 +32,7 @@
   --edge: rgba(201, 79, 124, 0.16);
   --hairline: rgba(36, 26, 32, 0.10);
   --shadow: rgba(36, 26, 32, 0.07);
+  --week-future: rgba(36, 26, 32, 0.12);
 }
 
 /* Evening (>=20:00 HKT, v1.19). Touches --bg and --shadow ONLY. AA verified against both
@@ -381,6 +392,102 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   margin-top: 3px;
 }
 
+/* Weeks tab (v1.22) — two life-in-weeks grids (J, B), canvas-rendered by weeks.js. Panel
+   content deliberately exceeds one screen and scrolls within .panel's existing overflow-y
+   (the same mechanism Values already relies on) — see audits/decisions.md for why this tab
+   is a deliberate exception to §4.4's single-screen framing. */
+.weeks-root {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.weeks-stats {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.weeks-stat-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.weeks-stat-line {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+}
+.weeks-zoom {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.weeks-zoom-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--ink);
+  font-size: 18px;
+  line-height: 1;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.weeks-zoom-btn:active { transform: scale(0.99); border-color: var(--ink); }
+.weeks-zoom-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.weeks-zoom-btn:disabled { opacity: 0.35; cursor: default; }
+@media (hover: hover) {
+  .weeks-zoom-btn:not(:disabled):hover { border-color: var(--ink); }
+}
+.weeks-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.weeks-card { padding: 14px 16px; }
+.weeks-swatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 999px;
+  margin-right: 6px;
+  vertical-align: middle;
+}
+.weeks-frame {
+  display: flex;
+  align-items: flex-start;
+  margin-top: 10px;
+}
+.weeks-gutter {
+  display: flex;
+  flex-direction: column;
+  width: 24px;
+  flex-shrink: 0;
+}
+.weeks-yr {
+  height: var(--pitch, 6px);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  line-height: 1;
+  color: var(--muted);
+  text-align: right;
+  padding-right: 5px;
+  white-space: nowrap;
+}
+.weeks-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+.weeks-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.weeks-scroll canvas { display: block; }
+.weeks-caption { text-align: center; margin: 4px 0 0; }
+
 footer {
   margin-top: auto;
   padding-top: 10px;
@@ -414,6 +521,13 @@ footer {
   #cards.focus .card {
     flex: none;
     min-width: 0;
+  }
+  .weeks-cards {
+    flex-direction: row;
+  }
+  .weeks-card {
+    flex: 1 1 0;
+    max-width: 560px;
   }
 }
 
