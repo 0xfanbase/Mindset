@@ -62,7 +62,7 @@ export function hktHour(d = new Date()) {
 }
 
 export function expectedDateHKT(now = new Date()) {
-  if (hktHour(now) >= 6) return hktDateString(now);
+  if (hktHour(now) >= 5) return hktDateString(now);
   const yesterday = new Date(now.getTime() - 86400000);
   return hktDateString(yesterday);
 }

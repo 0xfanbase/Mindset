@@ -429,7 +429,7 @@ before (all four cards, Journal first), with no collapse and no control at all.
 - **`lib.mjs`:** the inline HKT-hour `Intl.DateTimeFormat` expression inside `expectedDateHKT`
   was extracted into a new exported `hktHour(d)` (pure refactor, `expectedDateHKT`'s behavior
   unchanged); a new `isFocusWindowHKT(d) = hktHour(d) < 9` drives the gate. 00:00–08:59 HKT
-  counts as the focus window (including the pre-06:00 hours when yesterday's cards are still
+  counts as the focus window (including the pre-05:00 hours when yesterday's cards are still
   showing) — a 5am open should if anything be quieter, not less so.
 - **`app.js`:** `renderToday` now resolves `{anchor, journal, kenya, word}` once regardless of
   staleness mode, then branches on `isFocusWindowHKT(new Date())`: `paintCards([Journal,
@@ -1399,7 +1399,7 @@ logged in decisions.md.
 ## §1 — Mission & product summary
 
 A single-page, public, static website hosted on GitHub Pages. It is a personal
-mindset dashboard that refreshes itself every morning at **06:00 Hong Kong time**
+mindset dashboard that refreshes itself every morning at **05:00 Hong Kong time**
 with three short grounding cards, headed by a living "mind" — a small bottle of light,
 glowing and dimming on a slow breathing cycle, on repeat. Two tabs: **Today** (figure + date +
 3 cards) and **Values** (a quiet list of core qualities). Two themes: a cream/blue default
@@ -1536,7 +1536,7 @@ fails 4.5:1 (it is close, ~4.3:1 on white, so expect to adjust); log any token a
 ### 4.3 Typography (three deliberate roles)
 
 1. **Display / card voice:** `Fraunces` (variable, optical size on, italic used for the wordmark) — headings, card body text, value names, wordmark. Literary and warm: the cards are book-derived wisdom, so the type is bookish.
-2. **Utility / telemetry:** `IBM Plex Mono` — the date line, category chips, staleness chip, footer "refreshed 06:00 HKT" line. The page is machine-refreshed; the mono face *says* that truthfully.
+2. **Utility / telemetry:** `IBM Plex Mono` — the date line, category chips, staleness chip, footer "refreshed 05:00 HKT" line. The page is machine-refreshed; the mono face *says* that truthfully.
 3. **Body / everything else:** system sans stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`).
 
 Self-host both webfonts as woff2 in `assets/fonts/` with `font-display: swap` and their OFL licence files. **Exit ramp:** if woff2 files cannot be fetched within the attempt budget (§9.2), ship the system stack for all roles, log it in `decisions.md`, and continue — fonts are never a blocker.
@@ -1567,7 +1567,7 @@ The design supersedes v1.0's tall hero-canvas mockup with a compact, single-scre
 ├────────────────────────────────────┤  shown here, stacked ≤899px, 4-across ≥900px
                                           (desktop card min-width tightened 260→200px
                                           in v1.15 so 4 cards fit one row, not 3+1)
-│ refreshes daily · 06:00 HKT        │  footer, margin-top:auto pins it down
+│ refreshes daily · 05:00 HKT        │  footer, margin-top:auto pins it down
 └────────────────────────────────────┘
 ```
 
@@ -1586,7 +1586,7 @@ since it's no longer adjacent to the notch/status bar).
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
 3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Render order is **Journal, Anchor, Kenya, Word** (Journal moved to lead the list in v1.16 — see item 4b for what happens to the other three before 09:00 HKT). Header row = mono category chip (ANCHOR / JOURNAL / KENYA / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Kenya card (added v1.15) is the same minimal shape as Anchor — chip, fact in `.card-body`, category as a small `.card-attr` line (e.g. `— Wildlife`) — plus a trip-countdown pill top-right of its chip row as of v1.17 (item 4c). Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px, italic and centered per v1.13 — live feedback that it "sitting on the left" undersold it as a headline) inside a `.word-title-row` (also centered, v1.13) alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
 4. **Staleness chip (mono, small):**
-   - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 06:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 06:00 HKT, every single day.)
+   - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 05:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 05:00 HKT, every single day.)
    - `daily.json` unreachable, > 48h stale, or fetch fails → page computes all three cards locally via `lib.mjs` rotation → slate chip `offline rotation`. Since Word of the Day is deterministic (v1.10), this path picks the exact same word as the server would have for that date — unlike the retired Fresh card, there is no divergent "fallback" content.
    - **`.chip[hidden] { display: none; }` (v1.11, real bug fix):** `#staleness-chip` keeps `class="chip"` at all times, including while hidden; `.chip`'s own `display: table` (author-origin CSS) unconditionally overrode the browser's default `[hidden] { display: none }` (user-agent-origin CSS) — author styles always win over user-agent styles at equal specificity, regardless of selector order. The hidden chip was never actually disappearing; it sat empty but still consumed its padding/margin box in the default "fresh" case, every load. Fixed with an explicit override, matching the pattern `.panel[hidden] { display: none; }` already used correctly elsewhere in the same stylesheet.
 4a. **Word pronunciation (v1.11):** a 44×44px `<button aria-label="Pronounce <word>">🔊</button>` next to the word title, calling `window.speechSynthesis.speak(new SpeechSynthesisUtterance(word))` with `utterance.lang` set from the entry's `lang` field (§5.1/§5.3.10) — a native browser API, not a dependency (same category as `fetch`/`ResizeObserver`, already used). Rendered only if `"speechSynthesis" in window` (progressive enhancement — never a dead control on an unsupported browser).
@@ -1783,8 +1783,8 @@ automated pipeline is alive, independent of anything Word of the Day itself need
 name: daily-cards
 on:
   schedule:
-    - cron: "56 21 * * *"   # 21:56 UTC = 05:56 HKT next day — a few minutes before the
-                              # 06:00 HKT target and off the top-of-hour scheduler-congestion
+    - cron: "56 20 * * *"   # 20:56 UTC = 04:56 HKT next day — a few minutes before the
+                              # 05:00 HKT target and off the top-of-hour scheduler-congestion
                               # slot GitHub Actions cron is most likely to delay
   workflow_dispatch: {}
 permissions:
@@ -1817,7 +1817,7 @@ jobs:
 name: watchdog
 on:
   schedule:
-    - cron: "0 1 * * *"   # 09:00 HKT — a wider ~3h buffer after the 05:56/06:00 HKT daily
+    - cron: "0 1 * * *"   # 09:00 HKT — a wider ~4h buffer after the 04:56/05:00 HKT daily
                             # run than v1.0's 90 minutes, so a merely-delayed (not dead)
                             # daily run doesn't trigger a false alarm
   workflow_dispatch: {}
@@ -1904,7 +1904,7 @@ for stage in 0..5:
 
 | Loop | Mechanism | Catches |
 |---|---|---|
-| **LOOP-A** daily refresh | Actions cron 05:56 HKT + `workflow_dispatch` | the core auto-run |
+| **LOOP-A** daily refresh | Actions cron 04:56 HKT + `workflow_dispatch` | the core auto-run |
 | **LOOP-B** stuck-build killer | `timeout-minutes: 10` + `concurrency.cancel-in-progress` | any hung/overlapping run — killed inside 10 min, never "stuck for hours" |
 | **LOOP-C** dead-man's switch | watchdog 09:00 HKT → checks the *live* site, not just git → GitHub issue (deduped) + email | silent failures LOOP-B can't see (cron never fired, push failed, **or Pages didn't redeploy**) |
 | **LOOP-D** graceful degrade | client staleness chip (boundary-aware) + offline deterministic rotation (anchor/journal/wordOfDay all alike) | everything else — the page NEVER shows an empty slot |
@@ -2030,7 +2030,7 @@ trigger is closest, plus the raw error — don't spend cycles deliberating the t
 7. Skim `audits/CONTENT-REVIEW.md` (~15 min) — delete or reword anything you wouldn't sign, especially any card whose attribution feels like a guess rather than a known idea.
 8. Skim `audits/FINAL-AUDIT.md` "honest notes" + `decisions.md`.
 9. Confirm you received the watchdog test issue/email (from the Stage 4 stale-detection test). Close it if still open.
-10. Tomorrow at 06:00 HKT, glance once — on the phone. Then stop checking — LOOP-C watches so you don't have to.
+10. Tomorrow at 05:00 HKT, glance once — on the phone. Then stop checking — LOOP-C watches so you don't have to.
 
 ---
 
@@ -2125,7 +2125,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 {
   "name": "Mindset",
   "short_name": "Mindset",
-  "description": "Three grounding cards, every morning at 06:00 HKT.",
+  "description": "Three grounding cards, every morning at 05:00 HKT.",
   "display": "standalone",
   "start_url": "./",
   "scope": "./",
