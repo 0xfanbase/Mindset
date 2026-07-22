@@ -189,18 +189,28 @@ function drawGrid(pitch) {
 // J's weeks" label was erasing the tab's own headline stat). Folding the live figures into
 // the label itself, regenerated on every redraw alongside the visible text, keeps both in
 // sync and makes the number the primary accessible content, not a skippable description.
+// weeksLived() clamps to at most LIFE_WEEKS_TOTAL (a life that outruns the 90-year grid just
+// stops advancing), but the DISPLAYED week is 1-indexed ("week N" means "N-1 fully complete,
+// currently living the Nth") -- so at the clamp itself, weeks+1 reads "week 4,681 of 4,680",
+// which is wrong on its face. Cap the display at the same total (found in code-correctness
+// audit; unreachable before ~2079/2080 given the stored birth months, but a real bug, not a
+// hypothetical one -- weeksLived(..., farFutureDate) genuinely returns exactly the clamp).
+function displayWeek(weeks) {
+  return Math.min(weeks + 1, LIFE_WEEKS_TOTAL);
+}
+
 function statLabel(id, weeks, pct) {
-  return `${id}, week ${commas(weeks + 1)} of ${commas(LIFE_WEEKS_TOTAL)}, ${pct.toFixed(1)}% of life. Highlight ${id}'s weeks.`;
+  return `${id}, week ${commas(displayWeek(weeks))} of ${commas(LIFE_WEEKS_TOTAL)}, ${pct.toFixed(1)}% of life. Highlight ${id}'s weeks.`;
 }
 
 function updateStats() {
   const now = new Date();
   const jW = weeksLived(jBirth, now), bW = weeksLived(bBirth, now);
   const jP = percentLifeSpent(jBirth, now), bP = percentLifeSpent(bBirth, now);
-  jStat.meta.textContent = `J · week ${commas(jW + 1)} of ${commas(LIFE_WEEKS_TOTAL)}`;
+  jStat.meta.textContent = `J · week ${commas(displayWeek(jW))} of ${commas(LIFE_WEEKS_TOTAL)}`;
   jStat.pct.textContent = `${jP.toFixed(1)}%`;
   jStat.btn.setAttribute("aria-label", statLabel("J", jW, jP));
-  bStat.meta.textContent = `B · week ${commas(bW + 1)} of ${commas(LIFE_WEEKS_TOTAL)}`;
+  bStat.meta.textContent = `B · week ${commas(displayWeek(bW))} of ${commas(LIFE_WEEKS_TOTAL)}`;
   bStat.pct.textContent = `${bP.toFixed(1)}%`;
   bStat.btn.setAttribute("aria-label", statLabel("B", bW, bP));
 }
@@ -259,6 +269,15 @@ function buildStatButton(person, colorVar) {
 
   btn.addEventListener("click", () => {
     stickyFocus = stickyFocus === person.id ? null : person.id;
+    // Also sync hoverFocus to match -- without this, un-toggling by clicking a SECOND time
+    // while the mouse is still sitting on the button (never left, so no mouseleave fires)
+    // left stickyFocus correctly cleared but effectiveFocus() still returning the stale
+    // hoverFocus, so the visual highlight (and aria-pressed's underlying reality) stuck
+    // until the pointer physically moved away (found in code-correctness audit, reproduced
+    // via two same-position clicks with no mouse movement between them). A real mouseenter/
+    // mouseleave on this same button still updates hoverFocus independently afterward, so
+    // this doesn't break the normal hover-preview-over-a-sticky-selection interaction.
+    hoverFocus = stickyFocus;
     syncFocusUI();
     redrawAll();
   });
