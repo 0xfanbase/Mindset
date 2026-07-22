@@ -248,6 +248,7 @@ function stage1() {
     const offenders = exists("app.js") ? localeDateWithoutTZ(appjs()) : [];
     if (exists("figure.js")) offenders.push(...localeDateWithoutTZ(read("figure.js")));
     if (exists("weeks.js")) offenders.push(...localeDateWithoutTZ(read("weeks.js")));
+    if (exists("mara.js")) offenders.push(...localeDateWithoutTZ(read("mara.js")));
     assert.equal(offenders.length, 0, offenders.join(" | "));
   });
 
@@ -551,6 +552,104 @@ function stage3() {
     for (const c of d.closing) scan(c.id, c.prompt);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
+
+  const SIGHTING_BANDS = ["Almost certain", "Very likely", "Likely", "Even odds", "Long shot"];
+  check("stage3", "data/mara.json valid JSON with required shape (park + 20 animals, unique ids)", () => {
+    const d = readJSON("data/mara.json");
+    assert.ok(d.park && typeof d.park === "object", "missing park object");
+    assert.ok(Array.isArray(d.park.stats) && d.park.stats.length > 0, "park.stats missing/empty");
+    assert.ok(Array.isArray(d.park.migration?.paragraphs) && d.park.migration.paragraphs.length > 0, "park.migration.paragraphs missing/empty");
+    assert.ok(Array.isArray(d.animals), "animals missing");
+    assert.equal(d.animals.length, 20, `expected 20 animals, got ${d.animals.length}`);
+    const ids = d.animals.map((a) => a.id);
+    assert.equal(new Set(ids).size, ids.length, "duplicate animal ids");
+  });
+  check("stage3", "mara.json: every animal has required non-empty text fields and a valid sighting score", () => {
+    const d = readJSON("data/mara.json");
+    const problems = [];
+    for (const a of d.animals) {
+      for (const field of ["name", "swahili", "intro", "whereToLook"]) {
+        if (typeof a[field] !== "string" || !a[field].trim()) problems.push(`${a.id}.${field} missing/empty`);
+      }
+      for (const field of ["lifespan", "size", "eats"]) {
+        if (typeof a.stats?.[field] !== "string" || !a.stats[field].trim()) problems.push(`${a.id}.stats.${field} missing/empty`);
+      }
+      if (!Array.isArray(a.fieldNotes) || a.fieldNotes.length < 3 || a.fieldNotes.length > 4) {
+        problems.push(`${a.id}.fieldNotes should have 3-4 entries, has ${a.fieldNotes?.length ?? 0}`);
+      }
+      const s = a.sighting;
+      if (!s || !Number.isInteger(s.pct) || s.pct < 0 || s.pct > 100) problems.push(`${a.id}.sighting.pct invalid: ${s?.pct}`);
+      if (!s || !SIGHTING_BANDS.includes(s.band)) problems.push(`${a.id}.sighting.band "${s?.band}" not in ${SIGHTING_BANDS.join("/")}`);
+      if (!s || typeof s.note !== "string" || !s.note.trim()) problems.push(`${a.id}.sighting.note missing/empty`);
+    }
+    assert.equal(problems.length, 0, problems.join(" | "));
+  });
+  check("stage3", "mara.json: every animal has exactly 2 photos, each with non-empty src/alt/credit/license, and the file exists", () => {
+    const d = readJSON("data/mara.json");
+    const problems = [];
+    for (const a of d.animals) {
+      if (!Array.isArray(a.photos) || a.photos.length !== 2) {
+        problems.push(`${a.id}: expected exactly 2 photos, got ${a.photos?.length ?? 0}`);
+        continue;
+      }
+      for (const p of a.photos) {
+        for (const field of ["src", "alt", "credit", "license"]) {
+          if (typeof p[field] !== "string" || !p[field].trim()) problems.push(`${a.id}.photos[].${field} missing/empty`);
+        }
+        if (p.src && !exists(p.src)) problems.push(`${a.id}: photo file not found on disk: ${p.src}`);
+      }
+    }
+    assert.equal(problems.length, 0, problems.join(" | "));
+  });
+  check("stage3", "mara.json: fieldNotes bullets <=20 words each (house convention)", () => {
+    const d = readJSON("data/mara.json");
+    const problems = [];
+    for (const a of d.animals) {
+      for (const note of a.fieldNotes || []) {
+        if (wordCount(note) > 20) problems.push(`${a.id}: ${wordCount(note)}w -- ${note}`);
+      }
+    }
+    assert.equal(problems.length, 0, problems.join(" | "));
+  });
+  check("stage3", "mara.json: zero quotation-mark glyphs and no banned platitudes in animal/park text", () => {
+    const d = readJSON("data/mara.json");
+    const problems = [];
+    const scan = (label, s) => {
+      if (!s) return;
+      if (hasQuoteGlyph(s)) problems.push(`${label}: quote glyph -- ${s}`);
+      const p = findPlatitude(s);
+      if (p) problems.push(`${label}: platitude "${p}"`);
+    };
+    scan("park.about", d.park.about);
+    for (const para of d.park.migration.paragraphs) scan("park.migration.paragraphs[]", para);
+    for (const fact of d.park.migration.facts) scan("park.migration.facts[]", fact);
+    for (const a of d.animals) {
+      scan(`${a.id}.name`, a.name);
+      scan(`${a.id}.swahili`, a.swahili);
+      scan(`${a.id}.intro`, a.intro);
+      scan(`${a.id}.whereToLook`, a.whereToLook);
+      scan(`${a.id}.sighting.note`, a.sighting?.note);
+      for (const note of a.fieldNotes || []) scan(`${a.id}.fieldNotes[]`, note);
+      for (const p of a.photos || []) scan(`${a.id}.photos[].alt`, p.alt);
+    }
+    assert.equal(problems.length, 0, problems.join(" | "));
+  });
+  check("stage3", "assets/mara/ photo budget: total <= 4096KB, no single file > 150KB", () => {
+    const dir = abs("assets/mara");
+    assert.ok(fs.existsSync(dir), "assets/mara/ missing");
+    const files = fs.readdirSync(dir).filter((f) => f.endsWith(".jpg"));
+    assert.equal(files.length, 40, `expected 40 jpg files, found ${files.length}`);
+    let total = 0;
+    const oversized = [];
+    for (const f of files) {
+      const size = fs.statSync(path.join(dir, f)).size;
+      total += size;
+      if (size > 150 * 1024) oversized.push(`${f}: ${(size / 1024).toFixed(0)}KB`);
+    }
+    assert.equal(oversized.length, 0, oversized.join(", "));
+    assert.ok(total <= 4096 * 1024, `total ${(total / 1024).toFixed(0)}KB > 4096KB`);
+  });
+
   check("stage3", "near-duplicate proxy (token-overlap) — informational, non-blocking", () => {
     const d = readJSON("data/cards.json");
     const tok = (s) => new Set(s.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter((w) => w.length > 3));
@@ -637,7 +736,7 @@ function stage5() {
     assert.match(read("app.js"), /serviceWorker\.register\(["']\.\/sw\.js["']\)/);
   });
   check("stage5", "byte budgets: JS <= 60KB, icons <= 150KB, fonts <= 300KB", () => {
-    const jsFiles = ["app.js", "figure.js", "lib.mjs", "weeks.js", "sw.js"].filter(exists);
+    const jsFiles = ["app.js", "figure.js", "lib.mjs", "weeks.js", "mara.js", "sw.js"].filter(exists);
     const jsTotal = jsFiles.reduce((sum, f) => sum + sizeOf(f), 0);
     assert.ok(jsTotal <= 60 * 1024, `JS total ${jsTotal} bytes > 60KB (${jsFiles.join(",")})`);
     const iconsDir = abs("assets/icons");
@@ -652,8 +751,8 @@ function stage5() {
     }
   });
   check("stage5", "page weight (index.html+styles.css+data jsons) <= 350KB excl. fonts", () => {
-    const files = ["index.html", "styles.css", "app.js", "figure.js", "lib.mjs", "weeks.js", "manifest.webmanifest", "sw.js",
-      "data/cards.json", "data/values.json", "data/daily.json"].filter(exists);
+    const files = ["index.html", "styles.css", "app.js", "figure.js", "lib.mjs", "weeks.js", "mara.js", "manifest.webmanifest", "sw.js",
+      "data/cards.json", "data/values.json", "data/daily.json", "data/mara.json"].filter(exists);
     const total = files.reduce((sum, f) => sum + sizeOf(f), 0);
     assert.ok(total <= 350 * 1024, `total ${total} bytes > 350KB (${files.join(",")})`);
   });
