@@ -544,32 +544,41 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   85% { opacity: 0.5; }
   100% { top: 100%; opacity: 0; }
 }
-.weeks-legend {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 9.5px;
-  color: var(--muted);
+/* Epigraph (v1.24) -- moved to the top of the panel (was a quiet card-attr-style caption at
+   the bottom) per live feedback that it needed real display weight, "stands out from a UI
+   angle." Both lines (Burkeman, Seneca) share one treatment deliberately: one thought, ~2,000
+   years apart, not a hierarchy between them. Promoted from card-attr's 12.5px muted voice to
+   15px Fraunces italic in --ink -- display voice, not metadata voice -- with each line's
+   attribution picked out in --accent, the one accent use this tab was otherwise missing.
+   Person colors (--person-j/b) are deliberately NOT used here: those are data-identity colors,
+   and putting them on prose would leak the grid's own color encoding into copy that isn't
+   about either person specifically. */
+.weeks-epigraph {
+  text-align: center;
+  max-width: 340px;
+  margin: 4px auto 0;
 }
-.weeks-legend-item {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+.weeks-epigraph p {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-size: 15px;
+  line-height: 1.5;
+  color: var(--ink);
+  margin: 0;
 }
-.weeks-swatch {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 2px;
-  flex-shrink: 0;
+.weeks-epigraph p + p {
+  margin-top: 6px;
 }
-.weeks-swatch.split { background: linear-gradient(90deg, var(--person-j) 50%, var(--person-b) 50%); }
-.weeks-swatch.b { background: var(--person-b); }
-.weeks-swatch.outline-j { border: 1.5px solid var(--person-j); }
-.weeks-swatch.outline-b { border: 1.5px solid var(--person-b); }
-.weeks-swatch.future { background: var(--week-future); }
-.weeks-caption { text-align: center; margin: 4px 0 0; }
+.weeks-epigraph-attr {
+  font-size: 12.5px;
+  color: var(--accent);
+}
+.weeks-divider {
+  width: 24px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+}
 
 footer {
   margin-top: auto;
