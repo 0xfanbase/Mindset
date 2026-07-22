@@ -101,11 +101,26 @@ function wordCount(s) { return s.trim().split(/\s+/).filter(Boolean).length; }
 // quotation-mark glyphs that count as "verbatim quote" markers — an ASCII apostrophe
 // used intra-word (contraction/possessive) is explicitly allowed (invariant 2).
 const QUOTE_GLYPHS = /["“”‘’]/;
+// A matched PAIR of straight apostrophes used as quote delimiters ('like this') — separate
+// from QUOTE_GLYPHS above, which only ever covered curly quotes and the ASCII double-quote.
+// A v1.23 audit found this codebase's long-standing claim that "a leading/trailing/isolated
+// ' would still be flagged" was never actually true (`'quoted like this'` passed clean):
+// U+0027 was never a member of QUOTE_GLYPHS, so no amount of intra-word stripping upstream
+// could ever have made it match. The straightforward fix — just adding U+0027 to
+// QUOTE_GLYPHS — was tried and reverted after it flagged real, correct, already-shipped
+// content: English plural possessives ("runners'", "the dogs' toys") end in exactly the
+// same "letter + apostrophe + non-letter" shape as a closing quote mark, so a single trailing
+// apostrophe can't be judged in isolation. This requires an actual PAIR instead — an opening
+// apostrophe hugging the start of a word and a later closing apostrophe hugging the end of
+// one — which a lone plural-possessive apostrophe never forms. Verified against the entire
+// real data/cards.json + data/values.json corpus before landing: zero new flags.
+const PAIRED_QUOTE = /(?:^|[\s(—-])'[^\s'][^']*?'(?=$|[\s.,;:!?)—-])/;
 function hasQuoteGlyph(s) {
   // strip intra-word ASCII apostrophes (letter'letter, e.g. "yesterday's", "don't")
-  // before checking — a leading/trailing/isolated ' would still be flagged.
+  // before checking QUOTE_GLYPHS — irrelevant to PAIRED_QUOTE, which only ever matches a
+  // genuine word-boundary-anchored pair, never a lone intra-word apostrophe.
   const stripped = s.replace(/(\p{L})'(\p{L})/gu, "$1$2");
-  return QUOTE_GLYPHS.test(stripped);
+  return QUOTE_GLYPHS.test(stripped) || PAIRED_QUOTE.test(s);
 }
 
 const BANNED_PLATITUDES = [
