@@ -30,7 +30,7 @@
       "swahili": "Simba",
       "photos": [
         { "src": "assets/mara/lion-hero.jpg", "alt": "A maned male lion lying in grass, looking straight at the camera.", "credit": "Smtunli", "license": "CC BY-SA 4.0" },
-        { "src": "assets/mara/lion-alt.jpg", "alt": "A close-up of a male lion's face, teeth bared in a snarl.", "credit": "Wouter van Vliet", "license": "CC BY 2.0" }
+        { "src": "assets/mara/lion-alt.jpg", "alt": "A close-up of a male lion's face, mouth open, teeth visible.", "credit": "Wouter van Vliet", "license": "CC BY 2.0" }
       ],
       "sighting": { "pct": 92, "band": "Almost certain", "note": "Seen on nearly every multi-night August drive" },
       "stats": {
@@ -98,8 +98,8 @@
       "name": "African elephant",
       "swahili": "Tembo",
       "photos": [
-        { "src": "assets/mara/elephant-hero.jpg", "alt": "An elephant walking through green grassland with scattered acacia trees on the horizon.", "credit": "Daniel Case", "license": "CC BY-SA 4.0" },
-        { "src": "assets/mara/elephant-alt.jpg", "alt": "An elephant calf standing close beside its mother.", "credit": "Bett Duncan", "license": "CC BY-SA 4.0" }
+        { "src": "assets/mara/elephant-hero.jpg", "alt": "A close side view of an elephant's head and tusks as it walks through grassland.", "credit": "flowcomm", "license": "CC BY 2.0" },
+        { "src": "assets/mara/elephant-alt.jpg", "alt": "An elephant facing the camera with ears spread wide, trunk curled.", "credit": "flowcomm", "license": "CC BY 2.0" }
       ],
       "sighting": { "pct": 93, "band": "Almost certain", "note": "Abundant near rivers, especially in the dry season" },
       "stats": {

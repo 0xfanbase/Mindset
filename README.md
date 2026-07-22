@@ -19,8 +19,11 @@ A fourth tab, **Mara**, is a reference for the August 2026 Masai Mara trip: a 2-
 20 animals (Big Five, migration species, and other commonly-spotted wildlife) doubles as the
 picker — tap one and it opens to a focused profile (real photos, lifespan/size/diet, where to
 look, field notes, and a sighting-likelihood score for an August safari) with no filter left
-showing, exactly as asked. A park-facts and Great Migration card leads the list. On a wide
-screen the animal list becomes a persistent side column next to whichever animal is open.
+showing, exactly as asked. Sort the grid by name or by sighting likelihood, or leave it on the
+hand-curated "Featured" order; each tile's pill shows both the likelihood band and its
+percentage, and the five Big Five animals carry their own tag. A park-facts and Great Migration
+card leads the list. On a wide screen the animal list becomes a persistent side column next to
+whichever animal is open.
 
 Zero build step, zero runtime dependencies. The only personal data anywhere in this repo is
 two initials and two birth months (for the Weeks tab above) — never full names, never an exact

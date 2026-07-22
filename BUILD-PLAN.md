@@ -1276,6 +1276,92 @@ way once you're looking at one.
   budget; `assets/mara/` 3.2MB across 40 files (none over 150KB), lazy-loaded and outside both
   budgets by design.
 
+**v1.26 changelog (from v1.25, live feature request, same session): Mara index sort, Big Five
+tag, sighting % on the tile pill, and a second photo-quality pass — Fable as auditor.** The
+owner came back after using the merged tab: sort the index by name or by sighting likelihood;
+mark the Big Five on their tiles the same way the sighting bands are already tagged; put the
+percentage on the tile pill itself rather than the band name alone; and — the largest item —
+re-check every photo, naming six specific complaints (hyena cropped, hippo backlit, jackal's
+head not showing, baboon rear-view only, lion asleep with no face visible, black rhino also
+showing mostly its back) plus "etc.," an explicit instruction to look past the named examples.
+- **Photo re-review methodology, and a self-caught false alarm:** every one of the 20 tiles was
+  re-inspected via Playwright element screenshots (not full-page screenshots — an early
+  full-page pass had already produced one false lead, an apparently headless wildebeest that
+  turned out to be nothing more than a screenshot stitched across a scroll-segment seam,
+  cutting the tile mid-photo in the image file, not in the browser). Per-tile `.mara-tile`
+  element screenshots, each forced to `loading="eager"` and awaited on `img.complete &&
+  naturalWidth > 0` first, removed that ambiguity entirely. Verdict: four of the owner's named
+  animals (hippo, baboon, lion, black rhino) plus hyena were genuinely bad; jackal's existing
+  photo was not actually broken (a direct pixel check showed a clear head) but got tightened up
+  anyway rather than argue the point.
+- **Five fixed by promoting the existing second photo, zero new sourcing:** black rhino, hyena,
+  giraffe, hippo, and jackal each already had a properly-licensed second photo in the repo that
+  was strictly better for face visibility than the one being used as the tile/hero image. Fixed
+  by renaming the two files so `hero.jpg`/`alt.jpg` actually swap which photo they hold (with
+  `data/mara.json`'s credit/license/alt text swapped to match), rather than just reordering the
+  JSON array — so the filenames stay honest for whoever reads the asset folder next, not a
+  cosmetic distinction.
+- **Three needed real replacements:** lion, Nile crocodile, and olive baboon had no adequate
+  photo in either slot, so five new photos (lion hero+alt, crocodile hero+alt, baboon hero) were
+  sourced fresh from Wikimedia Commons under the same license discipline as the original build
+  (Public Domain/CC0/CC BY any version/CC BY-SA any version only), each confirmed via the
+  source file's own Commons category/description metadata to be a genuinely wild animal, not a
+  zoo or sanctuary photo, then run through the same 900×600 center-crop-plus-compress
+  Chromium-canvas pipeline as every other photo in this tab.
+- **UI additions:** a `.mara-sort` button row (Featured/Name/Likelihood) between the park card
+  and the grid, index-view only — "Featured" is the original hand-curated order, the other two
+  are plain comparators over `data.animals`. A `.mara-tile-big5` badge overlays the top-left
+  corner of the tile photo for the five Big Five animals (hardcoded as a `Set` in `mara.js`,
+  since it is a fixed biological classification rather than editable content) — solid opaque
+  `#1C1B17` background rather than the sighting pills' translucent tint, specifically so its
+  contrast doesn't depend on whatever photo happens to sit underneath it (~17:1 either way).
+  Because each tile button already carries an explicit `aria-label` (which suppresses
+  descendant-text accessible-name computation), the badge's "Big Five" text and the sighting
+  percentage were both folded into that label so a screen-reader user gets the same information
+  a sighted user reads off the tile. The pill itself changed from the band name alone to
+  `"<band> · <pct>%"`.
+- **Fable's pre-merge audit: three must-fix items, all real, all confirmed by measuring the
+  live render rather than trusting the diff.** (1) Sorting silently broke keyboard use: clicking
+  a sort button called a `renderIndex()` that wiped and rebuilt the entire index — park card,
+  sort row, and grid together — which meant the very button a keyboard user had just pressed no
+  longer existed, dropping focus to `<body>` (caught by checking `document.activeElement` after
+  a real `Enter` keypress, not by reading the click handler). Fixed by splitting the render:
+  `renderSortControl()` now builds its three buttons once and updates their `aria-pressed`
+  attributes in place on click; a new `renderGrid()` rebuilds only the `.mara-index-grid` node
+  via `gridEl.replaceWith(...)`, leaving the sort buttons (and the park card) untouched, so focus
+  simply stays where the keyboard user left it. (2) and (3): the spotted hyena and Thomson's
+  gazelle tiles each still amputated the subject — confirmed by measuring the actual source
+  photos directly: the hyena's face sits in the left third of its 900×600 frame and the
+  gazelle's head in the right sixth, both entirely outside the `1:1` tile crop's default
+  centered `600px` window. Fixed with two one-line, animal-specific `object-position` overrides
+  (`left center` / `right center`) rather than a general rule, since every other photo is already
+  centered well enough that a blanket change would just move a different photo's problem around.
+  Both fixes were screenshotted live before shipping, not assumed from the CSS text. A
+  should-fix (the African elephant tile — technically whole-animal-visible but occupying perhaps
+  15% of a wide scenic frame, the flattest remaining complaint against "zoom into the animals"
+  on a Big Five tile) was accepted and fixed with one more sourced photo pair, matching the same
+  license/wild-animal/pipeline discipline as the other three replacements. A nice-to-have (the
+  new lion alt photo's overstated caption, "teeth bared in a snarl," for an expression that
+  reads more like an open-mouthed pant) was softened to "mouth open, teeth visible" rather than
+  re-sourcing a sixth photo for a detail-page-only secondary slot. A second nice-to-have (the
+  desktop sort row wrapping to two lines inside the 260px sidebar) was fixed by tightening
+  `.mara-sort-btn` padding from 14px to 10px inside the existing `min-width:900px` block.
+- **Re-verified after every fix, not assumed:** a dedicated 12-check Playwright pass confirmed
+  focus survives both `Enter` and `Space` activation and lands back on the correct button each
+  time, the park card's own DOM node is untouched by a sort click (`===` identity check, not
+  just "looks the same"), the two crop fixes' `object-position` values are exactly as intended
+  via `getComputedStyle` (not screenshot inspection), untouched tiles kept their default centered
+  crop, and the desktop sort row's three buttons now share one `getBoundingClientRect().top`.
+  The existing 21-check sort/badge/pill suite and `verify.mjs` (73/73) were re-run clean after
+  every round of fixes, not just once at the end.
+- **`sw.js`:** `CACHE` bumped `"mindset-v11"` → `"mindset-v12"` (Appendix C.2 updated to match) —
+  `mara.js`, `styles.css`, and `data/mara.json` are all precached and all three changed content
+  this round; the photo files themselves are lazy-loaded, not precached, so their swap needed no
+  bump (network-first already serves the new bytes on next fetch).
+- **Verified (final):** `verify.mjs` 73/73. JS total (app+figure+lib+weeks+mara+sw) 58,043 B —
+  56.7KB of the 60KB budget; page weight 266,876 B — 260.6KB of the 350KB budget; `assets/mara/`
+  3.25MB across 40 files (none over 150KB).
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -2056,7 +2142,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v11";
+const CACHE = "mindset-v12";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
