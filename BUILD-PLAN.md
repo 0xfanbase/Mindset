@@ -698,10 +698,14 @@ shipped, the owner asked instead for the app/shortcut icon to be a real photo of
   rather than re-derived, including the explicit-target-size scaling that pipeline depends on.
   Framing iterated visually the same way as v1.20's mane geometry: rendered at 512/192/96/48/32/
   16px plus simulated iOS-squircle-on-dark and Android-circle-on-dark tiles, actually inspected
-  (multimodal read of the rendered PNGs/JPEGs) before finalizing — one round was enough; both
-  faces read clearly at every size down to 32px, degrading to "two warm blurs" at 16px (the same
-  floor v1.20's mark hit, and for the same reason: browser tabs use `favicon.svg` at 2×, so the
-  16px raster PNGs/JPEGs are never actually seen that small on any surface the owner asked about).
+  (multimodal read of the rendered PNGs/JPEGs) before finalizing — one round was enough for every
+  size the owner actually asked about (home-screen: 512/192/180, all fully legible as two cats).
+  The two faces don't degrade equally, corrected by Fable's audit: the grey cat (a tight studio
+  portrait) still reads as a cat at 32px, but the orange cat (an environmental shot, face ~7px
+  tall at that size) dissolves to a warm blur below ~48px. Since a standard 2× browser tab
+  renders `favicon.svg` at exactly 32 device px, the shipping *tab* icon reads as "grey cat plus
+  warm color", not "two cats" — a real, if minor, asymmetry the changelog originally missed by
+  claiming both held to 32px. Every home-screen size is unaffected.
 - **Format switched from PNG to JPEG for the two manifest icons — the budget forced it, not a
   preference.** A photographic composite is incompressible as flat-color PNG the way a vector
   mark is: the 512px composite alone was 355,512 B losslessly, versus a 150KB budget for all
@@ -722,7 +726,10 @@ shipped, the owner asked instead for the app/shortcut icon to be a real photo of
   "apple-touch-icon">` href is untouched (same filename, same format, new content only).
 - **`assets/favicon.svg` restructured, not just recolored** — an SVG can't natively hold a
   photo as vector paths the way the lion mark could, so it now wraps a small (128px, JPEG
-  quality 78, 4,744 B → 6,328 B base64) crop of the same composite behind an `xMidYMid slice`
+  quality 78, 4,744 B → 6,328 B base64) **re-render** of the same composite recipe — corrected
+  per Fable's byte-level check: not a crop of the 6px-divider composite (that would produce
+  4,702 B), but the split-frame rendered fresh at 128px with a proportionally-narrower 4px
+  divider, confirmed by matching quantization tables. Sits behind an `xMidYMid slice`
   `preserveAspectRatio` and a rounded `clipPath`, keeping `index.html`'s `<link rel="icon"
   href="./assets/favicon.svg" type="image/svg+xml">` reference completely unchanged. Total
   6,618 B — not counted against the 150KB icon budget (that check sums `assets/icons/` only,
@@ -744,8 +751,16 @@ shipped, the owner asked instead for the app/shortcut icon to be a real photo of
   `icon-512.jpg` 512×512 confirmed via `file`; icons total 113,526 B ≤ 150KB. `node --check`
   clean on `sw.js`. No `max-width` query, no `localStorage` touch, `.nojekyll`/`noindex`
   untouched.
-- **Fable's project-director review:** requested for this version too; see
-  `audits/v1.21-fable-audit.md` once complete.
+- **Fable's project-director review: Ship** — the strongest of the three icon audits: every
+  committed raster artifact (all three icon files plus the favicon's embedded JPEG) reproduced
+  **byte-for-byte** from an independently rebuilt pipeline, not just visually spot-checked; a
+  JPEG-marker/PNG-chunk metadata walk found zero EXIF/GPS/comment leakage from the source
+  photos; a zone-by-zone 2× pixel inspection of the actual shipped backgrounds (window blinds,
+  a wooden box, a dark room, wood flooring, a furniture-leg sliver) independently confirmed the
+  PII sweep. See `audits/v1.21-fable-audit.md` for the full write-up, including the two
+  corrections folded in above and one optional, owner's-call follow-up (a tighter orange-cat
+  crop in the favicon embed only, if two-cats-at-tab-size ever matters — not a defect, the
+  home-screen sizes this was actually asked for are unaffected).
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
