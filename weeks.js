@@ -183,14 +183,26 @@ function drawGrid(pitch) {
   canvas.setAttribute("aria-label", ariaLabelFor(Jw, Bw, total, focus));
 }
 
+// aria-label on a <button> replaces its visible children entirely for the accessible name --
+// a screen-reader user hears ONLY the label, never the 34px percent or the week count next to
+// it (confirmed via a real accessibility-tree snapshot during audit: the static "Highlight
+// J's weeks" label was erasing the tab's own headline stat). Folding the live figures into
+// the label itself, regenerated on every redraw alongside the visible text, keeps both in
+// sync and makes the number the primary accessible content, not a skippable description.
+function statLabel(id, weeks, pct) {
+  return `${id}, week ${commas(weeks + 1)} of ${commas(LIFE_WEEKS_TOTAL)}, ${pct.toFixed(1)}% of life. Highlight ${id}'s weeks.`;
+}
+
 function updateStats() {
   const now = new Date();
   const jW = weeksLived(jBirth, now), bW = weeksLived(bBirth, now);
   const jP = percentLifeSpent(jBirth, now), bP = percentLifeSpent(bBirth, now);
   jStat.meta.textContent = `J · week ${commas(jW + 1)} of ${commas(LIFE_WEEKS_TOTAL)}`;
   jStat.pct.textContent = `${jP.toFixed(1)}%`;
+  jStat.btn.setAttribute("aria-label", statLabel("J", jW, jP));
   bStat.meta.textContent = `B · week ${commas(bW + 1)} of ${commas(LIFE_WEEKS_TOTAL)}`;
   bStat.pct.textContent = `${bP.toFixed(1)}%`;
+  bStat.btn.setAttribute("aria-label", statLabel("B", bW, bP));
 }
 
 function syncFocusUI() {
@@ -237,7 +249,8 @@ function buildStatButton(person, colorVar) {
   btn.className = "weeks-stat";
   btn.dataset.person = person.id;
   btn.setAttribute("aria-pressed", "false");
-  btn.setAttribute("aria-label", `Highlight ${person.id}'s weeks`);
+  // No static aria-label here -- updateStats() sets the real one (folding in the live
+  // week/percent figures) immediately after build(), before first paint.
   const meta = document.createElement("div");
   meta.className = "weeks-stat-meta";
   const pct = document.createElement("div");
