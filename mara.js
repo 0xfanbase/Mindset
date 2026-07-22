@@ -1,9 +1,16 @@
 // mara.js — Mara tab: animal reference + Great Migration facts (BUILD-PLAN.md v1.25)
 const DATA_URL = "./data/mara.json";
+const BIG_FIVE = new Set(["lion", "leopard", "black-rhino", "elephant", "buffalo"]);
+const SORT_OPTIONS = [
+  ["featured", "Featured"],
+  ["name", "Name"],
+  ["likelihood", "Likelihood"],
+];
 
 let built = false;
 let data = null;
 let selectedId = null;
+let sortMode = "featured";
 let root, indexEl, detailEl;
 
 function el(tag, props = {}, children = []) {
@@ -63,33 +70,71 @@ function renderParkCard() {
 }
 
 function renderTile(animal) {
+  const isBigFive = BIG_FIVE.has(animal.id);
+  const labelParts = [animal.name];
+  if (isBigFive) labelParts.push("Big Five");
+  labelParts.push(`${animal.sighting.pct}% likelihood, ${animal.sighting.band.toLowerCase()}`);
+
   const btn = el("button", {
     type: "button",
     class: "mara-tile",
     "data-id": animal.id,
-    "aria-label": `${animal.name}, ${animal.sighting.band.toLowerCase()} to see`,
+    "aria-label": labelParts.join(", "),
   });
   if (animal.id === selectedId) btn.setAttribute("aria-current", "true");
+
   const img = el("img", {
     src: `./${animal.photos[0].src}`,
     alt: "",
     loading: "lazy",
     class: "mara-tile-photo",
   });
+  const photoWrap = el("div", { class: "mara-tile-photo-wrap" }, [img]);
+  if (isBigFive) photoWrap.appendChild(el("div", { class: "mara-tile-big5", text: "Big Five" }));
+
   const nameRow = el("div", { class: "mara-tile-name" }, [
     el("span", { text: animal.name }),
   ]);
   const swahili = el("div", { class: "mara-tile-swahili", text: animal.swahili });
-  const pill = el("div", { class: `mara-tile-pill ${bandClass(animal.sighting.band)}`, text: animal.sighting.band });
-  btn.append(img, nameRow, swahili, pill);
+  const pill = el("div", {
+    class: `mara-tile-pill ${bandClass(animal.sighting.band)}`,
+    text: `${animal.sighting.band} · ${animal.sighting.pct}%`,
+  });
+  btn.append(photoWrap, nameRow, swahili, pill);
   btn.addEventListener("click", () => selectAnimal(animal.id));
   return btn;
+}
+
+function sortedAnimals() {
+  if (sortMode === "name") return [...data.animals].sort((a, b) => a.name.localeCompare(b.name));
+  if (sortMode === "likelihood") return [...data.animals].sort((a, b) => b.sighting.pct - a.sighting.pct);
+  return data.animals;
+}
+
+function renderSortControl() {
+  const group = el("div", { class: "mara-sort", role: "group", "aria-label": "Sort animals" });
+  for (const [mode, label] of SORT_OPTIONS) {
+    const btn = el("button", {
+      type: "button",
+      class: "mara-sort-btn",
+      "aria-pressed": String(mode === sortMode),
+      text: label,
+    });
+    btn.addEventListener("click", () => {
+      if (sortMode === mode) return;
+      sortMode = mode;
+      renderIndex();
+    });
+    group.appendChild(btn);
+  }
+  return group;
 }
 
 function renderIndex() {
   indexEl.textContent = "";
   indexEl.appendChild(renderParkCard());
-  const grid = el("div", { class: "mara-index-grid" }, data.animals.map(renderTile));
+  indexEl.appendChild(renderSortControl());
+  const grid = el("div", { class: "mara-index-grid" }, sortedAnimals().map(renderTile));
   indexEl.appendChild(grid);
 }
 
