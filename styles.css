@@ -583,6 +583,281 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   background: var(--accent);
 }
 
+/* Mara tab (v1.25): animal reference + Great Migration facts. Plain DOM, not canvas --
+   photos and text -- so none of Weeks' ResizeObserver/redraw-on-theme-change plumbing
+   applies here; CSS custom properties alone keep this tab in sync with theme changes. */
+#mara-root { display: flex; flex-direction: column; }
+
+/* Park/migration card -- shown only on the index, above the animal grid. Context first,
+   then the reference tool; never repeated inside a single animal's detail view. */
+.mara-park-card {
+  background: var(--surface);
+  border-radius: 20px;
+  box-shadow: 0 10px 28px var(--shadow);
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+.mara-park-title {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 20px;
+  margin: 0 0 12px;
+  color: var(--ink);
+}
+.mara-park-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px 16px;
+  margin-bottom: 14px;
+}
+.mara-park-stat-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+.mara-park-stat-value {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  margin-top: 2px;
+}
+.mara-park-about {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 15px;
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0 0 12px;
+}
+.mara-methodology {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  margin: 10px 0 0;
+  line-height: 1.5;
+}
+
+/* Index grid: a 2-column grid of tappable tiles is both the "pick an animal" control and
+   the "what will we see" overview, replacing a persistent dropdown/filter the owner
+   explicitly wanted out of the way once inside an animal. */
+.mara-index-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.mara-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  padding: 10px;
+  cursor: pointer;
+  touch-action: manipulation;
+  text-align: left;
+  animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.mara-tile:active { transform: scale(0.99); }
+.mara-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) {
+  .mara-tile:hover { border-color: var(--ink); }
+}
+.mara-tile[aria-current="true"] { border-color: var(--accent); }
+.mara-tile-photo {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  background: var(--edge);
+}
+.mara-tile-name {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 14.5px;
+  color: var(--ink);
+}
+.mara-tile-swahili {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-size: 11.5px;
+  color: var(--muted);
+  margin-top: 1px;
+}
+.mara-tile-pill {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+  background: var(--edge);
+  border-radius: 999px;
+  padding: 3px 8px;
+  margin-top: 8px;
+}
+/* The two rarer sighting tiers get a warmer pill tint, so the grid itself hints at the
+   real long shots before you ever tap in -- the majority "almost certain" tiles stay in
+   the neutral --edge tint, which is the expected case, not something to highlight. */
+.mara-band-long-shot { background: rgba(180, 72, 112, 0.14); }
+.mara-band-even-odds { background: rgba(180, 120, 26, 0.14); }
+
+/* Detail view: one animal, full focus, exactly one navigation affordance -- matching the
+   owner's explicit ask that no filter or picker show once inside an animal. */
+.mara-detail { display: none; }
+#mara-root[data-view="detail"] .mara-detail { display: block; }
+#mara-root[data-view="detail"] .mara-index { display: none; }
+
+.mara-back {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 16px;
+  margin-bottom: 12px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.mara-back:active { transform: scale(0.99); border-color: var(--ink); }
+.mara-back:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) {
+  .mara-back:hover { color: var(--ink); border-color: var(--ink); }
+}
+
+.mara-photo { margin: 0 0 16px; }
+.mara-photo-img {
+  width: 100%;
+  aspect-ratio: 3 / 2;
+  object-fit: cover;
+  border-radius: 14px;
+  border: 1px solid var(--hairline);
+  display: block;
+}
+.mara-photo-caption {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9.5px;
+  color: var(--muted);
+  margin-top: 6px;
+  text-align: center;
+}
+
+.mara-detail-name { text-align: center; margin-bottom: 4px; }
+.mara-detail-name-en {
+  font-family: "Fraunces", Georgia, serif;
+  font-weight: 600;
+  font-size: 24px;
+  margin: 0;
+  color: var(--ink);
+}
+.mara-detail-name-sw {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--muted);
+  margin-top: 2px;
+}
+
+/* The sighting score: large, bold, italic, animated -- the one figure this whole tab
+   exists to answer, given more visual weight than any other single number in the app
+   (bigger even than Weeks' percent-of-life-spent) on direct request. --accent, not a
+   person color -- there is no per-person identity concept on this tab. */
+.mara-sighting { text-align: center; margin: 12px 0 18px; }
+.mara-sighting-pct {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 52px;
+  line-height: 1.05;
+  color: var(--accent);
+}
+.mara-sighting-meta { margin-top: 4px; }
+.mara-sighting-band {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  color: var(--ink);
+}
+.mara-sighting-note {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10.5px;
+  color: var(--muted);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+.mara-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 16px;
+  margin-bottom: 16px;
+}
+.mara-stat-row { display: flex; flex-direction: column; }
+.mara-stat-label {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9px;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+}
+.mara-stat-value {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  color: var(--ink);
+  margin-top: 2px;
+}
+
+.mara-intro {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 15.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0 0 18px;
+}
+.mara-section { margin-bottom: 18px; }
+.mara-section-title {
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--muted);
+  margin: 0 0 8px;
+}
+.mara-section-body {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0;
+}
+.mara-field-notes {
+  margin: 0;
+  padding-left: 18px;
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 14.5px;
+  line-height: 1.55;
+  color: var(--ink);
+}
+.mara-field-notes li { margin-bottom: 6px; }
+
+.mara-empty {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--muted);
+  text-align: center;
+  padding: 40px 20px;
+}
+
 footer {
   margin-top: auto;
   padding-top: 10px;
@@ -628,6 +903,39 @@ footer {
     width: 100%;
     margin: 0 auto;
   }
+
+  /* Mara tab: the index becomes a persistent left column beside the detail panel --
+     literally "a drop-down list on the side," at the only width where a side exists.
+     Same DOM as mobile, no second implementation: these selectors repeat the mobile
+     hiding rules' exact specificity so source order (this block comes later) wins the
+     tie and forces both panels visible regardless of which one JS currently considers
+     "active" on a phone-width viewport. */
+  .mara-layout {
+    display: flex;
+    gap: 24px;
+    max-width: 900px;
+    width: 100%;
+    margin: 0 auto;
+    align-items: flex-start;
+  }
+  .mara-index {
+    flex: 0 0 260px;
+    max-height: 70vh;
+    overflow-y: auto;
+  }
+  .mara-detail { flex: 1; min-width: 0; }
+  #mara-root[data-view="index"] .mara-detail,
+  #mara-root[data-view="detail"] .mara-detail {
+    display: block;
+  }
+  #mara-root[data-view="index"] .mara-index,
+  #mara-root[data-view="detail"] .mara-index {
+    display: block;
+  }
+  .mara-index-grid { grid-template-columns: 1fr; }
+  /* The back pill is a mobile-only affordance -- the index sidebar is always visible at
+     this width, so "return to the list" is meaningless when the list never left. */
+  .mara-back { display: none; }
 }
 
 /* Kept last on purpose: .card/.value-row/.reveal-rest each set their own `animation:
@@ -636,7 +944,7 @@ footer {
    this rule previously sat right after @keyframes cardIn, before any of those three
    base rules, so it silently never took effect). */
 @media (prefers-reduced-motion: reduce) {
-  .card, .value-row, .reveal-rest { animation: none; }
+  .card, .value-row, .reveal-rest, .mara-tile { animation: none; }
   /* Cancelling the animation alone is not enough here (unlike the rule above): the reveal's
      `from` state is fully clipped/invisible, so a reduced-motion viewer must also get the
      resting "fully visible" state explicitly, not just an animation-free freeze on frame

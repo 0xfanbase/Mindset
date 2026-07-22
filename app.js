@@ -1,6 +1,7 @@
 // app.js — UI logic: tabs, theme, date, cards, staleness (BUILD-PLAN.md §4/§6)
 import { hktDateParts, staleness, pickToday, isFocusWindowHKT, isEveningWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
 import { initWeeksTab, refreshWeeksIfStale, redrawWeeksForTheme } from "./weeks.js";
+import { initMaraTab } from "./mara.js";
 
 const PULSE = { calm: "#7FB0FF", blossom: "#F2A9C6" };
 const BG = { calm: "#FAF9F5", blossom: "#FBF4F6" };
@@ -65,7 +66,7 @@ function initDateLine() {
 // today/values flip insufficient. Arrow keys roll with wraparound, matching the standard
 // ARIA tablist roving-focus pattern.
 function initTabs() {
-  const tabs = ["today", "values", "weeks"].map((name) => ({
+  const tabs = ["today", "values", "weeks", "mara"].map((name) => ({
     name,
     btn: document.getElementById(`tab-${name}`),
     panel: document.getElementById(`panel-${name}`),
@@ -78,6 +79,7 @@ function initTabs() {
       t.panel.hidden = !active;
     });
     if (tabs[index].name === "weeks") initWeeksTab();
+    if (tabs[index].name === "mara") initMaraTab();
   }
 
   tabs.forEach((t, i) => {
