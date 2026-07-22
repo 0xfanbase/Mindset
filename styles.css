@@ -570,10 +570,13 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   margin-top: 6px;
 }
 .weeks-epigraph-attr {
+  display: block;
+  margin-top: 2px;
   font-size: 12.5px;
   color: var(--accent);
 }
 .weeks-divider {
+  align-self: center;
   width: 24px;
   height: 2px;
   border-radius: 1px;
