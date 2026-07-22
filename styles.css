@@ -639,6 +639,40 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   line-height: 1.5;
 }
 
+/* Sort control: reorders the grid below in place -- "Featured" is the hand-curated order
+   (park facts card's species mix), the other two are plain comparators. Group of native
+   buttons + aria-pressed matches the existing .theme-toggle pattern rather than introducing
+   a radiogroup, since only one is ever "on" and a toggle button reads fine either way. */
+.mara-sort {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.mara-sort-btn {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.mara-sort-btn:active { transform: scale(0.99); }
+.mara-sort-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+@media (hover: hover) {
+  .mara-sort-btn:hover { color: var(--ink); border-color: var(--ink); }
+}
+.mara-sort-btn[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--ink);
+  background: var(--edge);
+}
+
 /* Index grid: a 2-column grid of tappable tiles is both the "pick an animal" control and
    the "what will we see" overview, replacing a persistent dropdown/filter the owner
    explicitly wanted out of the way once inside an animal. */
@@ -666,6 +700,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   .mara-tile:hover { border-color: var(--ink); }
 }
 .mara-tile[aria-current="true"] { border-color: var(--accent); }
+.mara-tile-photo-wrap { position: relative; }
 .mara-tile-photo {
   width: 100%;
   aspect-ratio: 1 / 1;
@@ -673,6 +708,24 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   border-radius: 10px;
   margin-bottom: 8px;
   background: var(--edge);
+}
+/* Badge sits on the photo itself, so its background must stand on its own -- a solid
+   near-black regardless of theme or the photo's own colors underneath is the only way to
+   guarantee the AA contrast a translucent tint (like the sighting pills use) can't promise
+   against an arbitrary image. */
+.mara-tile-big5 {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8.5px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #FFFFFF;
+  background: #1C1B17;
+  padding: 3px 7px;
+  border-radius: 999px;
 }
 .mara-tile-name {
   font-family: "Fraunces", Georgia, serif;
