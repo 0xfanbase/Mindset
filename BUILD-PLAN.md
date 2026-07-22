@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.19)
+# MINDSET — Autonomous Build Plan (v1.20)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -621,6 +621,40 @@ second feature, mirroring the existing pre-09:00 focus window on the other end o
   stale-`daily.json` + evening-hour state (backdated a live file, loaded at an evening clock
   instant) — all composed correctly with zero console errors. 24/24 assertions passed. Full
   record in `audits/decisions.md`.
+
+**v1.20 changelog (from v1.19, live feature request):** the owner asked for the app/shortcut
+icon — `assets/favicon.svg` plus the three PNGs it's rasterized to (`apple-touch-icon.png`/
+`icon-192.png`/`icon-512.png`, what iOS/Android actually show once the site is added to a home
+screen) — to become a lion with hearts. This is a different asset from `<mindset-figure>` (the
+on-page animated element, currently the v1.8 glowing bottle; untouched here): the static icon
+had shipped as a plain teardrop mark, unchanged, since Stage 5. A Fable-led project-director
+review was requested alongside the change, per the owner's ask.
+
+- **`assets/favicon.svg`:** the teardrop replaced with an original geometric mark — an 8-lock
+  radial mane (`#BE7326`, two-tone against a lighter `#EFAE5C` face disc) around two round ears,
+  two eye dots, and a heart-shaped nose in the app's own blossom `--accent` (`#B84870`) rather
+  than an invented pink. The "hearts" half of the request is folded into the face itself (a
+  heart-shaped nose) rather than added as a separate floating glyph, which stays legible at
+  favicon size where two disconnected motifs would not. Mane-tip radius kept at 24.5 of the
+  canvas's 32-unit half-width — inside the 80%-radius safe circle Android's maskable-icon spec
+  recommends (checked by direct coordinate math against all 8 radial tips, not eyeballed); the
+  old drop mark cleared the same margin by a wider, un-measured amount.
+- **PNGs regenerated, not hand-edited:** same pipeline Stage 5 used originally (`audits/
+  decisions.md`, 2026-07-13) — pre-installed headless Chromium screenshots the SVG at each
+  target size, here driven via the globally-installed Playwright package rather than a raw CLI
+  invocation (equivalent rasterizer, zero new dependency — nothing was `npm install`ed into the
+  repo, which still has none). `apple-touch-icon.png` 180×180, `icon-192.png` 192×192,
+  `icon-512.png` 512×512 — dimensions confirmed unchanged via `file`. Icons total 38,335 bytes
+  (was ~16KB before), still well inside the 150KB icon budget.
+- **`sw.js`:** `CACHE` bumped `"mindset-v5"` → `"mindset-v6"` (Appendix C.2 updated to match,
+  verbatim requirement) — see the updated rationale note under C.2 for why a content-only change
+  to an already-listed `ASSETS` entry still warranted a bump here.
+- **No `verify.mjs` changes** — a static-asset swap, not new app behavior; the existing
+  byte-identity-modulo-`ASSETS`, budget, and manifest checks cover it unchanged.
+- **Verified:** `verify.mjs all` 63/63 (unchanged count — no check added or removed, invariant
+  12 doesn't require a `decisions.md` entry for an unchanged ratchet). `node --check` clean.
+  Icon budget and page-weight checks both green at the new byte counts.
+- **Fable's project-director review:** see `audits/v1.20-fable-audit.md`.
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
 
@@ -1396,7 +1430,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v5";
+const CACHE = "mindset-v6";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
@@ -1432,7 +1466,7 @@ self.addEventListener("fetch", (e) => {
 });
 ```
 
-Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name).
+Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request.
 
 ### C.3 Registration (last lines of `app.js`)
 
