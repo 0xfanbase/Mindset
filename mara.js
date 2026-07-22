@@ -11,7 +11,7 @@ let built = false;
 let data = null;
 let selectedId = null;
 let sortMode = "featured";
-let root, indexEl, detailEl;
+let root, indexEl, detailEl, gridEl;
 
 function el(tag, props = {}, children = []) {
   const node = document.createElement(tag);
@@ -113,29 +113,43 @@ function sortedAnimals() {
 
 function renderSortControl() {
   const group = el("div", { class: "mara-sort", role: "group", "aria-label": "Sort animals" });
-  for (const [mode, label] of SORT_OPTIONS) {
-    const btn = el("button", {
+  const buttons = SORT_OPTIONS.map(([mode, label]) =>
+    el("button", {
       type: "button",
       class: "mara-sort-btn",
       "aria-pressed": String(mode === sortMode),
       text: label,
-    });
+    })
+  );
+  buttons.forEach((btn, i) => {
+    const [mode] = SORT_OPTIONS[i];
     btn.addEventListener("click", () => {
       if (sortMode === mode) return;
       sortMode = mode;
-      renderIndex();
+      buttons.forEach((b) => b.setAttribute("aria-pressed", String(b === btn)));
+      renderGrid();
     });
     group.appendChild(btn);
-  }
+  });
   return group;
+}
+
+// Rebuilds only the tile grid, leaving the park card and sort row's own button elements
+// in place -- a sort click's focus stays on the button the keyboard user just activated,
+// rather than the whole index being wiped and rebuilt out from under it (a real bug Fable's
+// audit caught by checking document.activeElement after Enter, not just reading the diff).
+function renderGrid() {
+  const grid = el("div", { class: "mara-index-grid" }, sortedAnimals().map(renderTile));
+  gridEl.replaceWith(grid);
+  gridEl = grid;
 }
 
 function renderIndex() {
   indexEl.textContent = "";
   indexEl.appendChild(renderParkCard());
   indexEl.appendChild(renderSortControl());
-  const grid = el("div", { class: "mara-index-grid" }, sortedAnimals().map(renderTile));
-  indexEl.appendChild(grid);
+  gridEl = el("div", { class: "mara-index-grid" }, sortedAnimals().map(renderTile));
+  indexEl.appendChild(gridEl);
 }
 
 function animateSightingCount(numEl, target) {

@@ -755,6 +755,14 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 .mara-band-long-shot { background: rgba(180, 72, 112, 0.14); }
 .mara-band-even-odds { background: rgba(180, 120, 26, 0.14); }
 
+/* The 1:1 tile crop's default centered object-position can amputate the subject when it
+   sits off-center in the wider 3:2 source photo -- confirmed by measuring these two source
+   photos directly (hyena's face and the gazelle's head both fall outside the center 600px
+   of a 900px-wide frame). Per-animal overrides, not a general fix, since most photos are
+   already centered well enough. */
+.mara-tile[data-id="hyena"] .mara-tile-photo { object-position: left center; }
+.mara-tile[data-id="thomsons-gazelle"] .mara-tile-photo { object-position: right center; }
+
 /* Detail view: one animal, full focus, exactly one navigation affordance -- matching the
    owner's explicit ask that no filter or picker show once inside an animal. */
 .mara-detail { display: none; }
@@ -996,6 +1004,9 @@ footer {
   /* The back pill is a mobile-only affordance -- the index sidebar is always visible at
      this width, so "return to the list" is meaningless when the list never left. */
   .mara-back { display: none; }
+  /* The 260px sidebar is narrower than the three sort buttons' mobile padding allows for --
+     tighten just enough that "Featured/Name/Likelihood" fits on one row instead of wrapping. */
+  .mara-sort-btn { padding: 0 10px; }
 }
 
 /* Kept last on purpose: .card/.value-row/.reveal-rest each set their own `animation:
