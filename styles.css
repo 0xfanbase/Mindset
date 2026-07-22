@@ -734,6 +734,12 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 .mara-photo { margin: 0 0 16px; }
 .mara-photo-img {
   width: 100%;
+  /* The img's width/height HTML attributes (900/600, kept for the pre-load size hint) map
+     to a presentational height:600px hint that this rule must explicitly override -- with
+     no author height declared at all, that hint would otherwise stand unopposed, aspect-ratio
+     only auto-computes height while it is otherwise unset, and every photo would render as a
+     350x600 portrait crop discarding ~46% of the frame instead of the intended 3:2 landscape. */
+  height: auto;
   aspect-ratio: 3 / 2;
   object-fit: cover;
   border-radius: 14px;
@@ -921,6 +927,7 @@ footer {
   .mara-index {
     flex: 0 0 260px;
     max-height: 70vh;
+    max-height: 70svh;
     overflow-y: auto;
   }
   .mara-detail { flex: 1; min-width: 0; }

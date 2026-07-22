@@ -172,7 +172,17 @@ function renderDetail(id) {
   );
 }
 
+let savedIndexScroll = 0;
+
+// On mobile the real scroll container is the document, not .panel -- the panel's own
+// overflow-y never engages because body grows to fit content (pre-existing, app-wide).
+// A tile sitting below the ~1,300px park card would otherwise open its detail view
+// mid-scroll, off the name/photo/sighting-score every tap is meant to land on.
 function selectAnimal(id) {
+  if (id) {
+    savedIndexScroll = window.scrollY;
+    window.scrollTo(0, 0);
+  }
   selectedId = id;
   root.setAttribute("data-view", id ? "detail" : "index");
   renderDetail(id);
@@ -181,8 +191,9 @@ function selectAnimal(id) {
   if (id) {
     const tile = indexEl.querySelector(`.mara-tile[data-id="${id}"]`);
     if (tile) tile.setAttribute("aria-current", "true");
+  } else {
+    window.scrollTo(0, savedIndexScroll);
   }
-  if (!id) detailEl.scrollTop = 0;
 }
 
 async function build() {
