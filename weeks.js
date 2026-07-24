@@ -260,7 +260,7 @@ function setZoom(newIndex) {
   chart.scroller.scrollLeft = pending;
 }
 
-function buildStatButton(person, colorVar) {
+function buildStatButton(person) {
   const btn = document.createElement("button");
   btn.type = "button";
   btn.className = "weeks-stat";
@@ -326,8 +326,8 @@ function build() {
 
   const statsRow = document.createElement("div");
   statsRow.className = "weeks-stats";
-  jStat = buildStatButton(LIFE_PEOPLE.find((p) => p.id === "J"), "--person-j");
-  bStat = buildStatButton(LIFE_PEOPLE.find((p) => p.id === "B"), "--person-b");
+  jStat = buildStatButton(LIFE_PEOPLE.find((p) => p.id === "J"));
+  bStat = buildStatButton(LIFE_PEOPLE.find((p) => p.id === "B"));
   statsRow.append(jStat.btn, bStat.btn);
   root.appendChild(statsRow);
 

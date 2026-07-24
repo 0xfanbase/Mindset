@@ -1,10 +1,9 @@
 // app.js — UI logic: tabs, theme, date, cards, staleness (BUILD-PLAN.md §4/§6)
-import { hktDateParts, staleness, pickToday, isFocusWindowHKT, isEveningWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
+import { hktDateParts, hktDateString, hktHour, staleness, pickToday, isFocusWindowHKT, isEveningWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
 import { initWeeksTab, refreshWeeksIfStale, redrawWeeksForTheme } from "./weeks.js";
 import { initMaraTab } from "./mara.js";
 
 const PULSE = { calm: "#7FB0FF", blossom: "#F2A9C6" };
-const BG = { calm: "#FAF9F5", blossom: "#FBF4F6" };
 
 function el(tag, props = {}, children = []) {
   const node = document.createElement(tag);
@@ -21,9 +20,17 @@ function currentTheme() {
   return document.documentElement.getAttribute("data-theme") === "blossom" ? "blossom" : "calm";
 }
 
-function applyThemeSideEffects(theme) {
+// Status-bar color tracks whatever --bg resolves to right now — theme AND period (evening
+// shifts --bg after 20:00, v1.19) — not a per-theme table blind to [data-period] (v1.28).
+function syncThemeColorMeta() {
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute("content", BG[theme]);
+  if (!meta) return;
+  const bg = getComputedStyle(document.documentElement).getPropertyValue("--bg").trim();
+  if (bg) meta.setAttribute("content", bg);
+}
+
+function applyThemeSideEffects(theme) {
+  syncThemeColorMeta();
   const figure = document.getElementById("figure");
   if (figure) {
     figure.setAttribute("color", PULSE[theme]);
@@ -213,7 +220,9 @@ function paintFocusedToday(leadNode, restNodes) {
   });
   const more = el("div", { id: "cards-more" }, restNodes);
   more.hidden = true;
-  restNodes.forEach((n, i) => { n.style.animationDelay = `${ARRIVAL_BEAT_S + i * 0.09}s`; });
+  // No arrival beat (v1.28): these animate on each "show the rest" click, and v1.18's beat
+  // was a page-arrival treatment — a click should answer from zero, not re-pause.
+  restNodes.forEach((n, i) => { n.style.animationDelay = `${i * 0.09}s`; });
 
   toggle.addEventListener("click", () => {
     const revealing = more.hidden;
@@ -255,11 +264,19 @@ function windowMode(now) {
 }
 
 let paintedWindowMode = null;
+let paintedDateHKT = null;
 let bootedToday = null;
 
+// Offline rotation must agree with the live path on which day is "current": expectedDateHKT
+// flips at 05:00 HKT but pickToday's day number flips at midnight, so 00:00-05:00 the
+// fallback ran a day ahead. Same shift-back arithmetic as expectedDateHKT (v1.28).
+function offlinePickReference(now) {
+  return hktHour(now) >= 5 ? now : new Date(now.getTime() - 86400000);
+}
+
 function renderToday(cardsData, dailyData) {
-  const staleMode = staleness(dailyData && dailyData.dateHKT);
-  showChip(staleMode);
+  const now = new Date();
+  let staleMode = staleness(dailyData && dailyData.dateHKT, now);
 
   let anchor, journal, kenya, word, closing;
   if (staleMode === "fresh" || staleMode === "yesterday") {
@@ -268,15 +285,25 @@ function renderToday(cardsData, dailyData) {
     kenya = cardsData.kenya.find((k) => k.id === dailyData.kenyaId);
     word = cardsData.wordOfDay.find((w) => w.id === dailyData.wordId);
     closing = cardsData.closing.find((c) => c.id === dailyData.closingId);
-    if (!anchor || !journal || !kenya || !word || !closing) { paintCards([renderErrorCard()]); return; }
-  } else {
-    ({ anchor, journal, kenya, word, closing } = pickToday(cardsData, new Date()));
+    if (!anchor || !journal || !kenya || !word || !closing) {
+      // A daily.json id that no longer resolves (pool edited without regenerating the file)
+      // is a freshness problem, not availability: fall back to the deterministic offline
+      // pick, slate-chip labelled, instead of NO DATA over a loaded library (v1.28). The
+      // error card is reserved for the library itself failing (boot()'s catch).
+      staleMode = "offline";
+    }
   }
+  if (staleMode === "offline") {
+    ({ anchor, journal, kenya, word, closing } = pickToday(cardsData, offlinePickReference(now)));
+  }
+  showChip(staleMode);
 
   const rest = [renderAnchorCard(anchor), renderKenyaCard(kenya), renderWordCard(word)];
-  const winMode = windowMode(new Date());
+  const winMode = windowMode(now);
   paintedWindowMode = winMode;
+  paintedDateHKT = hktDateString(now);
   document.documentElement.setAttribute("data-period", winMode === "evening" ? "evening" : "day");
+  syncThemeColorMeta();
   if (winMode === "focus") {
     paintFocusedToday(renderJournalCard(journal), rest);
   } else if (winMode === "evening") {
@@ -286,19 +313,26 @@ function renderToday(cardsData, dailyData) {
   }
 }
 
+function renderValuesError() {
+  const host = document.getElementById("values-list");
+  host.textContent = "";
+  host.appendChild(el("p", { class: "values-empty", text: "Couldn't load values. Refresh to try again." }));
+}
+
 async function boot() {
   initTheme();
   initDateLine();
   initTabs();
 
-  let cardsData, valuesData, dailyData;
+  // Values renders (or quietly fails) on its own — one bad values.json must not blank
+  // Today, nor a Today failure blank Values (v1.28; one Promise.all coupled all three).
+  fetchJSON("./data/values.json").then(renderValues).catch(renderValuesError);
+
   try {
-    [dailyData, cardsData, valuesData] = await Promise.all([
+    const [dailyData, cardsData] = await Promise.all([
       fetchJSON("./data/daily.json").catch(() => null),
       fetchJSON("./data/cards.json"),
-      fetchJSON("./data/values.json"),
     ]);
-    renderValues(valuesData);
     bootedToday = { cardsData, dailyData };
     renderToday(cardsData, dailyData);
   } catch (e) {
@@ -306,13 +340,15 @@ async function boot() {
   }
 }
 
-// Installed iOS PWAs freeze JS while backgrounded and resume the frozen render on
-// return, so an 08:45 open can still show the pre-09:00 focus mode at 11:00 if the
-// user only switched apps and came back — re-check the boundary (not the network)
-// whenever the tab becomes visible again, and only repaint if it actually flipped.
+// Installed iOS PWAs freeze JS while backgrounded and resume the frozen render on return —
+// re-check boundaries (not the network) whenever the tab becomes visible again. v1.28: the
+// HKT date is a boundary too, not just the focus/evening window — resuming a day later in
+// the SAME window left date line, cards, and chip frozen indefinitely, the freeze class
+// v1.16 fixed for the window flip and v1.22 for Weeks (see refreshIfStale's memoized date).
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
-  if (bootedToday && windowMode(new Date()) !== paintedWindowMode) {
+  const now = new Date();
+  if (bootedToday && (windowMode(now) !== paintedWindowMode || hktDateString(now) !== paintedDateHKT)) {
     initDateLine();
     renderToday(bootedToday.cardsData, bootedToday.dailyData);
   }

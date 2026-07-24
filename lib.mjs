@@ -1,5 +1,5 @@
 // lib.mjs — shared pure functions (BUILD-PLAN.md Appendix B, verbatim + hktDateParts)
-// Imported by both the browser (app.js, drop.js) and Node (scripts/, verify.mjs).
+// Imported by both the browser (app.js, weeks.js) and Node (scripts/, verify.mjs).
 export function hktDateString(d = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit",
@@ -83,7 +83,10 @@ export function isEveningWindowHKT(now = new Date()) {
 export function staleness(dailyDateHKT, now = new Date()) {
   if (!dailyDateHKT) return "offline";
   const expected = expectedDateHKT(now);
-  if (dailyDateHKT === expected) return "fresh";
+  // Second clause (v1.28): a file already stamped with TODAY'S date before the 05:00
+  // boundary is the newest possible file, not "yesterday's" — the cron fires 04:56 HKT,
+  // so without this the amber chip mislabelled those four minutes every morning.
+  if (dailyDateHKT === expected || dailyDateHKT === hktDateString(now)) return "fresh";
   const ageMs = now.getTime() - Date.parse(dailyDateHKT + "T00:00:00+08:00");
   if (ageMs <= 48 * 3600 * 1000) return "yesterday";
   return "offline";

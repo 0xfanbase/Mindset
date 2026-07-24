@@ -217,6 +217,10 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   min-height: 0;
   overflow-y: auto;
   padding: 14px 20px 8px;
+  /* Landscape on a notched phone (viewport-fit=cover): panel content must clear the
+     cutout the same way header/footer already do (v1.28). */
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
 }
 .panel[hidden] { display: none; }
 
@@ -224,10 +228,22 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   from { opacity: 0; transform: translateY(14px) scale(0.97); }
   to { opacity: 1; transform: none; }
 }
+/* Every cardIn shorthand below uses fill-mode `backwards`, NOT `both` (v1.28): `both`
+   keeps the finished animation owning `transform` forever at the CSS-animations cascade
+   origin, which outranks ordinary author rules — so .card:hover's lift and the :active
+   scale feedback on .reveal-rest/.mara-tile silently never applied once the entrance
+   finished. `backwards` keeps the pre-delay invisibility the stagger needs, then releases
+   the properties when the animation completes. (cardIn's `to` state equals the natural
+   resting state, so nothing visibly changes at the handoff.) The Weeks reveal keeps
+   `both` deliberately — its scanline's end state is NOT its natural state. */
 
-/* Today's three items read as actual cards (v1.9) -- a surface, a shadow, room to
-   breathe -- distinct from the Values tab's quieter flat list, since Today is meant to be
-   read and learned from, not just glanced at as a reference. */
+/* Today's items read as actual cards (v1.9) -- a surface, a shadow, room to breathe --
+   distinct from the Values tab's quieter flat list, since Today is meant to be read and
+   learned from, not just glanced at as a reference. Normal mode (09:00-20:00 HKT, four
+   stacked cards) is a logged exception to §4.4's one-screen rule at 390x844, like Weeks:
+   measured 844-996px depending on the day's rotated content, so no spacing trim can
+   guarantee the fit without gutting the owner-tuned breathing room -- while focus and
+   evening modes (the bookend states) fit exactly. See audits/decisions.md, v1.28. */
 #cards {
   display: flex;
   flex-direction: column;
@@ -238,7 +254,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   border-radius: 20px;
   box-shadow: 0 10px 28px var(--shadow);
   padding: 18px 20px;
-  animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 @media (hover: hover) {
   .card:hover { transform: translateY(-2px); }
@@ -263,7 +279,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   letter-spacing: 0.12em;
   cursor: pointer;
   touch-action: manipulation;
-  animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 .reveal-rest:active { transform: scale(0.99); border-color: var(--ink); }
 .reveal-rest:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
@@ -368,7 +384,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 .value-row {
   padding: 15px 0;
   border-bottom: 1px solid var(--hairline);
-  animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 .value-row:last-child { border-bottom: none; }
 .value-name {
@@ -390,6 +406,16 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   line-height: 1.5;
   color: var(--muted);
   margin-top: 3px;
+}
+/* Values' own quiet failure state (v1.28) — same voice as .mara-empty, needed once the
+   values fetch was decoupled from Today's so one failed file can't blank both tabs. */
+.values-empty {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-size: 15px;
+  color: var(--muted);
+  text-align: center;
+  padding: 40px 20px;
 }
 
 /* Weeks tab (v1.23) — one combined life-in-weeks grid for J and B, canvas-rendered by
@@ -692,7 +718,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   cursor: pointer;
   touch-action: manipulation;
   text-align: left;
-  animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation: cardIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 .mara-tile:active { transform: scale(0.99); }
 .mara-tile:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

@@ -171,6 +171,31 @@ function stage0() {
       assert.ok(fs.existsSync(abs(d)) && fs.statSync(abs(d)).isDirectory(), `missing dir ${d}`);
     }
   });
+  check("stage0", "invariant-1 name denylist: protected first name appears nowhere in tracked text files", () => {
+    // v1.28: a protected family member's first name shipped in two prose files (BUILD-PLAN.md's
+    // v1.24 changelog and the matching decisions.md entry) and sat live on Pages for two days
+    // before an audit caught it -- invariant 1's most important term had no mechanical check at
+    // all. The needle is stored base64-encoded so this checker never itself becomes the one
+    // remaining copy of the name in the tree (which a plain string literal here would be).
+    // Deliberately case-insensitive and repo-wide (every text extension, .git excluded):
+    // the name has no legitimate use anywhere in this project, including audit prose --
+    // "the owner's wife" is always the correct spelling of it.
+    const needle = Buffer.from("am95Y2U=", "base64").toString("utf8").toLowerCase();
+    const TEXT_EXTS = new Set([".md", ".js", ".mjs", ".json", ".html", ".css", ".yml", ".yaml", ".txt", ".webmanifest", ".svg"]);
+    const offenders = [];
+    (function walk(dir) {
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        if (entry.name === ".git") continue;
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) { walk(full); continue; }
+        if (!TEXT_EXTS.has(path.extname(entry.name).toLowerCase())) continue;
+        if (fs.readFileSync(full, "utf8").toLowerCase().includes(needle)) {
+          offenders.push(path.relative(ROOT, full));
+        }
+      }
+    })(ROOT);
+    assert.equal(offenders.length, 0, `protected name found in: ${offenders.join(", ")}`);
+  });
 }
 
 // ---------- Stage 1 ----------

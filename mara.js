@@ -28,8 +28,8 @@ function bandClass(band) {
   return "mara-band-" + band.toLowerCase().replace(/[^a-z]+/g, "-").replace(/(^-|-$)/g, "");
 }
 
-function renderPhoto(photo, sizeClass) {
-  const figure = el("figure", { class: `mara-photo ${sizeClass}` }, [
+function renderPhoto(photo) {
+  const figure = el("figure", { class: "mara-photo" }, [
     el("img", {
       src: `./${photo.src}`,
       alt: photo.alt,
@@ -220,14 +220,14 @@ function renderDetail(id) {
 
   detailEl.append(
     back,
-    renderPhoto(animal.photos[0], "mara-photo-main"),
+    renderPhoto(animal.photos[0]),
     nameBlock,
     renderSighting(animal.sighting),
     renderStats(animal.stats),
     el("p", { class: "mara-intro", text: animal.intro }),
     whereSection,
     notesSection,
-    renderPhoto(animal.photos[1], "mara-photo-secondary")
+    renderPhoto(animal.photos[1])
   );
 }
 
@@ -257,6 +257,9 @@ function selectAnimal(id) {
 
 async function build() {
   root = document.getElementById("mara-root");
+  // The retry path re-enters here after a failure — start from a clean root, or every
+  // failed fetch stacks another .mara-layout under the stale error text (v1.28).
+  root.textContent = "";
   root.setAttribute("data-view", "index");
   const layout = el("div", { class: "mara-layout" });
   indexEl = el("div", { class: "mara-index", id: "mara-index" });
@@ -278,6 +281,9 @@ export async function initMaraTab() {
     await build();
   } catch (e) {
     built = false;
-    if (root) root.appendChild(el("p", { class: "mara-empty", text: "Couldn't load the Mara reference. Refresh, or check back later." }));
+    if (root) {
+      root.textContent = ""; // drop the failed build's skeleton so the error stands alone
+      root.appendChild(el("p", { class: "mara-empty", text: "Couldn't load the Mara reference. Refresh, or check back later." }));
+    }
   }
 }

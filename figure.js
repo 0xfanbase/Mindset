@@ -52,8 +52,14 @@
           if (e.type === "keydown" && e.key !== "Enter" && e.key !== " ") return;
           if (e.type === "keydown") e.preventDefault(); // Space must not scroll the page
           if (!this._animated) return; // nothing to pace under reduced motion / animate="0"
+          // Re-anchor _t0 so the new cycle resumes at the old one's phase fraction —
+          // swapping _cycleMs alone rescales the sine's argument and snaps the glow in one
+          // frame, exactly the "sudden" this file's header rules out (v1.28).
+          const nowTs = performance.now();
+          const frac = ((nowTs - this._t0) % this._cycleMs) / this._cycleMs;
           this._resonance = !this._resonance;
           this._cycleMs = this._resonance ? RESONANCE_CYCLE : BREATHE_CYCLE;
+          this._t0 = nowTs - frac * this._cycleMs;
           this._paintPaceLabel();
         };
         this.addEventListener("click", this._onActivate);

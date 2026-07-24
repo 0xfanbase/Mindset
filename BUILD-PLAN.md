@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.27)
+# MINDSET — Autonomous Build Plan (v1.28)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1029,7 +1029,7 @@ feel, and — the explicit gate before merge — multiple independent UX and cod
 
 **v1.24 changelog (from v1.23, live feature request, same session):** live feedback on v1.23's
 shipped Weeks tab plus a separate content request for the unrelated Word of the Day feature,
-both from the owner directly (one line, [owner's wife]'s feedback relayed by the owner, on the word
+both from the owner directly (one line, his wife's feedback relayed by the owner, on the word
 pool). Four changes, one Fable audit pass (single round, as explicitly requested — not the
 multi-audit protocol v1.22/v1.23 used):
 - **Epigraph reposition + restyle.** The single caption ("An average human life is about four
@@ -1062,7 +1062,7 @@ multi-audit protocol v1.22/v1.23 used):
   chrome.
 - **Word of the Day pool fully reworked** (`data/cards.json`, all 30 `wordOfDay` entries —
   unrelated to the Weeks tab itself, shipped in the same round because it arrived in the same
-  feedback message). [owner's wife]'s feedback, relayed by the owner: the old pool of foreign
+  feedback message). The owner's wife's feedback, relayed by him: the old pool of foreign
   "untranslatable feeling" loanwords (wabi-sabi, ikigai, hygge, saudade, dharma, and 26 more,
   each tagged with its own language locale like `ja-JP`/`da-DK`) didn't meet the bar of "words
   we would see in life... more phrases or words that are meaningful and we would see them in
@@ -1395,6 +1395,57 @@ auditor sign-off after — see `audits/v1.27-fable-audit.md` for the full two-pa
   scheduled cron run outright; merge outside that window or dispatch `daily-cards` manually
   right after.
 - **Verified:** `verify.mjs` 74/74.
+
+**v1.28 changelog (from v1.27, duo audit + director fix round): two blind independent audits
+(Opus 5 and Fable 5), a synthesis pass adjudicating them against the real project history, then
+Fable as project director implementing what ships.** Full method and finding-by-finding
+disposition in `audits/v1.28-duo-audit.md`; per-decision reasoning in `audits/decisions.md`
+(2026-07-24 entries).
+- **An invariant-1 violation, found and scrubbed:** the owner's wife's first name had shipped
+  three times in v1.24 prose (twice in this file's changelog, once in decisions.md) — live on
+  Pages, since the deploy uploads the whole repo. All three reworded; `verify.mjs` gained a
+  base64-encoded name-denylist check (74 → 75, mutation-tested) so this class of slip can never
+  ship silently again; `robots.txt` (`Disallow: /`) added at root as cheap defense-in-depth for
+  the prose files the app's own `noindex` meta can't cover. The name remains inside two
+  already-pushed v1.24 commits — purging those requires the history rewrite invariant 10
+  prohibits, so it is flagged for the owner's explicit decision rather than acted on.
+- **The iOS-PWA resume freeze had a third face:** v1.16 fixed the focus/evening boundary and
+  v1.22 the Weeks tab, but resuming Today a day later in the SAME window left the date line,
+  cards, and staleness chip frozen indefinitely. Reproduced live before patching; fixed by
+  memoizing the painted HKT date alongside the painted window mode (weeks.js's own pattern).
+- **Entrance animations were eating interaction feedback:** every `cardIn` shorthand used
+  fill-mode `both`, leaving the finished animation owning `transform` forever and silently
+  disabling `.card:hover` and the `:active` scale on `.reveal-rest`/`.mara-tile` — all four
+  switched to `backwards` (same stagger invisibility, releases on completion), measured live.
+- **Resilience fixes:** a stale `daily.json` id now falls back to the deterministic offline
+  pick (slate chip) instead of the NO DATA card; a failed-then-retried Mara fetch no longer
+  duplicates DOM or strands its error line; Values' fetch is decoupled from Today's with its
+  own quiet error state; the two 00:00-05:00 HKT "which day is it" seams closed (offline
+  rotation now flips at 05:00 like the live path; a today-stamped file arriving in the 04:56
+  cron window now reads fresh, not "yesterday's cards").
+- **Polish:** the breathing-pace toggle re-anchors its phase (no more one-frame glow snap);
+  `theme-color` tracks the live `--bg` including evening; `.panel` gained the safe-area inset
+  pattern header/footer already had; the 0.3s arrival beat no longer delays every "show the
+  rest" reveal; meta/OG/manifest finally say "Five grounding cards" (five since v1.19); dead
+  parameters dropped in weeks.js/mara.js; lib.mjs's header stopped crediting the long-removed
+  drop.js.
+- **Today's normal mode is now a LOGGED §4.4 one-screen exception, like Weeks,** not a silent
+  breach: the real content envelope measures 844px (shortest day, exactly fits) to 996px
+  (longest) at 390×844, so no spacing trim guarantees the invariant without gutting the
+  owner-tuned breathing room — while focus and evening modes, the bookend states the app is
+  designed around, fit exactly. Reasoning and numbers in decisions.md.
+- **`sw.js` `CACHE` bumped `mindset-v12` → `mindset-v13`** — one bump covering this round's
+  eight touched precached assets AND v1.27's own never-bumped three (an audit catch); Appendix
+  C.2 updated to match verbatim.
+- **Deliberately left:** tablist roving-tabindex (facts agreed, severity a judgment call),
+  the Mara CC BY-SA attribution-link gap (real; recommended as its own dedicated pass), the
+  deploy-artifact restructure (robots.txt covers the practical exposure), §1's wider
+  mission-summary drift (its own future spec-refresh), and the pushed-history purge (owner's
+  call alone).
+- **Verified:** `verify.mjs` 75/75; unpatched-first repro plus 40+ post-fix Playwright
+  assertions across normal/focus/evening modes, two viewports, six frozen HKT instants, and
+  forced-failure fetch routes, zero console errors; JS 60,873 B (59.4KB of 60KB), figure.js
+  9,984 B, page 265.0KB of 350KB, fonts 174.2KB of 300KB.
 
 ---
 
@@ -2159,7 +2210,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 {
   "name": "Mindset",
   "short_name": "Mindset",
-  "description": "Three grounding cards, every morning at 05:00 HKT.",
+  "description": "Five grounding cards, every morning at 05:00 HKT.",
   "display": "standalone",
   "start_url": "./",
   "scope": "./",
@@ -2176,7 +2227,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v12";
+const CACHE = "mindset-v13";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
