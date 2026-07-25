@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.28)
+# MINDSET — Autonomous Build Plan (v1.29)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1492,6 +1492,69 @@ output, exchanged findings, and agreed on every remedy; full detail in `audits/d
   and will not resolve. Invariant 10's definition in §2 now carries a pointer to this logged
   exception. JS budget after the refetch fix: 61,373 B of 61,440 — 67 B headroom.
 
+**v1.29 changelog (from v1.28, agreed duo design spec — dark theme replaces calm; themes
+follow the HKT clock):** two independent co-director design proposals (Opus-model and
+Fable-model), reconciled across two explicit rounds; this version implements the agreed
+consensus.
+- **`calm` is retired; `dark` replaces it.** Blossom's tokens are byte-identical but now live
+  on `:root, [data-theme="blossom"]` (true no-JS default); `[data-theme="dark"]` is declared
+  after it and wins the cascade tie by source order. Dark is warm charcoal (`--bg #242119`,
+  `--surface #2F2C27` — elevation via lightness, not shadow), warm off-white ink, and the
+  clay hue lightened to `#DE8A68` for real AA headroom (raw `#D97757` measures 4.45:1 on
+  dark's `--surface` — the same knife-edge class as decisions.md's "tightest AA pair" note).
+  Calm's old accent `#2B5FD9` survives only as `--person-b`'s fixed light-theme value. Full
+  palette and every computed ratio: `audits/decisions.md`, 2026-07-25 (v1.29).
+- **Theme follows the Hong Kong clock, not localStorage:** dark 17:00–06:00 HKT, blossom the
+  rest (`lib.mjs isDarkWindowHKT`, one dark-positive boolean; `index.html`'s pre-paint
+  snippet duplicates the exact expression — it can't import a module — and a verify.mjs
+  anti-drift check pins the two together). The toggle is a session-only override
+  (`manualOverride`, module-scoped, reset only by a fresh page load); `mindset.theme` is
+  retired, actively removed by the snippet, and the app now touches localStorage zero times
+  beyond that one `removeItem` — a deliberate behavior reversal from v1.0–v1.28's
+  persistence, logged, not silent.
+- **The `[data-period="evening"]` CSS block is deleted** — left standing it would have
+  repainted dark's charcoal `--bg` back to cream every night at 20:00 (measured: dark ink on
+  the evening cream = 1.11:1). The evening CONTENT window (Closing leads ≥20:00) is
+  untouched; theme clock and content clock are deliberately independent — five combined
+  states per HKT day, documented at `windowMode()`.
+- **Person colors are theme-scoped now:** dark gets J `#F0AEC4` / B `#86AAF0` (hue preserved
+  — the v1.22 identity principle survives; its one-hex-on-every-background premise doesn't,
+  measured 2.48–3.21:1 on dark). `weeks.js` nulls its memoized glow sprites on theme change
+  so the current-week glow can't keep the previous theme's color (same pattern as
+  figure.js's `attributeChangedCallback`). Staleness chips and Mara band tints gained dark
+  variants; blossom's long-shot tint alpha was separately FIXED (0.14 → 0.30) — its
+  composite sat 2.4 RGB units from blossom's neutral pill, a pre-existing bug both proposals
+  caught independently.
+- **Toggle a11y:** glyphs kept (◐ while pink is active, ❀ while dark is — calm-era glyphs,
+  meanings repurposed, proven to render on the owner's device), `aria-pressed` removed (an
+  action-named control whose name changes per state must not also carry pressed state),
+  `aria-label`/`title` pinned verbatim to `Switch to dark theme` / `Switch to pink theme`.
+- **Manifest splash flips to dark** (`#242119`) while the static fallback meta stays blossom
+  (`#FBF4F6`): the pre-existing splash-mismatch limitation changes direction by design — a
+  light splash flashing at 23:00 is the harm this feature exists to remove; a dark splash at
+  10:00 is a shrug (§4.7.8).
+- **`verify.mjs` 76 → 82, all mutation-tested, originals quoted in decisions.md (invariant
+  12):** contrast pairs retargeted {calm, blossom, +evening composites} → {blossom, dark};
+  NEW gates for person-color pairs, composited `--edge` pills (Kenya countdown, Mara pressed
+  pill), staleness chips (both themes — light chips were never gated either),
+  `isDarkWindowHKT` boundary pins, a 1440-minute partition sweep (doubling as the h23/h24
+  ICU guard for all three window functions), and the snippet anti-drift check; the
+  `aria-pressed`-in-index.html assertion retargeted to the pinned labels; the localStorage
+  check inverted (only the one removeItem may exist); the bare-locale-date sweep extended to
+  `index.html`.
+- **`sw.js` `CACHE` bumped `mindset-v13` → `mindset-v14`** (core visual assets changed
+  app-wide); Appendix C.2 updated to match in the same change.
+- **Flagged, not attempted:** `apple-mobile-web-app-status-bar-style: default` against a
+  dark `theme-color` on an installed iOS PWA can't be verified from this environment — needs
+  the owner's on-device check after 17:00 HKT; fallback candidate `black-translucent`, named
+  but not applied speculatively.
+- **Verified:** `verify.mjs all` 82/82; `node --check` clean; 82/82 Playwright assertions
+  (headless Chromium, request-interception to disk, clock-frozen) across all five combined
+  states, toggle glyph/label/meta/figure sync, a 17:00-boundary resume re-theme, session
+  override honored then reset by reload, pre-paint snippet standalone with app.js 404'd,
+  weeks split-cell fills AND glow-ring hue probes across a live toggle, Mara tint values,
+  reduced-motion inertness, chips on dark; JS 61,337 B of 61,440 (103 B headroom).
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -1532,8 +1595,8 @@ A single-page, public, static website hosted on GitHub Pages. It is a personal
 mindset dashboard that refreshes itself every morning at **05:00 Hong Kong time**
 with three short grounding cards, headed by a living "mind" — a small bottle of light,
 glowing and dimming on a slow breathing cycle, on repeat. Two tabs: **Today** (figure + date +
-3 cards) and **Values** (a quiet list of core qualities). Two themes: a cream/blue default
-and a soft pink alternative.
+3 cards) and **Values** (a quiet list of core qualities). Two themes: a soft pink daytime
+default and a warm-charcoal dark theme that owns 17:00–06:00 HKT (v1.29).
 Zero backend. Zero dependencies. Zero personal data (about the owner — see §2.1).
 
 The three daily cards:
@@ -1627,22 +1690,14 @@ deliberately, on an otherwise still page. Contemplative Stoic calm + the precisi
 automated system. All boldness is spent on the figure; everything else is disciplined and
 quiet. The whole screen fits without scrolling on a phone (§4.4) — editorial, not busy.
 
-### 4.2 Design tokens (CSS custom properties on `:root` / `[data-theme="blossom"]`)
+### 4.2 Design tokens (CSS custom properties on `:root, [data-theme="blossom"]` / `[data-theme="dark"]`)
 
-**Theme `calm` (default — cream/blue):**
+Since v1.29 the two themes are `blossom` (pink — declared on `:root` itself, so a JS-disabled
+or snippet-failed load still gets one complete valid theme) and `dark` (warm charcoal, the
+17:00–06:00 HKT default — see §4.5.1). `calm` (cream/blue) shipped v1.0–v1.28 and is retired;
+its accent `#2B5FD9` survives only as `--person-b`'s fixed light-theme value.
 
-| Token | Value | Use |
-|---|---|---|
-| `--bg` | `#FAF9F5` | page background (brief-specified) |
-| `--surface` | `#FFFFFF` | cards |
-| `--ink` | `#1C1B17` | primary text |
-| `--muted` | `#6F6B60` | attribution, meta |
-| `--accent` | `#2B5FD9` | links, active tab, chips |
-| `--pulse` | `#7FB0FF` | figure colour/glow |
-| `--edge` | `rgba(43,95,217,0.16)` | reserved (unused since the brain's edges retired; keep the token defined for future use, no verify requirement) |
-| `--hairline` | `rgba(28,27,23,0.10)` | dividers, toggle border (cards are borderless — see §4.5.3) |
-
-**Theme `blossom` (pink):**
+**Theme `blossom` (pink — default, byte-identical to its v1.28 values):**
 
 | Token | Value |
 |---|---|
@@ -1650,18 +1705,30 @@ quiet. The whole screen fits without scrolling on a phone (§4.4) — editorial,
 | `--surface` | `#FFFFFF` |
 | `--ink` | `#241A20` |
 | `--muted` | `#7A6870` |
-| `--accent` | `#C94F7C` |
+| `--accent` | `#B84870` |
 | `--pulse` | `#F2A9C6` |
 | `--edge` | `rgba(201,79,124,0.16)` |
 | `--hairline` | `rgba(36,26,32,0.10)` |
 
+**Theme `dark` (warm charcoal — 17:00–06:00 HKT):**
+
+| Token | Value | Note |
+|---|---|---|
+| `--bg` | `#242119` | warm charcoal — not pure black, not cold blue-grey |
+| `--surface` | `#2F2C27` | one lightness step up — elevation via lightness, not shadow |
+| `--ink` | `#EDE9E1` | warm off-white, deliberately not `#FFFFFF` (halation) |
+| `--muted` | `#A8A093` | |
+| `--accent` | `#DE8A68` | the clay hue lightened for headroom — raw `#D97757` is 4.45:1 on `--surface` |
+| `--pulse` | `#F0AD82` | the figure's glow at night — warm lamplight, not a cold wash |
+| `--edge` | `rgba(222,138,104,0.16)` | same 0.16 alpha blossom uses |
+| `--hairline` | `rgba(237,233,225,0.11)` | |
+
 Rules: verify **contrast ≥ 4.5:1** numerically for (`--ink`,`--bg`), (`--ink`,`--surface`),
-(`--muted`,`--surface`), (`--muted`,`--bg`) in BOTH themes. For (`--accent`,`--surface`) and
-(`--accent`,`--bg`): gate at **4.5:1** because `--accent` is used for normal-size text (the
-active-tab underline text and inline links are body-size, not large/bold) — verify blossom's
-`--accent` (`#C94F7C`) against `#FFFFFF`/`#FBF4F6` numerically and darken it slightly if it
-fails 4.5:1 (it is close, ~4.3:1 on white, so expect to adjust); log any token adjustment in
-`decisions.md`. `color-scheme: light` for both themes.
+(`--muted`,`--surface`), (`--muted`,`--bg`), (`--accent`,`--surface`), (`--accent`,`--bg`) in
+BOTH themes — plus, all mechanically gated since v1.29: `--person-j`/`--person-b` against both
+backgrounds per theme, `--ink` on the composited `--edge` pills, and both staleness chips'
+text on their composited tints. `color-scheme: light` on blossom, `dark` on dark. Every
+measured ratio is tabulated in `audits/decisions.md` (2026-07-25, v1.29).
 
 ### 4.3 Typography (three deliberate roles)
 
@@ -1712,7 +1779,7 @@ since it's no longer adjacent to the notch/status bar).
 
 ### 4.5 Components
 
-1. **Theme toggle:** pill button top-right, `aria-pressed`, icons ◐/❀ (calm/blossom), 44×44px, `persists mindset.theme`, default `calm`, no flash-of-wrong-theme (inline script reads localStorage before CSS paint).
+1. **Theme toggle (reworked v1.29):** pill button top-right, 44×44px. The theme DEFAULT follows the HKT clock — dark 17:00–06:00, blossom otherwise (`lib.mjs isDarkWindowHKT`; `index.html`'s pre-paint inline script computes the same window before CSS loads, sets `data-theme` + inline `color-scheme`, pre-sets `theme-color`, and removes the retired `mindset.theme` key — nothing is persisted anymore). The button is a session-only override: a tap flips the theme and suppresses the visibilitychange re-check until the next fresh load, so every reload returns to the cycle. Glyphs: ◐ while pink is active ("tap for dark"), ❀ while dark is active ("tap for pink") — the calm-era glyphs with repurposed meanings, kept because they're proven to render on the owner's device. No `aria-pressed` (an action-named control whose accessible name changes per state must not also carry a pressed state); `aria-label` and `title` are the identical pinned strings `Switch to dark theme` / `Switch to pink theme`, asserted verbatim by verify.mjs.
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
 3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Render order is **Journal, Anchor, Kenya, Word** (Journal moved to lead the list in v1.16 — see item 4b for what happens to the other three before 09:00 HKT). Header row = mono category chip (ANCHOR / JOURNAL / KENYA / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Kenya card (added v1.15) is the same minimal shape as Anchor — chip, fact in `.card-body`, category as a small `.card-attr` line (e.g. `— Wildlife`) — plus a trip-countdown pill top-right of its chip row as of v1.17 (item 4c). Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px, italic and centered per v1.13 — live feedback that it "sitting on the left" undersold it as a headline) inside a `.word-title-row` (also centered, v1.13) alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
 4. **Staleness chip (mono, small):**
@@ -1756,9 +1823,10 @@ one calm, alive thing on the page" role:
    live on a `change` listener) → render one static frame at a calm mid-bright point in the
    breath cycle, no RAF loop.
 6. **Themes:** the element takes `color`/`glow` as attributes, unchanged from v1.2–v1.7;
-   `app.js` sets these to the current theme's `--pulse` value on init and again on every
-   theme-toggle event, so the light is blue in `calm` and rose in `blossom`. No app.js changes
-   were needed for the v1.8 swap.
+   `app.js` reads the active theme's computed `--pulse` (no hardcoded JS color table since
+   v1.29) on init and on every theme change, so the light is rose-pink in `blossom` and warm
+   lamplight (`#F0AD82`) in `dark`. The element's own hex fallbacks are blossom's pulse —
+   dead code paths in practice, aligned for coherence.
 7. **Budget:** `figure.js` ≤ 12 KB (the reference implementation is ~7.6 KB as of v1.8 — smaller
    than the pose-based v1.7 figure since there is no pose table to carry).
 8. **Not part of the shipped file:** the original Claude Design prototype's `ios-frame.jsx` and
@@ -1779,7 +1847,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 
 **Installability (home-screen app):**
 7. `manifest.webmanifest` — use the Appendix C JSON verbatim; `display: standalone`, relative `start_url`/`scope`.
-8. `<link rel="manifest">`, `<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">`, `<meta name="mobile-web-app-capable" content="yes">`, `<meta name="apple-mobile-web-app-status-bar-style" content="default">`, and `<meta name="theme-color">` — updated by JS to the current `--bg` whenever the theme toggles, so the standalone chrome matches calm/blossom (note: the manifest's own static `theme_color`/`background_color` only cover the calm-theme cold-launch splash screen — this is a known, acceptable cosmetic limitation for blossom's first paint; log it in `decisions.md`, don't try to fix it with JS that can't run before launch).
+8. `<link rel="manifest">`, `<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">`, `<meta name="mobile-web-app-capable" content="yes">`, `<meta name="apple-mobile-web-app-status-bar-style" content="default">`, and `<meta name="theme-color">` — pre-set by index.html's inline script to the clock's theme before first paint, then kept on the live `--bg` by JS on every theme change (v1.29). Note, direction FLIPPED in v1.29: the manifest's static `theme_color`/`background_color` are now the DARK bg `#242119` while the static meta fallback stays blossom's `#FBF4F6` — the manifest owns the cold-launch splash, which renders before any JS/CSS exists at all, and a light splash flashing at 23:00 is the exact harm the dark theme removes, while a dark splash flashing at 10:00 is a shrug. Same known, logged cosmetic limitation as before, now deliberately parked on daytime launches. Unverifiable from this environment: how `apple-mobile-web-app-status-bar-style: default` treats a dark `theme-color` on an installed iOS PWA — needs the owner's on-device check after 17:00 HKT; `black-translucent` is the named fallback, not applied speculatively.
 9. `sw.js` — Appendix C **verbatim (as amended in this v1.1 — see C.2)**: network-first for every GET with cache fallback. Registered with the one-liner in Appendix C.
 10. **Icon pipeline (this environment is Linux, not macOS):** check for an available rasterizer first — `rsvg-convert`, ImageMagick (`convert`/`magick`), or Inkscape's CLI, in that order of preference — and use whichever is present to render `favicon.svg` to 512/192/180px PNGs. If none is available (and none can be installed — `npm install` and global installs are banned), ship the manifest with the SVG icon entry only, skip `apple-touch-icon`, log the decision, and continue — icons are never a hard blocker, but do check for a real rasterizer before assuming none exists.
 
@@ -2145,7 +2213,7 @@ trigger is closest, plus the raw error — don't spend cycles deliberating the t
 
 **Explicitly deferred to §13 human review (mark UNVERIFIED in FINAL-AUDIT, do not check off here):**
 - [ ] Today's HKT date shows; cards populated; no console errors
-- [ ] Theme toggle works both ways and survives reload; no wrong-theme flash
+- [ ] Theme toggle works both ways; a reload returns to the HKT time-of-day theme (the override is session-only, v1.29); no wrong-theme flash
 - [ ] The bottle's light visibly breathes (brightens/dims slowly) in both themes; pauses when hidden; static under reduced motion; feels calm, not busy
 - [ ] Offline rotation demonstrated live on a phone (airplane mode)
 
@@ -2153,7 +2221,7 @@ trigger is closest, plus the raw error — don't spend cycles deliberating the t
 
 1. Open the Pages URL **on your phone**. Does the bottle's light clearly, slowly breathe, feeling alive and calm, not busy? Rotate the phone, scroll — nothing clipped, nothing under the notch or home bar, no sideways scroll, the whole thing should fit one screen.
 2. Safari: Share → **Add to Home Screen**. Reopen from the icon — it should launch full-screen like an app, with a proper icon and the chrome matching the theme.
-3. Toggle blossom mode. Would its intended user smile? (Standalone chrome should turn blossom too — except the cold-launch splash screen, which is a known, logged limitation.)
+3. Toggle between pink and dark. Would its intended user smile? (Standalone chrome should follow — the cold-launch splash is always dark-toned since v1.29, a known, logged limitation now parked on daytime launches instead of nights. After 17:00 HKT, also confirm the iOS status bar text reads correctly over the dark chrome — §4.7.8's flagged on-device check.)
 4. **Airplane mode**, reopen from the icon: the shell loads instantly and the `offline rotation` chip appears with valid cards. Turn network back on, pull to refresh — today returns.
 5. Open the **Values** tab and skim all 5 — confirm it reads as the same visual style as Today's cards. Toggle OS **Reduce Motion** and confirm the figure renders a static frame.
 6. Read today's three cards aloud. Would you keep any? (Your monthly curation replaces the weakest cards — that's where the library becomes *yours*.)
@@ -2259,20 +2327,20 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
   "display": "standalone",
   "start_url": "./",
   "scope": "./",
-  "background_color": "#FAF9F5",
-  "theme_color": "#FAF9F5",
+  "background_color": "#242119",
+  "theme_color": "#242119",
   "icons": [
     { "src": "assets/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
     { "src": "assets/icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
   ]
 }
 ```
-*(If the §4.7.10 icon fallback fires, replace the icons array with the single SVG entry and log it. Known cosmetic limitation, logged rather than fixed: this manifest's static `theme_color`/`background_color` only cover calm's cold-launch splash; blossom users see a calm-colored splash for an instant before the app's own JS repaints — see §4.7.8.)*
+*(If the §4.7.10 icon fallback fires, replace the icons array with the single SVG entry and log it. Known cosmetic limitation, logged rather than fixed — direction flipped in v1.29: the static splash colors are now the DARK theme's, so a daytime (blossom-window) launch sees a dark splash for an instant before the app repaints; a light splash at night was the harm worth removing — see §4.7.8.)*
 
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v13";
+const CACHE = "mindset-v14";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
@@ -2308,7 +2376,7 @@ self.addEventListener("fetch", (e) => {
 });
 ```
 
-Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request. Fable's audit sharpened the reasoning: Chromium-family browsers fetch tab favicons outside the page's service-worker `fetch` handler entirely, so network-first was never actually going to self-heal `favicon.svg` — the bump is the only reliable path. Bumped again to `"mindset-v7"` in v1.21 for the same reason: `favicon.svg`'s content changed again (lion mark → cat-photo mark) when the owner redirected mid-session, before v1.20's lion ever shipped. Bumped again to `"mindset-v8"` in v1.22: `weeks.js` (the new Weeks tab's module) was added to `ASSETS` so it's part of the offline shell from first install, same reasoning as every prior content-driven bump. Bumped again to `"mindset-v9"` in v1.23: `weeks.js`'s own content changed substantially (the combined-grid redesign) — same reasoning again.
+Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request. Fable's audit sharpened the reasoning: Chromium-family browsers fetch tab favicons outside the page's service-worker `fetch` handler entirely, so network-first was never actually going to self-heal `favicon.svg` — the bump is the only reliable path. Bumped again to `"mindset-v7"` in v1.21 for the same reason: `favicon.svg`'s content changed again (lion mark → cat-photo mark) when the owner redirected mid-session, before v1.20's lion ever shipped. Bumped again to `"mindset-v8"` in v1.22: `weeks.js` (the new Weeks tab's module) was added to `ASSETS` so it's part of the offline shell from first install, same reasoning as every prior content-driven bump. Bumped again to `"mindset-v9"` in v1.23: `weeks.js`'s own content changed substantially (the combined-grid redesign) — same reasoning again. Bumped `"mindset-v10"`–`"mindset-v13"` across v1.24–v1.28 (each logged in its own changelog entry), and to `"mindset-v14"` in v1.29: the calm→dark theme retoken changed `styles.css`/`app.js`/`index.html` bytes app-wide.
 
 ### C.3 Registration (last lines of `app.js`)
 

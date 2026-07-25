@@ -1,5 +1,5 @@
 // figure.js — a small bottle of light, glowing slowly, on repeat (BUILD-PLAN.md §4.6)
-// <mindset-figure color="#7FB0FF" glow="#7FB0FF" animate="1">
+// <mindset-figure color="#F2A9C6" glow="#F2A9C6" animate="1">
 // A glass bottle holding a soft light that breathes: brightens and dims on one slow, even
 // cycle, with a couple of embers drifting up inside. Nothing sudden, nothing that startles —
 // Zen-like. Pauses when hidden; static mid-breath frame under reduced motion.
@@ -8,7 +8,7 @@
 
   function hexToRgb(hex) {
     const m = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex || "");
-    return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [127, 176, 255];
+    return m ? [parseInt(m[1], 16), parseInt(m[2], 16), parseInt(m[3], 16)] : [242, 169, 198];
   }
 
   // Normalized bottle box (x: 0-60, y: 0-96). A simple apothecary-bottle silhouette: narrow
@@ -77,7 +77,7 @@
       this._spriteC = null;
       if (!this._running) this._drawStatic();
     }
-    get _color() { return this.getAttribute("color") || "#7FB0FF"; }
+    get _color() { return this.getAttribute("color") || "#F2A9C6"; }
     get _animated() { return this.getAttribute("animate") !== "0" && !this._mql.matches; }
 
     // Retries until the element actually has a size — a connectedCallback firing before

@@ -1,28 +1,13 @@
 /* Mindset — design tokens, mobile-first layout (BUILD-PLAN.md §4) */
 
-:root {
-  color-scheme: light;
-  --bg: #FAF9F5;
-  --surface: #FFFFFF;
-  --ink: #1C1B17;
-  --muted: #6F6B60;
-  --accent: #2B5FD9;
-  --pulse: #7FB0FF;
-  --edge: rgba(43, 95, 217, 0.16);
-  --hairline: rgba(28, 27, 23, 0.10);
-  --shadow: rgba(28, 27, 23, 0.07);
-  --week-future: rgba(28, 27, 23, 0.12);
-  /* Weeks-tab identity colors (v1.22) -- J pink / B blue, fixed regardless of the calm/
-     blossom toggle (identity, not mood) -- deliberately NOT redeclared inside
-     [data-theme="blossom"] below. Reuse the app's own two existing accents (blossom's
-     --accent for J, calm's --accent for B) rather than inventing new ones; both
-     independently hand-verified (verify.mjs's own relLuminance/contrastRatio math, not
-     eyeballed) at >=4.5:1 against every background the app can show (--surface, both
-     themes' --bg, evening's --bg) -- see audits/decisions.md. */
-  --person-j: #B84870;
-  --person-b: #2B5FD9;
-}
+/* Two themes since v1.29 (calm retired): blossom (pink, 06:00-17:00 HKT) and dark (warm
+   charcoal, 17:00-06:00). blossom doubles as the :root default so a JS-disabled or
+   snippet-failed load still gets one complete, valid theme; [data-theme="dark"] is declared
+   AFTER it and wins the cascade tie at equal specificity by source order (the same principle
+   documented at this file's end for the reduced-motion block). */
+:root,
 [data-theme="blossom"] {
+  color-scheme: light;
   --bg: #FBF4F6;
   --surface: #FFFFFF;
   --ink: #241A20;
@@ -33,15 +18,35 @@
   --hairline: rgba(36, 26, 32, 0.10);
   --shadow: rgba(36, 26, 32, 0.07);
   --week-future: rgba(36, 26, 32, 0.12);
+  /* Weeks-tab identity colors (v1.22, amended v1.29) -- J rose / B blue: identity, not mood,
+     so each keeps its HUE in every theme, but v1.22's premise that one fixed hex could sit
+     on every background died when a dark background arrived -- the dark block below lightens
+     both (see audits/decisions.md). --person-b keeps #2B5FD9 (the retired calm theme's
+     accent) as a plain fixed value, no longer tied to any theme system. All person-color x
+     bg/surface pairs are >=4.5:1 per theme, gated mechanically in verify.mjs since v1.29. */
+  --person-j: #B84870;
+  --person-b: #2B5FD9;
 }
-
-/* Evening (>=20:00 HKT, v1.19). Touches --bg and --shadow ONLY. AA verified against both
-   themes; blossom accent on this bg = 4.57:1 — do NOT darken --bg further without
-   re-verifying by hand. Declared after both theme blocks so it always wins the cascade
-   tie (equal-specificity attribute selectors on <html>, source order decides). */
-[data-period="evening"] {
-  --bg: #FAF4EA;
-  --shadow: rgba(120, 72, 30, 0.12);
+/* Dark (v1.29): the 17:00-06:00 HKT default. Warm charcoal, not pure black or blue-grey;
+   elevation via --surface's lightness step, not shadow; --ink off-white, never #FFFFFF
+   (halation). --accent is the clay hue lightened for real AA headroom -- raw #D97757
+   measures 4.45:1 on --surface, under the 4.5 bar this repo was burned by before (the
+   "tightest AA pair" note in decisions.md). Every rendered pair recomputed and gated in
+   verify.mjs -- see audits/decisions.md v1.29 for the full table. */
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #242119;
+  --surface: #2F2C27;
+  --ink: #EDE9E1;
+  --muted: #A8A093;
+  --accent: #DE8A68;
+  --pulse: #F0AD82;
+  --edge: rgba(222, 138, 104, 0.16);
+  --hairline: rgba(237, 233, 225, 0.11);
+  --shadow: rgba(0, 0, 0, 0.40);
+  --week-future: rgba(237, 233, 225, 0.13);
+  --person-j: #F0AEC4;
+  --person-b: #86AAF0;
 }
 
 @font-face {
@@ -183,6 +188,10 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 }
 .chip.amber { background: rgba(180, 120, 26, 0.10); color: #8A5A00; border-color: rgba(180, 120, 26, 0.35); }
 .chip.slate { background: rgba(90, 100, 112, 0.10); color: #4A5462; border-color: rgba(90, 100, 112, 0.35); }
+/* Dark theme: same two hues, text lightened -- the light-theme text hexes measure 2.39:1
+   (amber) / 1.93:1 (slate) on their tints over dark --bg. Both pairs gated in verify.mjs. */
+[data-theme="dark"] .chip.amber { background: rgba(180, 120, 26, 0.14); color: #E3B25E; border-color: rgba(227, 178, 94, 0.35); }
+[data-theme="dark"] .chip.slate { background: rgba(90, 100, 112, 0.14); color: #B7C2D2; border-color: rgba(183, 194, 210, 0.35); }
 .chip[hidden] { display: none; }
 
 .tabs {
@@ -467,8 +476,8 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 /* The percent figure: Fraunces italic, the app's own "artistic" voice (already used for the
    wordmark and Word of the Day's headline), not a bigger mono digit -- a dashboard would use
    the latter. Large enough to clear WCAG's large-text 3:1 bar; both person colors clear the
-   stricter 4.5:1 normal-text bar anyway on every background this app can show, hand-verified
-   the same way as every other color in this codebase -- see audits/decisions.md. */
+   stricter 4.5:1 normal-text bar anyway on their own theme's backgrounds (per-theme values
+   since v1.29), gated mechanically in verify.mjs. */
 .weeks-stat-pct {
   font-family: "Fraunces", Georgia, serif;
   font-style: italic;
@@ -667,8 +676,11 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 
 /* Sort control: reorders the grid below in place -- "Featured" is the hand-curated order
    (park facts card's species mix), the other two are plain comparators. Group of native
-   buttons + aria-pressed matches the existing .theme-toggle pattern rather than introducing
-   a radiogroup, since only one is ever "on" and a toggle button reads fine either way. */
+   buttons + aria-pressed suits three mutually-exclusive, persistently-visible options
+   rather than introducing a radiogroup, since only one is ever "on" and a plain button
+   group reads fine either way. (Not the same shape as #theme-toggle, v1.29: that control
+   names its own destination action and flips state entirely, so aria-pressed there would
+   double-announce -- see app.js's initTheme.) */
 .mara-sort {
   display: flex;
   flex-wrap: wrap;
@@ -777,9 +789,16 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 }
 /* The two rarer sighting tiers get a warmer pill tint, so the grid itself hints at the
    real long shots before you ever tap in -- the majority "almost certain" tiles stay in
-   the neutral --edge tint, which is the expected case, not something to highlight. */
-.mara-band-long-shot { background: rgba(180, 72, 112, 0.14); }
+   the neutral --edge tint, which is the expected case, not something to highlight.
+   Long-shot alpha raised 0.14 -> 0.30 in v1.29: at 0.14 its composite sat 2.4 RGB units
+   from blossom's own neutral --edge pill (visually identical -- a pre-existing bug, not a
+   dark-theme casualty; even-odds always read because its hue differs). Dark theme gets its
+   own deeper variants below -- a 0.14 tint vanishes into the charcoal surface. --ink stays
+   >=4.5:1 on all four composites (measured 11.0 / worst 6.6). */
+.mara-band-long-shot { background: rgba(180, 72, 112, 0.30); }
 .mara-band-even-odds { background: rgba(180, 120, 26, 0.14); }
+[data-theme="dark"] .mara-band-long-shot { background: rgba(180, 72, 112, 0.45); }
+[data-theme="dark"] .mara-band-even-odds { background: rgba(180, 120, 26, 0.42); }
 
 /* The 1:1 tile crop's default centered object-position can amputate the subject when it
    sits off-center in the wider 3:2 source photo -- confirmed by measuring these two source

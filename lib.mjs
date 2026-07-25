@@ -73,11 +73,22 @@ export function isFocusWindowHKT(now = new Date()) {
   return hktHour(now) < 9;
 }
 
-// After 20:00 HKT: a "Closing" reflection leads, paired with a low-stimulation palette
-// (data-period="evening" in app.js/styles.css). Non-overlapping with isFocusWindowHKT by
-// construction (hktHour is never simultaneously < 9 and >= 20).
+// After 20:00 HKT: a "Closing" reflection leads. Content-window boundary only since v1.29 —
+// v1.19's paired evening palette shift is superseded by the dark THEME's earlier 17:00 window
+// (isDarkWindowHKT below; the two clocks are deliberately independent). Non-overlapping with
+// isFocusWindowHKT by construction (hktHour is never simultaneously < 9 and >= 20).
 export function isEveningWindowHKT(now = new Date()) {
   return hktHour(now) >= 20;
+}
+
+// Dark theme 17:00 HKT through 06:00 HKT (wraps midnight); blossom the rest. The two
+// windows exactly partition the day — every HKT hour resolves to exactly one, by
+// construction of this single boolean (not two separate predicates that could drift
+// into disagreeing at a boundary). index.html's pre-paint snippet duplicates this exact
+// expression (it can't import a module); verify.mjs pins the two against each other.
+export function isDarkWindowHKT(now = new Date()) {
+  const h = hktHour(now);
+  return h < 6 || h >= 17;
 }
 
 export function staleness(dailyDateHKT, now = new Date()) {
@@ -92,10 +103,9 @@ export function staleness(dailyDateHKT, now = new Date()) {
   return "offline";
 }
 
-// Kenya trip countdown (v1.17) — the flight departs 2026-08-15, HKT-anchored like every
-// other date in this app (invariant 8). Day-number diffing (not ms subtraction) reuses the
-// exact same epoch-day mechanism as hktDayNumber/pickIndex, so it can't drift from a DST edge
-// case or an odd local-clock offset the way `new Date(future) - new Date(now)` could.
+// Kenya trip countdown (v1.17) — departs 2026-08-15, HKT-anchored (invariant 8). Day-number
+// diffing reuses the epoch-day mechanism of hktDayNumber/pickIndex, so it can't drift from a
+// DST edge or odd local-clock offset the way raw ms subtraction could.
 const KENYA_TRIP_DATE_HKT = "2026-08-15";
 
 export function daysUntilKenyaTrip(now = new Date()) {
@@ -114,13 +124,11 @@ export function pickToday(cards, now = new Date()) {
   return { anchor, journal, kenya, word, closing, dayNumber };
 }
 
-// Weeks-of-life chart (v1.22) -- a "life in weeks" grid for J and B (initials only, never
-// real names, per invariant 1). Anchored to each person's birth MONTH-START only -- no exact
-// day was given or is needed at week-level granularity -- via the same epoch-day idiom as
-// daysUntilKenyaTrip/hktDayNumber, so it can't drift on a DST/local-clock edge case. 90 years
-// (not the literal 4,000-week/77-year average) so the grid has real headroom against Hong
-// Kong life expectancy rather than risk "completing" while its subject is alive -- see
-// audits/decisions.md.
+// Weeks-of-life chart (v1.22) -- "life in weeks" for J and B (initials only, never real
+// names, invariant 1). Anchored to birth MONTH-START only (no exact day given or needed at
+// week granularity), same epoch-day idiom as daysUntilKenyaTrip. 90 years, not the literal
+// 4,000-week/77 -- real headroom against HK life expectancy, so the grid can't visibly
+// "complete" while its subject is alive -- see audits/decisions.md.
 export const LIFE_WEEKS_YEARS = 90;
 export const LIFE_WEEKS_PER_ROW = 52;
 export const LIFE_WEEKS_TOTAL = LIFE_WEEKS_YEARS * LIFE_WEEKS_PER_ROW;

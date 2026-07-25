@@ -97,6 +97,41 @@ function extractTokens(css, selectorRegex) {
   while ((mm = re.exec(block))) tokens[mm[1]] = mm[2].trim();
   return tokens;
 }
+// v1.29 theme model: blossom lives on `:root, [data-theme="blossom"]`, dark overrides after.
+// Both extractions are guarded non-empty (same rationale as the retired evening-block guard:
+// a moved/renamed block must fail loudly, never silently extract {} and trivially pass).
+const BLOSSOM_SEL = /:root\s*,\s*\[data-theme=["']blossom["']\]\s*\{/;
+const DARK_SEL = /\[data-theme=["']dark["']\]\s*\{/;
+function themeTokens(cssText) {
+  const blossom = extractTokens(cssText, BLOSSOM_SEL);
+  const darkOverride = extractTokens(cssText, DARK_SEL);
+  assert.ok(blossom.bg && blossom.ink, "could not extract tokens from the `:root, [data-theme=blossom]` block");
+  assert.ok(darkOverride.bg, "could not extract a non-empty [data-theme=dark] --bg token");
+  return { blossom, dark: { ...blossom, ...darkOverride } };
+}
+// Composite a CSS rgba() tint over a solid hex base -> solid hex, for the pill/chip pairs
+// whose rendered background is translucent (their contrast is real but not token-vs-token).
+function parseRgba(str) {
+  const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/.exec(str);
+  return m ? { r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : +m[4] } : null;
+}
+function compositeOver(rgbaStr, baseHex) {
+  const f = parseRgba(rgbaStr);
+  if (!f) throw new Error(`not an rgba() tint: ${rgbaStr}`);
+  const b = hexToRgb(baseHex);
+  const mix = (fg, bg) => Math.round(f.a * fg + (1 - f.a) * bg);
+  const to2 = (n) => n.toString(16).padStart(2, "0");
+  return `#${to2(mix(f.r, b.r))}${to2(mix(f.g, b.g))}${to2(mix(f.b, b.b))}`;
+}
+// Pull `background:` (rgba tint) and `color:` (hex) out of one CSS rule found by regex.
+function ruleTintAndColor(cssText, selectorRegex, label) {
+  const block = extractBlock(cssText, selectorRegex);
+  assert.ok(block, `could not find rule: ${label}`);
+  const bg = /background:\s*([^;]+);/.exec(block);
+  const color = /color:\s*(#[0-9A-Fa-f]{3,8})/.exec(block);
+  assert.ok(bg && color, `rule ${label} is missing background: or a hex color:`);
+  return { tint: bg[1].trim(), color: color[1] };
+}
 function wordCount(s) { return s.trim().split(/\s+/).filter(Boolean).length; }
 
 // quotation-mark glyphs that count as "verbatim quote" markers — an ASCII apostrophe
@@ -260,15 +295,36 @@ function stage1() {
   check("stage1", "robots noindex present", () => {
     assert.match(html(), /<meta\s+name=["']robots["']\s+content=["']noindex["']/);
   });
-  check("stage1", "tablist + aria roles present", () => {
+  check("stage1", "tablist + aria roles present; toggle labels pinned in app.js, no aria-pressed on it", () => {
     assert.match(html(), /role=["']tablist["']/);
     assert.match(html(), /role=["']tab["']/);
     assert.match(html(), /aria-selected/);
-    assert.match(html(), /aria-pressed/);
+    // v1.29: the theme toggle is an action-named control (its accessible name changes per
+    // state) and must NOT also carry aria-pressed — the old `aria-pressed`-in-index.html
+    // assertion is retargeted to the exact two label strings app.js swaps between.
+    assert.ok(appjs().includes('"Switch to dark theme"'), 'app.js missing pinned label "Switch to dark theme"');
+    assert.ok(appjs().includes('"Switch to pink theme"'), 'app.js missing pinned label "Switch to pink theme"');
+    const toggleTag = /<button id="theme-toggle"[^>]*>/.exec(html());
+    assert.ok(toggleTag, "no theme-toggle button in index.html");
+    assert.doesNotMatch(toggleTag[0], /aria-pressed/, "theme-toggle must not carry aria-pressed");
   });
-  check("stage1", "localStorage key mindset.theme used", () => {
-    const hay = html() + appjs();
-    assert.match(hay, /mindset\.theme/);
+  check("stage1", "localStorage: mindset.theme only in a removeItem; zero other localStorage use app-wide", () => {
+    // v1.29 retired theme persistence entirely — the ONLY localStorage touch permitted
+    // anywhere in the app is index.html's removeItem cleanup of the retired key, which
+    // runs on every load (idempotent and harmless once the key is gone, not a one-shot).
+    const files = ["index.html", "app.js", "figure.js", "lib.mjs", "weeks.js", "mara.js", "sw.js"].filter(exists);
+    const offenders = [];
+    let removes = 0;
+    for (const f of files) {
+      const src = read(f);
+      for (const m of src.matchAll(/localStorage\s*(?:\.\s*(\w+)|\[)/g)) {
+        if (m[1] === "removeItem") { removes++; continue; }
+        offenders.push(`${f}: ${m[0].trim()}`);
+      }
+    }
+    assert.equal(offenders.length, 0, `unexpected localStorage usage: ${offenders.join(" | ")}`);
+    assert.equal(removes, 1, `expected exactly one localStorage.removeItem (the index.html cleanup), found ${removes}`);
+    assert.match(html(), /localStorage\.removeItem\("mindset\.theme"\)/);
   });
   check("stage1", "safe-area insets present", () => assert.match(css(), /env\(safe-area-inset/));
   check("stage1", "svh sizing present (with vh fallback line above)", () => {
@@ -313,11 +369,13 @@ function stage1() {
     const offenders = m.filter((s) => parseInt(s.match(/\d+/)[0], 10) >= 400);
     assert.equal(offenders.length, 0, offenders.join(", "));
   });
-  check("stage1", "no bare locale-date calls without timeZone (app.js)", () => {
+  check("stage1", "no bare locale-date calls without timeZone (app/figure/weeks/mara/index.html)", () => {
     const offenders = exists("app.js") ? localeDateWithoutTZ(appjs()) : [];
     if (exists("figure.js")) offenders.push(...localeDateWithoutTZ(read("figure.js")));
     if (exists("weeks.js")) offenders.push(...localeDateWithoutTZ(read("weeks.js")));
     if (exists("mara.js")) offenders.push(...localeDateWithoutTZ(read("mara.js")));
+    // index.html's pre-paint snippet is genuinely time-critical since v1.29.
+    offenders.push(...localeDateWithoutTZ(html()));
     assert.equal(offenders.length, 0, offenders.join(" | "));
   });
 
@@ -335,18 +393,10 @@ function stage1() {
     for (const f of jsFiles) nodeCheckSyntax(f);
   });
 
-  check("stage1", "WCAG contrast pairs pass at corrected thresholds", () => {
-    const calm = extractTokens(css(), /:root\s*\{/);
-    const blossomOverride = extractTokens(css(), /\[data-theme=["']blossom["']\]\s*\{/);
-    const blossom = { ...calm, ...blossomOverride };
-    const eveningOverride = extractTokens(css(), /\[data-period=["']evening["']\]\s*\{/);
-    // Guard against a silent false-pass: if the evening rule is ever split across a media
-    // query or moved non-contiguously, extractTokens's single-block regex would return {}
-    // and the checks below would trivially pass without verifying anything real.
-    assert.ok(eveningOverride.bg, "could not extract a non-empty [data-period=evening] --bg token");
-    const calmEvening = { ...calm, ...eveningOverride };
-    const blossomEvening = { ...blossom, ...eveningOverride };
-    const themes = { calm, blossom, calmEvening, blossomEvening };
+  check("stage1", "WCAG contrast pairs pass at corrected thresholds (blossom + dark)", () => {
+    // v1.29: calm and the evening --bg shift are retired; the theme set is blossom + dark
+    // (themeTokens() carries the old evening check's loud-failure extraction guard forward).
+    const themes = themeTokens(css());
     const pairs = [
       ["ink", "bg", 4.5], ["ink", "surface", 4.5],
       ["muted", "surface", 4.5], ["muted", "bg", 4.5],
@@ -358,6 +408,57 @@ function stage1() {
         assert.ok(tokens[a] && tokens[b], `${themeName}: missing token --${a} or --${b}`);
         const ratio = contrastRatio(tokens[a], tokens[b]);
         if (ratio < min) failures.push(`${themeName} (--${a} on --${b}) = ${ratio.toFixed(2)} < ${min}`);
+      }
+    }
+    assert.equal(failures.length, 0, failures.join(" | "));
+  });
+
+  check("stage1", "person colors >= 4.5:1 on --bg and --surface in both themes (v1.22 hand-check, now gated)", () => {
+    const themes = themeTokens(css());
+    const failures = [];
+    for (const [themeName, tokens] of Object.entries(themes)) {
+      for (const p of ["person-j", "person-b"]) {
+        for (const base of ["bg", "surface"]) {
+          assert.ok(tokens[p] && tokens[base], `${themeName}: missing token --${p} or --${base}`);
+          const ratio = contrastRatio(tokens[p], tokens[base]);
+          if (ratio < 4.5) failures.push(`${themeName} (--${p} on --${base}) = ${ratio.toFixed(2)} < 4.5`);
+        }
+      }
+    }
+    assert.equal(failures.length, 0, failures.join(" | "));
+  });
+
+  check("stage1", "composited --edge pills: --ink >= 4.5:1 on edge-over-surface (Kenya countdown) and edge-over-bg (Mara pressed pill), both themes", () => {
+    // These pills render text on a translucent --edge tint — real rendered pairs that the
+    // token-vs-token check above can never see (hand-verified in v1.17, gated since v1.29).
+    const themes = themeTokens(css());
+    const failures = [];
+    for (const [themeName, tokens] of Object.entries(themes)) {
+      for (const base of ["surface", "bg"]) {
+        const ratio = contrastRatio(tokens.ink, compositeOver(tokens.edge, tokens[base]));
+        if (ratio < 4.5) failures.push(`${themeName} (--ink on edge-over-${base}) = ${ratio.toFixed(2)} < 4.5`);
+      }
+    }
+    assert.equal(failures.length, 0, failures.join(" | "));
+  });
+
+  check("stage1", "staleness chips: text >= 4.5:1 on its tint composited over --bg, both themes", () => {
+    const themes = themeTokens(css());
+    const rules = {
+      blossom: {
+        amber: ruleTintAndColor(css(), /^\.chip\.amber\s*\{/m, ".chip.amber"),
+        slate: ruleTintAndColor(css(), /^\.chip\.slate\s*\{/m, ".chip.slate"),
+      },
+      dark: {
+        amber: ruleTintAndColor(css(), /\[data-theme=["']dark["']\]\s*\.chip\.amber\s*\{/, "dark .chip.amber"),
+        slate: ruleTintAndColor(css(), /\[data-theme=["']dark["']\]\s*\.chip\.slate\s*\{/, "dark .chip.slate"),
+      },
+    };
+    const failures = [];
+    for (const [themeName, chips] of Object.entries(rules)) {
+      for (const [chipName, { tint, color }] of Object.entries(chips)) {
+        const ratio = contrastRatio(color, compositeOver(tint, themes[themeName].bg));
+        if (ratio < 4.5) failures.push(`${themeName} .chip.${chipName} = ${ratio.toFixed(2)} < 4.5`);
       }
     }
     assert.equal(failures.length, 0, failures.join(" | "));
@@ -401,6 +502,60 @@ function stage1() {
     assert.equal(lib.isEveningWindowHKT(new Date("2026-07-15T11:59:00Z")), false);
     // 2026-07-15T12:00:00Z = 2026-07-15T20:00 HKT — evening window opens
     assert.equal(lib.isEveningWindowHKT(new Date("2026-07-15T12:00:00Z")), true);
+  });
+
+  check("stage1", "lib.mjs: isDarkWindowHKT correct at the 06:00 and 17:00 HKT boundaries", async () => {
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    // 2026-07-14T21:59:59Z = 2026-07-15T05:59:59 HKT — last second of the overnight dark window
+    assert.equal(lib.isDarkWindowHKT(new Date("2026-07-14T21:59:59Z")), true);
+    // 2026-07-14T22:00:00Z = 2026-07-15T06:00:00 HKT — blossom takes over
+    assert.equal(lib.isDarkWindowHKT(new Date("2026-07-14T22:00:00Z")), false);
+    // 2026-07-15T08:59:59Z = 2026-07-15T16:59:59 HKT — last blossom second
+    assert.equal(lib.isDarkWindowHKT(new Date("2026-07-15T08:59:59Z")), false);
+    // 2026-07-15T09:00:00Z = 2026-07-15T17:00:00 HKT — dark window opens for the evening
+    assert.equal(lib.isDarkWindowHKT(new Date("2026-07-15T09:00:00Z")), true);
+  });
+
+  check("stage1", "lib.mjs: 1440-minute sweep — dark/blossom partition the HKT day (transitions exactly at 06:00/17:00), hktHour always 0-23", async () => {
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    // 2026-07-14T16:00:00Z = 2026-07-15T00:00 HKT; walk one full HKT day minute by minute.
+    // The hktHour range assertion doubles as the h23-vs-h24 ICU-safety guard for ALL three
+    // window functions at once (each is a pure comparison on hktHour's return value).
+    const start = Date.parse("2026-07-14T16:00:00Z");
+    const transitions = [];
+    let prev = null;
+    for (let m = 0; m < 1440; m++) {
+      const d = new Date(start + m * 60000);
+      const h = lib.hktHour(d);
+      assert.ok(Number.isInteger(h) && h >= 0 && h <= 23, `hktHour at minute ${m} = ${h}, outside [0,23]`);
+      const dark = lib.isDarkWindowHKT(d);
+      assert.equal(typeof dark, "boolean", `isDarkWindowHKT at minute ${m} is not boolean`);
+      if (prev !== null && dark !== prev) transitions.push(m);
+      prev = dark;
+    }
+    assert.deepEqual(transitions, [360, 1020],
+      `expected exactly two dark/blossom transitions, at 06:00 (minute 360) and 17:00 (minute 1020) HKT; got [${transitions.join(", ")}]`);
+  });
+
+  check("stage1", "index.html pre-paint snippet agrees with lib.mjs isDarkWindowHKT (anti-drift)", async () => {
+    // The snippet can't import lib.mjs, so it duplicates the boundary logic — this pins the
+    // two together: structural match on the numbers/strings, behavioral match at all 24 hours.
+    const src = html();
+    const m = /var dark = \(h < (\d+) \|\| h >= (\d+)\);/.exec(src);
+    assert.ok(m, "could not find `var dark = (h < N || h >= M);` in index.html's inline script");
+    const lo = Number(m[1]), hi = Number(m[2]);
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    const midnightHKT = Date.parse("2026-07-14T16:00:00Z"); // 2026-07-15T00:00 HKT
+    for (let hour = 0; hour < 24; hour++) {
+      const d = new Date(midnightHKT + hour * 3600000);
+      const snippetSays = hour < lo || hour >= hi;
+      assert.equal(snippetSays, lib.isDarkWindowHKT(d),
+        `HKT hour ${hour}: snippet boundaries (${lo},${hi}) say ${snippetSays}, lib.mjs says ${lib.isDarkWindowHKT(d)}`);
+    }
+    assert.match(src, /root\.setAttribute\("data-theme", dark \? "dark" : "blossom"\)/,
+      "snippet must set the same two theme ids app.js/styles.css use");
+    assert.match(src, /timeZone:\s*"Asia\/Hong_Kong",\s*hour:\s*"2-digit",\s*hour12:\s*false/,
+      "snippet's hour read must be HKT-pinned, 2-digit, hour12:false (mirrors lib.mjs hktHour)");
   });
 
   check("stage1", "lib.mjs: daysUntilKenyaTrip correct at 4 known instants (HKT-anchored, 2026-08-15 trip)", async () => {

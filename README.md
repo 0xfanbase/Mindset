@@ -6,7 +6,9 @@ that refresh themselves every morning at 05:00 HKT: an **Anchor** (a timeless pr
 a **Journal** prompt (a mindful reflection question), a **Kenya** fact (one fact about Kenya —
 geography, wildlife, history, culture, and more), and a **Word of the Day** (one word
 worth knowing, its origin, and a one-line meaning). A quiet **Values** tab sits alongside it.
-Two themes — `calm` (cream/blue, default) and `blossom` (soft pink).
+Two themes that follow the Hong Kong clock — `blossom` (soft pink) through the day, `dark`
+(warm charcoal) from 17:00 to 06:00 HKT. The header toggle overrides the schedule for the
+current visit only: nothing is stored, and every fresh load returns to the time-of-day cycle.
 
 A third tab, **Weeks**, is a combined life-in-weeks chart for J and B — one 90-year grid of
 small squares, one square per week, filled pink-and-blue as each week passes (split cells
@@ -35,8 +37,11 @@ the full specification this site was built from.
 ## Add to Home Screen
 
 **iOS (Safari):** open the site → Share sheet → **Add to Home Screen**. It launches
-full-screen like an app, with its own icon, and the standalone chrome matches whichever
-theme you last used.
+full-screen like an app, with its own icon, and the standalone chrome follows the
+time-of-day theme — pink through the Hong Kong day, dark from 17:00 HKT (a toggle override
+lasts only until the app is next relaunched). The cold-launch splash is always dark-toned
+by design: a light splash flashing at night was the harm worth removing, a dark splash by
+day is a shrug.
 
 **Android (Chrome):** open the site → menu (⋮) → **Add to Home screen** / **Install app**.
 

@@ -14,14 +14,11 @@ const ZOOM_MULT = [1, 2, 3]; // multipliers of the dynamically-fit base pitch
 const DOT_FRACTION = 0.7; // dot size as a fraction of the cell pitch; remainder is gap
 const MIN_PITCH = 4;
 const PALE_ALPHA = 0.25; // focus-mode de-emphasis for the non-focused person
-// v1.24: the epigraph (fact, then reminder) -- moved to the top of the panel and given real
-// display weight per live feedback. Both lines share one treatment (see styles.css) rather
-// than being differentiated; they're one thought, ~2,000 years apart, not a hierarchy.
-// Seneca's line is an ORIGINAL paraphrase, not a lifted translation -- the commonly published
-// English rendering (Penguin/Costa; it's literally that edition's own subtitle) says "if you
-// know how to USE it," confirmed via source lookup before landing here. "Spend" was chosen
-// deliberately over "use": it's this tab's own established vocabulary (percent spent, filled
-// squares = spent weeks), tying the epigraph and the instrument below it into one language.
+// v1.24: the epigraph (fact, then reminder) -- top of the panel, real display weight, per
+// live feedback. One treatment for both lines: one thought ~2,000 years apart, no hierarchy.
+// Seneca's line is an ORIGINAL paraphrase, not a lifted translation -- the published
+// rendering (Penguin/Costa's own subtitle) says "if you know how to USE it"; "spend" was
+// chosen deliberately as this tab's own vocabulary (percent spent, squares = spent weeks).
 const EPIGRAPH = [
   { text: "An average human life is about four thousand weeks.", attr: "— after Oliver Burkeman" },
   { text: "Life is long, if you know how to spend it.", attr: "— after Seneca" },
@@ -87,8 +84,9 @@ function sizeCanvas(canvas, ctx, pitch) {
 }
 
 // A soft radial-gradient sprite, generated once per person and reused -- the same offscreen-
-// sprite technique figure.js uses for its glow (never per-frame shadowBlur). Person colors are
-// fixed across themes, so these never need regenerating.
+// sprite technique figure.js uses for its glow (never per-frame shadowBlur). Cached only
+// until the theme changes: person colors are theme-scoped since v1.29, so
+// redrawWeeksForTheme() nulls both sprites to force regeneration in the new theme's colors.
 function makeGlowSprite(hex) {
   const [r, g, b] = hexToRgbArr(hex);
   const size = 64;
@@ -96,10 +94,8 @@ function makeGlowSprite(hex) {
   c.width = c.height = size;
   const gctx = c.getContext("2d");
   const grad = gctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  // Peak alpha 0.28, not a near-solid 0.55 -- this glow sits UNDER an outline whose whole
-  // point is a transparent, unfilled center ("this week isn't done yet"); found during
-  // testing that a strong/wide glow visibly refilled that center and bled a full extra cell
-  // into the split-grid's neighboring "both lived" cells, muddying their pure split colors.
+  // Peak alpha 0.28, not 0.55 -- the glow sits UNDER an outline whose point is an unfilled
+  // center; a strong glow visibly refilled it and bled into neighboring cells (tested live).
   grad.addColorStop(0, `rgba(${r},${g},${b},0.28)`);
   grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
   gctx.fillStyle = grad;
@@ -109,9 +105,8 @@ function makeGlowSprite(hex) {
 function jGlow() { return jGlowSprite || (jGlowSprite = makeGlowSprite(themeColor("--person-j"))); }
 function bGlow() { return bGlowSprite || (bGlowSprite = makeGlowSprite(themeColor("--person-b"))); }
 function stampGlow(ctx, sprite, cx, cy, pitch) {
-  const size = pitch * 1.35; // wide enough to read as glowing, not just tinted (Fable's UX
-  // audit); still far from the original 2.2x that caused visible neighbor bleed, since the
-  // fix that actually mattered was the alpha drop (0.55 -> 0.28), not the size alone.
+  const size = pitch * 1.35; // reads as glowing, not just tinted (Fable's UX audit); the
+  // neighbor-bleed fix that actually mattered was the alpha drop, not size.
   ctx.drawImage(sprite, cx - size / 2, cy - size / 2, size, size);
 }
 
@@ -166,11 +161,9 @@ function drawGrid(pitch) {
   ctx.fillStyle = jColor;
   for (let w = 0; w < Jw; w++) { const [x, y] = xy(w); ctx.fillRect(x, y, dot / 2, dot); }
 
-  // J's current-week outline spans the FULL cell (matching B's), not just her half -- a
-  // half-width sliver read as a rendering glitch next to B's full square (Fable's UX audit,
-  // caught only by actually looking at the rendered grid, not by reading the code) and
-  // silently implied her current week counted for less. The blue right-half fill (drawn
-  // above, since B already lived that age-week) stays visible under the outline's right side.
+  // J's current-week outline spans the FULL cell (matching B's), not just her half -- the
+  // half-width sliver read as a glitch and implied her week counted for less (Fable's UX
+  // audit, from the rendered grid). B's blue right-half fill stays visible under it.
   const lw = Math.max(1, pitch * 0.08);
   if (Jw < total) {
     const [x, y] = xy(Jw);
@@ -190,18 +183,12 @@ function drawGrid(pitch) {
   canvas.setAttribute("aria-label", ariaLabelFor(Jw, Bw, total, focus));
 }
 
-// aria-label on a <button> replaces its visible children entirely for the accessible name --
-// a screen-reader user hears ONLY the label, never the 34px percent or the week count next to
-// it (confirmed via a real accessibility-tree snapshot during audit: the static "Highlight
-// J's weeks" label was erasing the tab's own headline stat). Folding the live figures into
-// the label itself, regenerated on every redraw alongside the visible text, keeps both in
-// sync and makes the number the primary accessible content, not a skippable description.
-// weeksLived() clamps to at most LIFE_WEEKS_TOTAL (a life that outruns the 90-year grid just
-// stops advancing), but the DISPLAYED week is 1-indexed ("week N" means "N-1 fully complete,
-// currently living the Nth") -- so at the clamp itself, weeks+1 reads "week 4,681 of 4,680",
-// which is wrong on its face. Cap the display at the same total (found in code-correctness
-// audit; unreachable before ~2079/2080 given the stored birth months, but a real bug, not a
-// hypothetical one -- weeksLived(..., farFutureDate) genuinely returns exactly the clamp).
+// aria-label on a <button> replaces its visible children as the accessible name -- a static
+// label was erasing the tab's own headline stat for screen readers (confirmed via a real
+// accessibility-tree snapshot). Folding the live figures in, regenerated on every redraw,
+// keeps label and visible text in sync.
+// The DISPLAYED week is 1-indexed, so at weeksLived()'s clamp weeks+1 would read "week 4,681
+// of 4,680" -- cap the display at the same total (real, though unreachable before ~2079).
 function displayWeek(weeks) {
   return Math.min(weeks + 1, LIFE_WEEKS_TOTAL);
 }
@@ -230,10 +217,9 @@ function syncFocusUI() {
   }
 }
 
-// A canvas inside a `display:none` (hidden-tab) ancestor reports zero client width -- bail
-// out rather than size the grid down to MIN_PITCH and stamp a wrong lastDrawnDateHKT, which
-// would otherwise make refreshIfStale() think it already redrew for today while hidden and
-// skip the real redraw once the tab is actually shown again (found in pre-merge audit).
+// A hidden-tab canvas reports zero client width -- bail out rather than draw at MIN_PITCH
+// and stamp a wrong lastDrawnDateHKT, which would make refreshIfStale() skip the real
+// redraw once the tab is actually shown (found in pre-merge audit).
 function redrawAll() {
   if (!chart || chart.scroller.clientWidth === 0) return;
   const pitch = fitPitch(chart.scroller) * ZOOM_MULT[zoomIndex];
@@ -276,14 +262,9 @@ function buildStatButton(person) {
 
   btn.addEventListener("click", () => {
     stickyFocus = stickyFocus === person.id ? null : person.id;
-    // Also sync hoverFocus to match -- without this, un-toggling by clicking a SECOND time
-    // while the mouse is still sitting on the button (never left, so no mouseleave fires)
-    // left stickyFocus correctly cleared but effectiveFocus() still returning the stale
-    // hoverFocus, so the visual highlight (and aria-pressed's underlying reality) stuck
-    // until the pointer physically moved away (found in code-correctness audit, reproduced
-    // via two same-position clicks with no mouse movement between them). A real mouseenter/
-    // mouseleave on this same button still updates hoverFocus independently afterward, so
-    // this doesn't break the normal hover-preview-over-a-sticky-selection interaction.
+    // Sync hoverFocus too: un-toggling via a second click with the pointer never leaving
+    // (so no mouseleave fires) left effectiveFocus() returning the stale hoverFocus until
+    // the pointer moved (found in audit). Later mouseenter/mouseleave still work normally.
     hoverFocus = stickyFocus;
     syncFocusUI();
     redrawAll();
@@ -415,8 +396,12 @@ export function refreshWeeksIfStale() {
   if (built) refreshIfStale();
 }
 
-// Called from app.js's theme toggle -- future-cell fill and year labels follow the active
-// theme's ink/muted tones; person colors (J pink, B blue) never do. No-ops if never built.
+// Called from app.js on every theme change -- ALL grid colors are theme-scoped since v1.29,
+// person colors included, so the memoized glow sprites must be dropped here or the current-
+// week markers would keep glowing in the PREVIOUS theme's colors after a toggle (same
+// null-on-change pattern as figure.js's attributeChangedCallback). No-ops if never built.
 export function redrawWeeksForTheme() {
+  jGlowSprite = null;
+  bGlowSprite = null;
   if (built) redrawAll();
 }

@@ -1,9 +1,7 @@
 // app.js — UI logic: tabs, theme, date, cards, staleness (BUILD-PLAN.md §4/§6)
-import { hktDateParts, hktDateString, hktHour, staleness, pickToday, isFocusWindowHKT, isEveningWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
+import { hktDateParts, hktDateString, hktHour, staleness, pickToday, isFocusWindowHKT, isEveningWindowHKT, isDarkWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
 import { initWeeksTab, refreshWeeksIfStale, redrawWeeksForTheme } from "./weeks.js";
 import { initMaraTab } from "./mara.js";
-
-const PULSE = { calm: "#7FB0FF", blossom: "#F2A9C6" };
 
 function el(tag, props = {}, children = []) {
   const node = document.createElement(tag);
@@ -16,12 +14,18 @@ function el(tag, props = {}, children = []) {
   return node;
 }
 
+// Theme follows the HKT clock (dark 17:00–06:00, blossom the rest — isDarkWindowHKT), never
+// localStorage (v1.29 retired mindset.theme; the toggle is a session-only override). A tap
+// sets manualOverride so the visibilitychange recheck stops re-applying the clock; ONLY a
+// fresh page load resets it — that's what makes "reload returns to the cycle" always true.
+let manualOverride = false;
+
 function currentTheme() {
-  return document.documentElement.getAttribute("data-theme") === "blossom" ? "blossom" : "calm";
+  return document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "blossom";
 }
 
-// Status-bar color tracks whatever --bg resolves to right now — theme AND period (evening
-// shifts --bg after 20:00, v1.19) — not a per-theme table blind to [data-period] (v1.28).
+// Status-bar color tracks whatever --bg resolves to for the active theme right now,
+// not a per-theme JS table that could drift from the CSS (v1.28).
 function syncThemeColorMeta() {
   const meta = document.querySelector('meta[name="theme-color"]');
   if (!meta) return;
@@ -29,37 +33,41 @@ function syncThemeColorMeta() {
   if (bg) meta.setAttribute("content", bg);
 }
 
-function applyThemeSideEffects(theme) {
+function applyThemeSideEffects() {
   syncThemeColorMeta();
   const figure = document.getElementById("figure");
   if (figure) {
-    figure.setAttribute("color", PULSE[theme]);
-    figure.setAttribute("glow", PULSE[theme]);
+    // Read the CSS's own --pulse, same pattern as syncThemeColorMeta (v1.29; replaces a
+    // hardcoded per-theme map that could silently drift from styles.css).
+    const pulse = getComputedStyle(document.documentElement).getPropertyValue("--pulse").trim();
+    figure.setAttribute("color", pulse);
+    figure.setAttribute("glow", pulse);
   }
   redrawWeeksForTheme();
 }
 
-function initTheme() {
-  let theme = "calm";
-  try {
-    const saved = localStorage.getItem("mindset.theme");
-    if (saved === "calm" || saved === "blossom") theme = saved;
-  } catch (e) {}
-  document.documentElement.setAttribute("data-theme", theme);
-
+function applyTheme(theme) {
+  const dark = theme === "dark";
+  const root = document.documentElement;
+  root.setAttribute("data-theme", theme);
+  // The pre-paint snippet set an inline color-scheme (so browser chrome is right before CSS
+  // loads); inline outranks the theme blocks' declarations, so it must move with the theme.
+  root.style.colorScheme = dark ? "dark" : "light";
   const btn = document.getElementById("theme-toggle");
-  function paint(t) {
-    btn.setAttribute("aria-pressed", String(t === "blossom"));
-    btn.textContent = t === "calm" ? "◐" : "❀";
-    applyThemeSideEffects(t);
-  }
-  paint(theme);
+  // Calm-era glyphs kept, meanings repurposed (v1.29): ◐ = pink active, tap for dark;
+  // ❀ = dark active, tap for pink. Action-named label, deliberately no aria-pressed.
+  btn.textContent = dark ? "❀" : "◐";
+  const label = dark ? "Switch to pink theme" : "Switch to dark theme";
+  btn.setAttribute("aria-label", label);
+  btn.setAttribute("title", label);
+  applyThemeSideEffects();
+}
 
-  btn.addEventListener("click", () => {
-    const next = currentTheme() === "calm" ? "blossom" : "calm";
-    document.documentElement.setAttribute("data-theme", next);
-    try { localStorage.setItem("mindset.theme", next); } catch (e) {}
-    paint(next);
+function initTheme() {
+  applyTheme(isDarkWindowHKT(new Date()) ? "dark" : "blossom");
+  document.getElementById("theme-toggle").addEventListener("click", () => {
+    manualOverride = true;
+    applyTheme(currentTheme() === "dark" ? "blossom" : "dark");
   });
 }
 
@@ -131,10 +139,8 @@ function renderClosingCard(closing) {
   ]);
 }
 
-// Countdown to the 2026-08-15 flight (v1.17), shown only while the trip is still ahead --
-// a countdown that goes negative the day after departure would read as a bug, not a feature,
-// so the badge simply stops rendering once the trip has passed (kenya-facts content keeps
-// rotating as normal either way).
+// Countdown to the 2026-08-15 flight (v1.17) -- a negative countdown would read as a bug,
+// so the badge stops rendering once the trip passes (facts keep rotating either way).
 function kenyaCountdownText(days) {
   if (days > 1) return { label: `${days} DAYS`, aria: `${days} days until the Kenya trip` };
   if (days === 1) return { label: "1 DAY", aria: "1 day until the Kenya trip" };
@@ -201,10 +207,9 @@ function paintCards(nodes) {
   });
 }
 
-// Pre-09:00 HKT: Journal stands alone, the other three sit behind a reveal toggle so
-// they don't compete for attention before the morning's actual reflection (v1.16).
-// Reused for the evening Closing card (v1.19) — same "one lead card, rest collapsed"
-// layout, just a different lead node depending on the time of day.
+// Pre-09:00 HKT: Journal stands alone, the rest behind a reveal toggle so they don't compete
+// for morning attention (v1.16). Reused for the evening Closing card (v1.19) — same "one
+// lead card, rest collapsed" layout, different lead node by time of day.
 function paintFocusedToday(leadNode, restNodes) {
   const host = document.getElementById("cards");
   host.classList.add("focus");
@@ -256,7 +261,10 @@ async function fetchJSON(path) {
 }
 
 // Tri-state read of "what part of the day is it" -- focus (pre-09:00, Journal leads),
-// evening (>=20:00, Closing leads), or normal (flat four-card layout) (v1.19).
+// evening (>=20:00, Closing leads), or normal (flat four-card layout) (v1.19). Deliberately
+// independent of the THEME clock (dark 17:00-06:00) -- two clocks, five combined states per
+// HKT day: dark+focus 00-06, blossom+focus 06-09, blossom+normal 09-17, dark+normal 17-20,
+// dark+evening 20-24.
 function windowMode(now) {
   if (isFocusWindowHKT(now)) return "focus";
   if (isEveningWindowHKT(now)) return "evening";
@@ -286,10 +294,9 @@ function renderToday(cardsData, dailyData) {
     word = cardsData.wordOfDay.find((w) => w.id === dailyData.wordId);
     closing = cardsData.closing.find((c) => c.id === dailyData.closingId);
     if (!anchor || !journal || !kenya || !word || !closing) {
-      // A daily.json id that no longer resolves (pool edited without regenerating the file)
-      // is a freshness problem, not availability: fall back to the deterministic offline
-      // pick, slate-chip labelled, instead of NO DATA over a loaded library (v1.28). The
-      // error card is reserved for the library itself failing (boot()'s catch).
+      // An id that no longer resolves (pool edited, file not regenerated) is a freshness
+      // problem: fall back to the offline pick, slate-chipped, not NO DATA over a loaded
+      // library (v1.28); the error card is for the library itself failing (boot's catch).
       staleMode = "offline";
     }
   }
@@ -302,6 +309,8 @@ function renderToday(cardsData, dailyData) {
   const winMode = windowMode(now);
   paintedWindowMode = winMode;
   paintedDateHKT = hktDateString(now);
+  // data-period drives no CSS since v1.29 (the evening palette block is gone -- the dark
+  // theme owns nights now); kept because a self-describing DOM is cheap and tests read it.
   document.documentElement.setAttribute("data-period", winMode === "evening" ? "evening" : "day");
   syncThemeColorMeta();
   if (winMode === "focus") {
@@ -340,16 +349,21 @@ async function boot() {
   }
 }
 
-// Installed iOS PWAs freeze JS while backgrounded and resume the frozen render on return —
-// re-check boundaries whenever the tab becomes visible again; the HKT date is a boundary
-// too, not just the focus/evening window (v1.28). A date flip REFETCHES daily.json before
-// repainting (v1.28 follow-up) — the cron has almost certainly published overnight, and
-// boot's cached object is yesterday's content; on failure the cached object stands, never
-// worse than before. A mode flip alone still never fetches — same day, same file (v1.16).
+// Installed iOS PWAs freeze JS while backgrounded and resume the frozen render — re-check
+// every boundary on return: theme window, HKT date, focus/evening window (v1.28/v1.29). A
+// date flip REFETCHES daily.json first (the cron has almost certainly published overnight;
+// on failure the cached object stands). A mode flip alone never fetches — same day, same
+// file (v1.16).
 let dailyRefetchInFlight = false;
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
   const now = new Date();
+  // A backgrounded resume can cross the 06:00/17:00 theme boundary too — re-apply the
+  // clock's theme unless this session's toggle overrode it (v1.29).
+  if (!manualOverride) {
+    const want = isDarkWindowHKT(now) ? "dark" : "blossom";
+    if (want !== currentTheme()) applyTheme(want);
+  }
   if (bootedToday && hktDateString(now) !== paintedDateHKT) {
     if (!dailyRefetchInFlight) {
       dailyRefetchInFlight = true;

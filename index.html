@@ -14,12 +14,20 @@
 <link rel="apple-touch-icon" href="./assets/icons/apple-touch-icon.png">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="theme-color" content="#FAF9F5">
+<meta name="theme-color" content="#FBF4F6">
 <script>
 (function () {
   try {
-    var t = localStorage.getItem("mindset.theme");
-    if (t === "calm" || t === "blossom") document.documentElement.setAttribute("data-theme", t);
+    var h = Number(new Intl.DateTimeFormat("en-GB", {
+      timeZone: "Asia/Hong_Kong", hour: "2-digit", hour12: false
+    }).format(new Date()));
+    var dark = (h < 6 || h >= 17);
+    var root = document.documentElement;
+    root.setAttribute("data-theme", dark ? "dark" : "blossom");
+    root.style.colorScheme = dark ? "dark" : "light";
+    var m = document.querySelector('meta[name="theme-color"]');
+    if (m) m.setAttribute("content", dark ? "#242119" : "#FBF4F6");
+    localStorage.removeItem("mindset.theme");
   } catch (e) {}
 })();
 </script>
@@ -34,7 +42,7 @@
   <div class="figure-wrap">
     <mindset-figure id="figure" aria-hidden="true"></mindset-figure>
   </div>
-  <button id="theme-toggle" class="theme-toggle" aria-pressed="false" aria-label="Switch theme" title="Switch theme">&#9680;</button>
+  <button id="theme-toggle" class="theme-toggle" aria-label="Switch to dark theme" title="Switch to dark theme">&#9680;</button>
 </header>
 <main>
   <div id="staleness-chip" class="chip" hidden></div>
