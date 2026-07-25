@@ -1447,6 +1447,14 @@ disposition in `audits/v1.28-duo-audit.md`; per-decision reasoning in `audits/de
   forced-failure fetch routes, zero console errors; JS 60,873 B (59.4KB of 60KB), figure.js
   9,984 B, page 265.0KB of 350KB, fonts 174.2KB of 300KB.
 
+**v1.28 follow-up (2026-07-25) — pushed-history purge, executed on the owner's explicit
+direction.** The item this entry originally left as "owner's call alone" was decided: purge it.
+`main`, this branch, and two other affected branches were rewritten (blob content and commit
+messages both) and force-pushed; verified clean via a fresh independent clone afterward, not
+just the local rewritten copy. Full mechanism, exact scope, and the one honest limitation that
+survives (GitHub's own per-PR refs, not writable via git) — `audits/decisions.md`, entry dated
+2026-07-25.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
