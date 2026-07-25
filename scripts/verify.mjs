@@ -5,6 +5,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { createRequire } from "node:module";
+import { createHash } from "node:crypto";
 import assert from "node:assert/strict";
 
 const require = createRequire(import.meta.url);
@@ -132,6 +133,38 @@ function findPlatitude(s) {
   return BANNED_PLATITUDES.find((p) => lower.includes(p));
 }
 
+// ---------- invariant-1 name denylist (shared by two stage0 checks) ----------
+// One-way detection: text is lowercased, split into letter-only tokens, and each unique
+// token is salted + SHA-256 hashed against the stored digest -- the protected name itself
+// appears nowhere in this file in any decodable form. (The v1.28 original stored it as
+// base64, which anyone can reverse in one command; see the stage0 check for the rest of
+// the rationale and the accepted limitation.)
+const NAME_SALT = "mindset-invariant1-2026.";
+const NAME_DIGEST = "65ca9b4a5d1408f29b9db04de88aaeaf18b77af0553d61eae7140c368c4f508b";
+function containsProtectedName(text) {
+  const seen = new Set();
+  for (const token of text.toLowerCase().split(/[^a-z]+/)) {
+    if (!token || seen.has(token)) continue;
+    seen.add(token);
+    if (createHash("sha256").update(NAME_SALT + token).digest("hex") === NAME_DIGEST) return true;
+  }
+  return false;
+}
+// Extension DENYLIST for obvious binaries, not an allowlist of "known text" -- an allowlist
+// silently skips extensionless tracked files (LICENSE today, a future CNAME), which is
+// exactly the kind of gap a denylist closes by defaulting to "scan it."
+const BINARY_EXTS = new Set([
+  ".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif", ".ico",
+  ".woff", ".woff2", ".ttf", ".otf", ".eot", ".zip", ".gz", ".tar", ".pdf",
+]);
+function gitTrackedTextFiles() {
+  return require("node:child_process")
+    .execFileSync("git", ["ls-files", "-z"], { cwd: ROOT })
+    .toString("utf8").split("\0").filter(Boolean)
+    .filter((f) => !BINARY_EXTS.has(path.extname(f).toLowerCase()))
+    .filter((f) => fs.existsSync(abs(f)));
+}
+
 function localeDateWithoutTZ(src) {
   // flag toLocaleDateString(/toLocaleString(/toLocaleTimeString( calls with no
   // `timeZone` anywhere in the same statement (heuristic: same line or next line).
@@ -171,30 +204,41 @@ function stage0() {
       assert.ok(fs.existsSync(abs(d)) && fs.statSync(abs(d)).isDirectory(), `missing dir ${d}`);
     }
   });
-  check("stage0", "invariant-1 name denylist: protected first name appears nowhere in tracked text files", () => {
+  check("stage0", "invariant-1 name denylist: protected first name appears in no tracked file", () => {
     // v1.28: a protected family member's first name shipped in two prose files (BUILD-PLAN.md's
     // v1.24 changelog and the matching decisions.md entry) and sat live on Pages for two days
     // before an audit caught it -- invariant 1's most important term had no mechanical check at
-    // all. The needle is stored base64-encoded so this checker never itself becomes the one
-    // remaining copy of the name in the tree (which a plain string literal here would be).
-    // Deliberately case-insensitive and repo-wide (every text extension, .git excluded):
-    // the name has no legitimate use anywhere in this project, including audit prose --
-    // "the owner's wife" is always the correct spelling of it.
-    const needle = Buffer.from("am95Y2U=", "base64").toString("utf8").toLowerCase();
-    const TEXT_EXTS = new Set([".md", ".js", ".mjs", ".json", ".html", ".css", ".yml", ".yaml", ".txt", ".webmanifest", ".svg"]);
-    const offenders = [];
-    (function walk(dir) {
-      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
-        if (entry.name === ".git") continue;
-        const full = path.join(dir, entry.name);
-        if (entry.isDirectory()) { walk(full); continue; }
-        if (!TEXT_EXTS.has(path.extname(entry.name).toLowerCase())) continue;
-        if (fs.readFileSync(full, "utf8").toLowerCase().includes(needle)) {
-          offenders.push(path.relative(ROOT, full));
-        }
-      }
-    })(ROOT);
+    // all. v1.28 stored the needle base64-encoded so this file never held the name in plain
+    // text, but base64 is an ENCODING, not a one-way function -- anyone reading this file could
+    // recover the name in one command. Replaced (v1.28 follow-up) with a salted SHA-256 digest
+    // of the lowercased name, compared token-by-token via containsProtectedName() above.
+    // Honest limitation, accepted: a salted hash of a low-entropy secret (a common first name)
+    // defeats casual reading of this file but NOT a deliberate dictionary attack hashing
+    // candidate names against the stored digest -- that trade-off is unavoidable for an
+    // in-repo check that must recognize one specific known string, and is still strictly
+    // better than a reversible encoding. Case-insensitivity is by construction (tokens are
+    // lowercased before hashing). Enumeration is `git ls-files` -- genuinely tracked files
+    // only, which the v1.28 walker claimed but didn't do (it also scanned untracked files) --
+    // filtered by the binary-extension DENYLIST above, so extensionless tracked files
+    // (LICENSE, a future CNAME) are scanned instead of silently skipped. The name has no
+    // legitimate use anywhere in this project, including audit prose -- "the owner's wife"
+    // is always the correct spelling of it.
+    const offenders = gitTrackedTextFiles().filter((f) => containsProtectedName(fs.readFileSync(abs(f), "utf8")));
     assert.equal(offenders.length, 0, `protected name found in: ${offenders.join(", ")}`);
+  });
+  check("stage0", "invariant-1 name denylist: protected first name appears in no commit message reachable from HEAD", () => {
+    // The v1.24 incident lived in commit MESSAGES as well as blobs -- the 2026-07-25 history
+    // purge needed --replace-message, not just --replace-text (see decisions.md). This scans
+    // every commit message reachable from HEAD with the same hashed-token detection as the
+    // file check above. Full history, no cutoff: the purge left the whole rewritten graph
+    // clean, so any hit at any depth is a new leak. Nuance, documented: a shallow CI checkout
+    // only exposes the commits it actually fetched, so this check's reach there equals the
+    // checkout's -- pages-deploy.yml checks out with fetch-depth: 0 specifically so this
+    // check sees the full graph before anything deploys.
+    const log = require("node:child_process")
+      .execFileSync("git", ["log", "--format=%B", "HEAD"], { cwd: ROOT, maxBuffer: 64 * 1024 * 1024 })
+      .toString("utf8");
+    assert.ok(!containsProtectedName(log), "protected name found in at least one commit message reachable from HEAD");
   });
 }
 

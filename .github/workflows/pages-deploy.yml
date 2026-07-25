@@ -18,9 +18,32 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Full history, not a shallow clone: verify.mjs's commit-message PII check scans
+          # everything reachable from HEAD, and a depth-1 checkout would silently narrow
+          # that to one commit (v1.28 follow-up).
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: verify
+        # The repo's own gate, finally run where it can actually block a deploy: a commit
+        # that fails any check must never reach Pages (v1.28 follow-up -- before this,
+        # nothing ran verify.mjs automatically at all).
+        run: node scripts/verify.mjs all
       - uses: actions/configure-pages@v5
+      - name: stage runtime files only
+        # The artifact ships ONLY what the app needs at runtime. BUILD-PLAN.md, audits/,
+        # CLAUDE.md, README.md, LICENSE, scripts/ and the workflow sources are internal
+        # process/decision docs -- exactly the class of file that carried the v1.24 PII
+        # leak when `path: .` uploaded the whole repo. Unpublished beats uncrawled: this
+        # replaces the non-functional robots.txt (see decisions.md, 2026-07-25).
+        run: |
+          mkdir _site
+          cp index.html styles.css app.js figure.js lib.mjs weeks.js mara.js sw.js manifest.webmanifest .nojekyll _site/
+          cp -r data assets _site/
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
       - id: deployment
         uses: actions/deploy-pages@v4

@@ -1455,6 +1455,43 @@ just the local rewritten copy. Full mechanism, exact scope, and the one honest l
 survives (GitHub's own per-PR refs, not writable via git) — `audits/decisions.md`, entry dated
 2026-07-25.
 
+**v1.28 second follow-up (2026-07-25) — duo re-review of the fix round and the purge; three
+real problems fixed, the record corrected.** The same two models re-reviewed v1.28's own
+output, exchanged findings, and agreed on every remedy; full detail in `audits/decisions.md`
+(second entry dated 2026-07-25).
+- **The resume fix relabeled but didn't refresh — and the bullet above overclaimed it:** a
+  date flip repainted from BOOT's cached daily.json, so the date line and amber chip updated
+  while card content stayed frozen. Now the date-flip branch refetches `./data/daily.json`
+  (cached object stands on failure — never worse), then repaints; mode-only flips still never
+  fetch. Proven live: unpatched repro first, then fresh-content equality against a swapped
+  served file across a 24h clock jump, 26/26 checks.
+- **The name-denylist check stored the protected name base64-encoded — reversible in one
+  command.** Now a salted SHA-256 token digest (one-way; the honest dictionary-attack
+  limitation is documented in the check itself), enumerating genuinely tracked files via
+  `git ls-files` with a binary-extension denylist (extensionless files now scanned), plus a
+  NEW second check running the same detection over every commit message reachable from HEAD —
+  the shape the actual incident took. Both mutation-tested; verify.mjs 75 → 76.
+- **The deploy now runs the repo's own gate and ships only runtime files:** `pages-deploy.yml`
+  gained `node scripts/verify.mjs all` as a hard pre-artifact gate (nothing ran it
+  automatically before) and stages `index.html`/`styles.css`/JS/`data/`/`assets/`/
+  `manifest.webmanifest`/`.nojekyll` into `_site` instead of uploading the whole repo —
+  BUILD-PLAN.md, `audits/`, and the other process docs no longer deploy at all. All 62 runtime
+  references verified resolvable from the staged set.
+- **`robots.txt` removed — it never worked:** crawlers only read the ORIGIN root's robots.txt,
+  and a project Pages site can't serve one there (confirmed by live fetch: the origin root
+  404s). The artifact restructure above is the real fix for the exposure it was meant to
+  cover; unpublished beats uncrawled.
+- **Record corrections:** the residual exposure is broader than the four PR refs — pre-rewrite
+  SHAs remain directly addressable and are enumerable from public workflow-run metadata
+  (`head_sha`), and the two originally-cited SHA prefixes still resolved when re-checked (they
+  are *expected* to stop once GitHub GCs, not already gone). The owner's decision to delete
+  and recreate the repository resolves all of it and supersedes the prior "contact GitHub
+  Support" note. The rewrite also re-hashed the whole graph back to the root and stripped
+  every commit signature (all "Verified" badges gone); the seven untouched branches share no
+  merge-base with the rewritten `main`. All SHAs in changelog entries above are pre-rewrite
+  and will not resolve. Invariant 10's definition in §2 now carries a pointer to this logged
+  exception. JS budget after the refetch fix: 61,373 B of 61,440 — 67 B headroom.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -1533,7 +1570,7 @@ The three daily cards:
 7. **Accessibility floor:** WCAG AA contrast for all text token pairs (verified numerically in `verify.mjs`, including `(--muted,--bg)` and `(--accent,--bg)` — not just the on-`--surface` pairs — and gated at 4.5:1 for any pair used for normal-size text, 3:1 only where the token is genuinely large-text/UI-component use), visible keyboard focus, `aria` roles on tabs and theme toggle, tap targets ≥ 44px, semantic landmarks (`header`, `main`, `nav`, `footer`).
 8. **Timezone law:** every date shown or computed is **Asia/Hong_Kong**, derived via `Intl.DateTimeFormat` with an explicit `timeZone` — never a bare `new Date().toLocaleDateString()` and never the runner's local time. `app.js`/`figure.js` must not call locale-date APIs without an explicit `timeZone` (Stage 1 verify greps for this).
 9. **Search visibility:** `<meta name="robots" content="noindex">` (public but unlisted — note: this hides the Pages URL from search, but the GitHub repo itself, including `cards.json`, remains a public, indexable, code-searchable text file regardless. Don't rely on "unlisted" as a content-privacy mechanism).
-10. **Git hygiene:** no force-push, no history rewrites of already-pushed commits, no edits outside this repo, no global installs, conventional commit messages per stage as specified. `git pull --rebase origin main` (rebasing your own unpushed local commits onto a workflow's bot commit) is explicitly permitted and required where noted (Stage 4/5) — this is not the kind of history rewrite the ban refers to.
+10. **Git hygiene:** no force-push, no history rewrites of already-pushed commits, no edits outside this repo, no global installs, conventional commit messages per stage as specified. `git pull --rebase origin main` (rebasing your own unpushed local commits onto a workflow's bot commit) is explicitly permitted and required where noted (Stage 4/5) — this is not the kind of history rewrite the ban refers to. (One owner-authorized exception is on record — the 2026-07-25 pushed-history PII purge; see `audits/decisions.md`, entries dated 2026-07-25 — logged there per the same convention invariant 12 uses for its own exceptions.)
 11. **Mobile-first law:** the phone is the PRIMARY client; desktop is the adaptation. Base CSS **is** the mobile layout; wider layouts are layered on exclusively via `min-width` media queries — **`max-width` media queries are banned** (mechanically verifiable). All URLs — assets, fetches, SW scope, manifest `start_url` — are **relative** (`./…`), never root-absolute. Viewport heights use `svh` (with a `vh` fallback line above it). Safe-area insets are respected. The page must be installable to the home screen (§4.7). The whole layout is a **single no-scroll screen** on a 390×844 viewport (see §4.4) — this is stricter than "mobile-first," it's "mobile-fits."
 12. **Verifier integrity ratchet.** After Stage 0's commit, `verify.mjs` checks and budget constants may only be added or tightened, never relaxed. Any relaxation requires a `decisions.md` entry quoting the original check text and the reason. `FINAL-AUDIT.md` must include a one-paragraph diff summary of `verify.mjs` versus its Stage 0 version. This exists because the same agent that hits a hard-to-satisfy check is the one who would otherwise be tempted to quietly soften it.
 

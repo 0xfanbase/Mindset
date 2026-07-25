@@ -341,14 +341,27 @@ async function boot() {
 }
 
 // Installed iOS PWAs freeze JS while backgrounded and resume the frozen render on return —
-// re-check boundaries (not the network) whenever the tab becomes visible again. v1.28: the
-// HKT date is a boundary too, not just the focus/evening window — resuming a day later in
-// the SAME window left date line, cards, and chip frozen indefinitely, the freeze class
-// v1.16 fixed for the window flip and v1.22 for Weeks (see refreshIfStale's memoized date).
+// re-check boundaries whenever the tab becomes visible again; the HKT date is a boundary
+// too, not just the focus/evening window (v1.28). A date flip REFETCHES daily.json before
+// repainting (v1.28 follow-up) — the cron has almost certainly published overnight, and
+// boot's cached object is yesterday's content; on failure the cached object stands, never
+// worse than before. A mode flip alone still never fetches — same day, same file (v1.16).
+let dailyRefetchInFlight = false;
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
   const now = new Date();
-  if (bootedToday && (windowMode(now) !== paintedWindowMode || hktDateString(now) !== paintedDateHKT)) {
+  if (bootedToday && hktDateString(now) !== paintedDateHKT) {
+    if (!dailyRefetchInFlight) {
+      dailyRefetchInFlight = true;
+      fetchJSON("./data/daily.json")
+        .then((fresh) => { bootedToday.dailyData = fresh; }, () => {})
+        .then(() => {
+          dailyRefetchInFlight = false;
+          initDateLine();
+          renderToday(bootedToday.cardsData, bootedToday.dailyData);
+        });
+    }
+  } else if (bootedToday && windowMode(now) !== paintedWindowMode) {
     initDateLine();
     renderToday(bootedToday.cardsData, bootedToday.dailyData);
   }
