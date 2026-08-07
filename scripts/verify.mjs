@@ -758,9 +758,9 @@ function stage3() {
     assert.equal(d.anchors.length, 365, `total anchors = ${d.anchors.length}`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
-  check("stage3", "journal = 40, kenya = 60, wordOfDay = 30", () => {
+  check("stage3", "journal = 1825, kenya = 60, wordOfDay = 30", () => {
     const d = readJSON("data/cards.json");
-    assert.equal(d.journal.length, 40, `journal = ${d.journal.length}`);
+    assert.equal(d.journal.length, 1825, `journal = ${d.journal.length}`);
     assert.equal(d.kenya.length, 60, `kenya = ${d.kenya.length}`);
     assert.equal(d.wordOfDay.length, 30, `wordOfDay = ${d.wordOfDay.length}`);
   });
@@ -947,6 +947,33 @@ function stage3() {
     }
     return flagged.length ? `flagged for human review: ${flagged.join(", ")}` : "no near-duplicates flagged";
   });
+  check("stage3", "journal: exact-duplicate guard + near-duplicate proxy (v1.32, 1825 entries) — informational, non-blocking", () => {
+    // Exact duplicates ARE a hard failure (unlike the fuzzy proxy below) -- a byte-identical
+    // repeat in a pool explicitly sized for "no repeat" would defeat the entire point of the
+    // v1.31 pickIndex seam fix. Near-duplicates stay informational, same threshold/rationale
+    // as the anchors check above -- run once per authoring pass, not worth blocking CI on.
+    const d = readJSON("data/cards.json");
+    const seen = new Map();
+    const exactDupes = [];
+    for (const j of d.journal) {
+      const key = j.prompt.trim().toLowerCase();
+      if (seen.has(key)) exactDupes.push(`${seen.get(key)} ~ ${j.id}`);
+      else seen.set(key, j.id);
+    }
+    assert.equal(exactDupes.length, 0, `exact duplicate journal prompts: ${exactDupes.join(", ")}`);
+    const tok = (s) => new Set(s.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter((w) => w.length > 3));
+    const toks = d.journal.map((j) => tok(j.prompt));
+    const flagged = [];
+    for (let i = 0; i < d.journal.length; i++) {
+      for (let j = i + 1; j < d.journal.length; j++) {
+        const a = toks[i], b = toks[j];
+        const overlap = [...a].filter((w) => b.has(w)).length;
+        const denom = Math.min(a.size, b.size) || 1;
+        if (overlap / denom > 0.75) flagged.push(`${d.journal[i].id} ~ ${d.journal[j].id}`);
+      }
+    }
+    return flagged.length ? `flagged for human review: ${flagged.join(", ")}` : "no near-duplicates flagged (>75%)";
+  });
   check("stage3", "rotation: three simulated dates give distinct in-range picks", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     const d = readJSON("data/cards.json");
@@ -1033,11 +1060,14 @@ function stage5() {
       assert.ok(fontsTotal <= 300 * 1024, `fonts total ${fontsTotal} bytes > 300KB`);
     }
   });
-  check("stage5", "page weight (index.html+styles.css+data jsons) <= 350KB excl. fonts", () => {
+  check("stage5", "page weight (index.html+styles.css+data jsons) <= 600KB excl. fonts", () => {
+    // Budget raised 350KB -> 600KB in v1.32 (invariant-12 logged exception, owner-authorized)
+    // to fit the 1825-entry, 5-year Journal pool; see audits/decisions.md for the original
+    // text this replaced and the reasoning.
     const files = ["index.html", "styles.css", "app.js", "figure.js", "lib.mjs", "weeks.js", "mara.js", "manifest.webmanifest", "sw.js",
       "data/cards.json", "data/values.json", "data/daily.json", "data/mara.json"].filter(exists);
     const total = files.reduce((sum, f) => sum + sizeOf(f), 0);
-    assert.ok(total <= 350 * 1024, `total ${total} bytes > 350KB (${files.join(",")})`);
+    assert.ok(total <= 600 * 1024, `total ${total} bytes > 600KB (${files.join(",")})`);
   });
   check("stage5", "README.md runbook present, non-trivial", () => {
     assert.ok(exists("README.md"));

@@ -7,7 +7,7 @@ Source of truth: BUILD-PLAN.md — read it before touching this repo.
 3. Zero runtime deps: vanilla HTML/CSS/JS, no build step, no npm install, `localStorage` keys `mindset.*` only.
 4. Node ≥ 20 built-ins only for scripts. Local `generate-daily.mjs` runs need `NODE_USE_ENV_PROXY=1`.
 5. Ships on GitHub Pages from `main` root. All local URLs relative. `.nojekyll` present.
-6. Budgets: page ≤350KB (excl. fonts), fonts ≤300KB, JS ≤60KB, `figure.js` ≤12KB.
+6. Budgets: page ≤600KB (excl. fonts), fonts ≤300KB, JS ≤60KB, `figure.js` ≤12KB. (Raised from 350KB in v1.32 — logged exception, see decisions.md — to fit the 5-year Journal pool; the owner explicitly authorized it.)
 7. WCAG AA contrast, keyboard focus, aria roles, 44px tap targets, semantic landmarks.
 8. Every date is Asia/Hong_Kong via `Intl.DateTimeFormat` with explicit `timeZone` — never bare local time.
 9. `<meta name="robots" content="noindex">`.

@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.31)
+# MINDSET — Autonomous Build Plan (v1.32)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1627,6 +1627,51 @@ entirely. This entry covers the removal and a rotation-primitive bug fix found w
   the seam-fix comments were trimmed to fit). Page weight 269,453 B of 358,400 -- 88,947 B
   (~86.9KB) headroom, the number the Journal-expansion sizing decision is computed against.
 
+**v1.32 changelog (from v1.31, live request continued):** the Journal content expansion itself,
+sized against the v1.31 entry's headroom numbers. 1825 entries (5 x 365, matching the anchors
+pool's own flat-365/year precedent) at the existing pool's prompt quality/length would cost
+~186.5KB against ~87KB of real headroom -- presented the owner three real options plus a fourth,
+higher-risk one not recommended (full numbers, all four options, and the choice made are in
+`audits/decisions.md`); the owner chose to raise the page-weight budget rather than compromise
+the content. `CLAUDE.md` invariant 6 and `BUILD-PLAN.md` §2 item 6 both updated 350KB -> 600KB,
+the invariant-12 exception logged in `audits/decisions.md` quoting the original check text
+verbatim as the invariant itself requires.
+
+- **`data/cards.json`:** `journal` pool replaced in full, 40 -> 1825 entries, `journal-01`..`-40`
+  -> zero-padded `journal-0001`..`-1825`. ~40 sub-themes (roughly half Stoic philosophy --
+  dichotomy of control, memento mori, impermanence, voluntary discomfort, and more; half Bill
+  Perkins's Die With Zero -- experiences now not deferred, memory dividends, giving while alive,
+  time-buckets by life stage, and more), neither source named in any shipped prompt text (Journal
+  has no `attribution` field, unlike anchors). Full sub-theme/id-range table, authoring
+  methodology, and an honestly-scoped account of what a 1825-entry round could and couldn't carry
+  over from the anchors v1.14 process (12 research passes, 4 QA passes per entry -- not
+  replicated at this volume) are in `audits/CONTENT-REVIEW.md`'s new "Journal v1.32" section.
+- **A real quality miss, caught and fixed within the round:** the first draft of the `duty`
+  sub-theme over-relied on one sentence template, producing 18 near-duplicate flags in a single
+  60-entry batch (up to 83% overlap) the moment it was actually validated. Rewritten in full with
+  deliberate structural variety before continuing; every later batch was validated per-batch
+  (not just at the end) specifically because of this catch. Two more near-duplicate pairs (82%,
+  80%) found on the first full-corpus pass were rewritten cleanly; two further pairs (78% each)
+  surfaced only after merging into `cards.json`, where the first fix attempt itself introduced
+  two NEW collisions elsewhere in the pool -- caught by re-running the full-corpus check rather
+  than assumed clean, and corrected with a second, more careful rewrite. Full sequence, not
+  smoothed over, in `audits/decisions.md`.
+- **`scripts/verify.mjs`:** `journal = 40` retargeted to `journal = 1825` (like-for-like, not
+  new). New: a hard exact-duplicate guard for `journal` (a literal repeat would defeat the point
+  of the v1.31 seam fix) plus a near-duplicate proxy scoped to `journal` at a 75% threshold
+  (looser than anchors' 60%, calibrated to this pool's own observed acceptable-overlap ceiling).
+  Check count: 85 -> 86.
+- **`data/daily.json` regenerated for real** (the previously-committed `journalId` no longer
+  existed in the new pool) -- today's pick, `journal-0684`, confirmed rendering correctly live.
+- **Verified:** `verify.mjs all` 86/86 -- word cap, quote-glyph, banned-platitude, and both
+  duplicate checks all pass across the real, full 1825, not a sample. Live Playwright pass
+  (clock-mocked, real app.js/lib.mjs/cards.json served from disk, three HKT instants): correct
+  Journal card content, zero console errors, 194ms local load time. `data/cards.json` 419,673 B
+  (journal array 243,068 B / 1825 entries, 133.2 B/entry average -- higher than the 102.2 B/entry
+  the pre-authoring estimate assumed, which is why the shipped total landed at 554,845 B rather
+  than the ~441KB first estimated). Page weight 554,845 B of 600KB (~45KB headroom). JS budget
+  untouched this round (no JS files changed): still 60,837 B of 61,440.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -1701,7 +1746,7 @@ The three daily cards:
 3. **Zero runtime dependencies.** Vanilla HTML/CSS/JS. No frameworks, no npm packages, no build step, no bundler, no analytics, no cookies, no third-party scripts or CDNs at runtime. `localStorage` only, keys namespaced `mindset.*`.
 4. **Node ≥ 20 built-ins only** for scripts (global `fetch`, `node:fs`, `node:test` allowed). No `npm install` at any point. When running `generate-daily.mjs` locally in this environment, set `NODE_USE_ENV_PROXY=1` so Node's built-in `fetch` honours the environment's egress proxy (GitHub Actions runners are unaffected and need no flag).
 5. **Static hosting truth:** everything must work on GitHub Pages served from `main` branch root. Include a `.nojekyll` file. All stages commit and push directly to `main` — the owner has authorized this for this repo; there is no feature-branch/PR step in this plan.
-6. **Performance budget:** total page weight ≤ 350 KB excluding fonts; fonts ≤ 300 KB total; JS ≤ 60 KB total; the figure animation must pause when the tab is hidden and must honour `prefers-reduced-motion`.
+6. **Performance budget:** total page weight ≤ 600 KB excluding fonts (raised from 350 KB in v1.32 — a logged invariant-12 exception, owner-authorized, to fit the 5-year Journal pool; see decisions.md); fonts ≤ 300 KB total; JS ≤ 60 KB total; the figure animation must pause when the tab is hidden and must honour `prefers-reduced-motion`.
 7. **Accessibility floor:** WCAG AA contrast for all text token pairs (verified numerically in `verify.mjs`, including `(--muted,--bg)` and `(--accent,--bg)` — not just the on-`--surface` pairs — and gated at 4.5:1 for any pair used for normal-size text, 3:1 only where the token is genuinely large-text/UI-component use), visible keyboard focus, `aria` roles on tabs and theme toggle, tap targets ≥ 44px, semantic landmarks (`header`, `main`, `nav`, `footer`).
 8. **Timezone law:** every date shown or computed is **Asia/Hong_Kong**, derived via `Intl.DateTimeFormat` with an explicit `timeZone` — never a bare `new Date().toLocaleDateString()` and never the runner's local time. `app.js`/`figure.js` must not call locale-date APIs without an explicit `timeZone` (Stage 1 verify greps for this).
 9. **Search visibility:** `<meta name="robots" content="noindex">` (public but unlisted — note: this hides the Pages URL from search, but the GitHub repo itself, including `cards.json`, remains a public, indexable, code-searchable text file regardless. Don't rely on "unlisted" as a content-privacy mechanism).
@@ -1730,7 +1775,7 @@ The three daily cards:
 │   ├── mara/                # 40 Wikimedia Commons wildlife photos, PD/CC0/CC BY/CC BY-SA only (v1.25)
 │   └── favicon.svg
 ├── data/
-│   ├── cards.json          # anchors[365], journal[40], kenya[60], wordOfDay[30]
+│   ├── cards.json          # anchors[365], journal[1825] (v1.32 -- 5yr no-repeat), kenya[60], wordOfDay[30]
 │   ├── values.json         # 5 values
 │   ├── mara.json           # park facts + Great Migration + 20 animals (v1.25)
 │   └── daily.json          # written by the pipeline daily
@@ -1951,7 +1996,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 | anchors | `voices` (Jay Shetty, Barack Obama, Michelle Obama, Nelson Mandela, Desmond Tutu, Fred Rogers, Viktor Frankl, Naval Ravikant; see §5.3.9) | 40 |
 | anchors | `grounding` (added v1.14 — universal sensory/body observations, no named attribution) | 35 |
 | **anchors total** | | **365** |
-| journal | — (replaced `shifts` in v1.12) | **40** |
+| journal | — (replaced `shifts` in v1.12; expanded 40 -> 1825 in v1.32, Stoic + Die With Zero themed, 5yr no-repeat) | **1825** |
 | kenya | `Geography` (12) `Wildlife` (14) `History` (10) `Government` (8) `Culture` (8) `Economy` (4) `Sports` (4) — added v1.15 | **60** |
 | wordOfDay | — (added v1.10, replacing freshReserve) | **30** |
 
@@ -1970,7 +2015,7 @@ rather than a short list of what actually matters (§5.3.6).
 2. Original paraphrase only; zero quotation-mark glyphs per invariant 2 (ASCII apostrophes for contractions/possessives are fine); attribution `— after <thinker>` or `— core principle`.
 3. Second person or imperative voice (`You control the response, not the event.`).
 4. **Banned platitudes** (verify.mjs greps, case-insensitive; store the list split/obfuscated in `verify.mjs` so the harness doesn't fail its own repo-wide-adjacent sweep by containing the literal strings): `believe in yourself`, `hustle`, `crush it`, `unlock your potential`, `be your best self`, `good vibes`, `grind`, `10x`, `manifest`.
-5. **Journal prompts (replaced Shift cards in v1.12):** `{ "id", "prompt" }`, `prompt` ≤ 25 words, one open-ended question per entry, second person, no yes/no questions — it should invite a few sentences of actual reflection, not a one-word answer. Concrete and specific beats abstract and general (`What's one thing you're avoiding right now, and what is it costing you to keep avoiding it?`, not `How are you feeling today?`).
+5. **Journal prompts (replaced Shift cards in v1.12; expanded to 1825 entries in v1.32):** `{ "id", "prompt" }`, `prompt` ≤ 25 words, one open-ended question per entry, second person, no yes/no questions — it should invite a few sentences of actual reflection, not a one-word answer. Concrete and specific beats abstract and general (`What's one thing you're avoiding right now, and what is it costing you to keep avoiding it?`, not `How are you feeling today?`). The 1825-entry pool (5 x 365, matching the anchors precedent of a flat 365/year with no leap-day adjustment) is organized across ~40 sub-themes drawn from two sources, named here even though attribution never appears in the shipped prompt text itself (unlike anchors): Stoic philosophy (dichotomy of control, memento mori, impermanence, virtue over reputation, voluntary discomfort, and more) and Bill Perkins's Die With Zero (experiences over deferred joy, memory dividends, giving while alive, time-buckets by life stage, and more). `journal-NNNN` ids are 4-digit zero-padded (was 2-digit at 40 entries).
 6. Values (`values.json`, exactly 5): `{ "name", "essence" (≤ 14 words), "behaviour" (≤ 16 words, observable — something a camera could see) }`. Generic-safe: no personal references to the owner. (Cut from 10 to 5 in v1.2 per live human feedback — keep the strongest 5, cut the rest rather than let the list grow back; if curating later, replace one of the 5, don't add a 6th.)
 7. **Attribution-confidence rule:** use a person-named attribution (`— after X`) only when you are confident the specific idea is centrally/traditionally X's (e.g. Epictetus/Seneca/Marcus Aurelius for Stoic control-of-response ideas, Bill Perkins for Die With Zero's core thesis, Dweck for growth-mindset framing, Carnegie for the specific relationship tactics from *How to Win Friends*, Housel for invisible-wealth/avoid-ruin framing, Newport for deep-work framing). Otherwise, demote to tradition-level attribution (`— Stoic tradition`, `— growth-mindset research`, `— core principle`) rather than guessing at a specific person. This is a quality/accuracy safeguard, independent of the (resolved) PII question — misattributing an idea to a real, named public figure is a credibility problem even though naming public figures itself is fine.
 8. Write anchors in six batches (one per category, extending each category's 3 seed cards to its full count). After each batch, run the normal mechanical self-review (word caps, quote marks, banned phrases — rules 1–5), **and then** a second, independent review pass per §10 Stage 3's content-QA step, before moving to the next batch.
