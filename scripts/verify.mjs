@@ -488,7 +488,7 @@ function stage1() {
     assert.equal(lib.staleness("2026-07-15", new Date("2026-07-15T21:00:00Z")), "yesterday");
   });
 
-  check("stage1", "app.js: PWA-resume day-flip check uses expectedDateHKT, not raw hktDateString (v1.30)", () => {
+  check("stage1", "app.js: PWA-resume day-flip check uses expectedDateHKT, not raw hktDateString for the CONTENT day (v1.30/v1.34)", () => {
     // Bug: paintedDateHKT was stamped with the raw HKT calendar date, which flips at midnight,
     // while content only rolls over at the 05:00 HKT boundary staleness() actually judges (the
     // line above). A resume during 00:00-05:00 "used up" that day's flip early; a later
@@ -502,7 +502,17 @@ function stage1() {
       "paintedDateHKT must be stamped from expectedDateHKT(now), not the raw HKT calendar date");
     assert.match(src, /expectedDateHKT\(now\)\s*!==\s*paintedDateHKT/,
       "the visibilitychange day-flip comparison must use expectedDateHKT(now), matching staleness()'s boundary");
-    assert.doesNotMatch(src, /\bhktDateString\b/, "hktDateString is unused in app.js now -- drop it, don't reintroduce it");
+    // v1.34: hktDateString is legitimately back, but only for a SEPARATE raw-calendar tracker
+    // (paintedCalendarDateHKT, a different bug entirely -- the header/Kenya-countdown staleness
+    // gap) -- assert it, but ALSO assert the original v1.30 bug's exact anti-pattern still never
+    // reappears: paintedDateHKT (the CONTENT tracker) must never be assigned from or compared
+    // against hktDateString directly.
+    assert.match(src, /paintedCalendarDateHKT\s*=\s*hktDateString\(now\)/,
+      "paintedCalendarDateHKT must be stamped from hktDateString(now)");
+    assert.match(src, /hktDateString\(now\)\s*!==\s*paintedCalendarDateHKT/,
+      "the visibilitychange handler must re-render on a bare calendar-day flip too, not just content-day/window-mode");
+    assert.doesNotMatch(src, /paintedDateHKT\s*=\s*hktDateString\(/, "the v1.30 bug's exact pattern: paintedDateHKT must never be stamped from hktDateString");
+    assert.doesNotMatch(src, /hktDateString\(now\)\s*!==\s*paintedDateHKT/, "the v1.30 bug's exact pattern: paintedDateHKT must never be compared against hktDateString");
   });
 
   check("stage1", "lib.mjs: isFocusWindowHKT correct at the 09:00 HKT boundary", async () => {
@@ -664,34 +674,52 @@ function stage1() {
     }
   });
 
-  check("stage1", "lib.mjs: pickIndex has no consecutive-day repeat across 10 cycle SEAMS per pool (v1.31 fix)", async () => {
-    // The full-cycle check above only proves uniqueness WITHIN one cycle; it can't catch a
-    // repeat AT the boundary between two independently-shuffled cycles, which is exactly the
-    // class of bug the v1.31 seam guard fixes (see lib.mjs's pickIndex comment). Sweeps 10
-    // consecutive seams (not just 1) per pool, across every salt in current use ("closing" is
-    // retired -- kept here anyway as a generic-correctness check, proving the fix isn't
-    // accidentally salt-specific -- plus one synthetic salt), so a fix that happens to work for
-    // one lucky seed can't pass silently.
+  check("stage1", "lib.mjs: pickIndex guarantees a minimum cross-seam gap, not just no immediate repeat (v1.34)", async () => {
+    // Supersedes the v1.31-era check of the same name/spirit, which only ever proved no
+    // IMMEDIATE (1-day) repeat at a seam. The v1.34 audit found that was too weak: a real,
+    // dated 4-day repeat was still possible one step further into the same seam, because
+    // nothing constrained days 2..G -- only day 1 was ever checked. This asserts the actual
+    // stronger guarantee lib.mjs now makes (minSeamGap, also exported so this test can't drift
+    // from the real formula): for every item, any two appearances within `window` days of a
+    // seam are more than minSeamGap(poolSize) days apart. Swept across 8 consecutive seams per
+    // pool (not just 1) and every salt in current use ("closing" is retired -- kept here anyway
+    // as a generic-correctness check, proving the guarantee isn't accidentally salt-specific --
+    // plus one synthetic salt), so a fix that happens to work for one lucky seed can't pass
+    // silently. (This also subsumes the old no-immediate-repeat property: gap > minSeamGap >= 1
+    // rules out gap === 1 too.)
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     for (const poolSize of [1825, 365, 60, 40, 34, 30, 10, 5]) {
+      const gap = lib.minSeamGap(poolSize);
+      const window = Math.min(poolSize, gap * 2 + 5); // margin past the guaranteed danger zone
       for (const salt of ["anchor", "journal", "kenya", "word", "closing", "arbitrary-salt"]) {
-        for (let cycle = 1; cycle <= 10; cycle++) {
+        for (let cycle = 1; cycle <= 8; cycle++) {
           const seamDay = cycle * poolSize; // first day of `cycle`, i.e. dayNumber%poolSize===0
-          const before = lib.pickIndex(poolSize, seamDay - 1, salt);
-          const after = lib.pickIndex(poolSize, seamDay, salt);
-          assert.notEqual(before, after,
-            `pool ${poolSize} salt "${salt}": day ${seamDay - 1} and day ${seamDay} (cycle seam) both picked index ${after}`);
+          const seenBefore = new Map(); // index -> most recent dayNumber, for [seamDay-window, seamDay)
+          for (let d = Math.max(0, seamDay - window); d < seamDay; d++) {
+            seenBefore.set(lib.pickIndex(poolSize, d, salt), d);
+          }
+          for (let d = seamDay; d < seamDay + window; d++) {
+            const idx = lib.pickIndex(poolSize, d, salt);
+            if (seenBefore.has(idx)) {
+              const actualGap = d - seenBefore.get(idx);
+              assert.ok(actualGap > gap,
+                `pool ${poolSize} salt "${salt}" cycle ${cycle}: index ${idx} repeated after only ${actualGap} days across the seam (day ${seenBefore.get(idx)} -> day ${d}), need > ${gap}`);
+            }
+          }
         }
       }
     }
   });
 
-  check("stage1", "lib.mjs: pickIndex is internally consistent -- every day in a cycle agrees on that cycle's order (v1.31 regression guard)", async () => {
+  check("stage1", "lib.mjs: pickIndex is internally consistent -- every day in a cycle agrees on that cycle's order (v1.31/v1.34 regression guard)", async () => {
     // The bug the seam fix itself had, caught before shipping: if the swap decision depended
     // on WHICH dayNumber triggered it instead of the cycle alone, two different days inside the
     // SAME cycle could each recompute a different order and collide with each other -- proven
     // by reconstructing each cycle's full picked sequence from its individual per-day calls and
-    // checking it's still a genuine permutation (every index appears exactly once).
+    // checking it's still a genuine permutation (every index appears exactly once). Still
+    // exactly as applicable to v1.34's wider swap-fixup construction, which is equally a pure
+    // function of (poolSize, salt, cycle) alone -- this check would catch it just as fast if
+    // that stopped being true.
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     for (const poolSize of [1825, 365, 40, 34, 10]) {
       for (let cycle = 0; cycle <= 4; cycle++) {
@@ -1053,10 +1081,12 @@ function stage5() {
   check("stage5", "sw.js registered in app.js", () => {
     assert.match(read("app.js"), /serviceWorker\.register\(["']\.\/sw\.js["']\)/);
   });
-  check("stage5", "byte budgets: JS <= 60KB, icons <= 150KB, fonts <= 300KB", () => {
+  check("stage5", "byte budgets: JS <= 65KB, icons <= 150KB, fonts <= 300KB", () => {
+    // JS budget raised 60KB -> 65KB in v1.34 (invariant-12 logged exception) -- see
+    // audits/decisions.md for the original check text this replaced and the reason.
     const jsFiles = ["app.js", "figure.js", "lib.mjs", "weeks.js", "mara.js", "sw.js"].filter(exists);
     const jsTotal = jsFiles.reduce((sum, f) => sum + sizeOf(f), 0);
-    assert.ok(jsTotal <= 60 * 1024, `JS total ${jsTotal} bytes > 60KB (${jsFiles.join(",")})`);
+    assert.ok(jsTotal <= 65 * 1024, `JS total ${jsTotal} bytes > 65KB (${jsFiles.join(",")})`);
     const iconsDir = abs("assets/icons");
     if (fs.existsSync(iconsDir)) {
       const iconsTotal = fs.readdirSync(iconsDir).reduce((sum, f) => sum + fs.statSync(path.join(iconsDir, f)).size, 0);

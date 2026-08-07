@@ -2494,7 +2494,7 @@
     },
     {
       "id": "journal-0076",
-      "prompt": "If you had a firm number of mornings left, would today's plan survive the cut?"
+      "prompt": "If you had a firm number of mornings left, what part of today's plan would not survive the cut?"
     },
     {
       "id": "journal-0077",
@@ -2542,7 +2542,7 @@
     },
     {
       "id": "journal-0088",
-      "prompt": "If your time here had a visible countdown, would you still be spending today the way you are?"
+      "prompt": "If your time here had a visible countdown, what about the way you're spending today would you change first?"
     },
     {
       "id": "journal-0089",
@@ -2606,7 +2606,7 @@
     },
     {
       "id": "journal-0104",
-      "prompt": "If you only had this one life, is today's version of it the one you'd choose again?"
+      "prompt": "If you only had this one life, what about today's version of it would you choose differently?"
     },
     {
       "id": "journal-0105",
@@ -2686,7 +2686,7 @@
     },
     {
       "id": "journal-0124",
-      "prompt": "If you knew exactly how many summers you had left, would you spend this one differently?"
+      "prompt": "If you knew exactly how many summers you had left, what would you do differently with this one?"
     },
     {
       "id": "journal-0125",
@@ -3074,7 +3074,7 @@
     },
     {
       "id": "journal-0221",
-      "prompt": "Which today's obstacle might you thank later for redirecting you somewhere you wouldn't have gone otherwise?"
+      "prompt": "Which of today's obstacles might you thank later for redirecting you somewhere you wouldn't have gone otherwise?"
     },
     {
       "id": "journal-0222",
@@ -3350,7 +3350,7 @@
     },
     {
       "id": "journal-0290",
-      "prompt": "How much of today's argument with you is about the actual issue, and how much is just two tired people losing perspective?"
+      "prompt": "How much of your argument today is about the actual issue, and how much is just two tired people losing perspective?"
     },
     {
       "id": "journal-0291",
@@ -3654,7 +3654,7 @@
     },
     {
       "id": "journal-0366",
-      "prompt": "Which today's routine will you look back on fondly once it's gone, and are you appreciating it now?"
+      "prompt": "Which routine of yours today will you look back on fondly once it's gone, and are you appreciating it now?"
     },
     {
       "id": "journal-0367",
@@ -5786,7 +5786,7 @@
     },
     {
       "id": "journal-0899",
-      "prompt": "Which stage of raising kids, or being a young adult, are you in that has a shape and a rhythm unique to right now?"
+      "prompt": "Which stage of raising kids, or of your own life right now, has a shape and a rhythm unique to this exact year?"
     },
     {
       "id": "journal-0900",
@@ -5974,7 +5974,7 @@
     },
     {
       "id": "journal-0946",
-      "prompt": "Which of the three are you shortest on today, and how is that quietly shaping every choice you make?"
+      "prompt": "Which of health, money, and time are you shortest on today, and how is that quietly shaping every choice you make?"
     },
     {
       "id": "journal-0947",
@@ -5982,7 +5982,7 @@
     },
     {
       "id": "journal-0948",
-      "prompt": "Where do you keep waiting for all three to align perfectly, when they may never actually line up at once?"
+      "prompt": "Where do you keep waiting for health, money, and time to align perfectly, when they may never line up at once?"
     },
     {
       "id": "journal-0949",
@@ -6006,7 +6006,7 @@
     },
     {
       "id": "journal-0954",
-      "prompt": "Which of the three resources did you have in abundance five years ago that you have less of today?"
+      "prompt": "Which of health, money, and time did you have in abundance five years ago that you have far less of today?"
     },
     {
       "id": "journal-0955",
@@ -6018,7 +6018,7 @@
     },
     {
       "id": "journal-0957",
-      "prompt": "What's a plan that depends on all three lining up, and how likely is that to actually happen if you keep waiting?"
+      "prompt": "What's a plan that depends on health, money, and time all lining up, and how likely is that if you keep waiting?"
     },
     {
       "id": "journal-0958",
@@ -6026,7 +6026,7 @@
     },
     {
       "id": "journal-0959",
-      "prompt": "What's something you're capable of doing this year that requires all three at once, and how rare is that overlap for you?"
+      "prompt": "What's something you're capable of this year that needs health, money, and time at once, and how rare is that overlap?"
     },
     {
       "id": "journal-0960",
@@ -6038,7 +6038,7 @@
     },
     {
       "id": "journal-0962",
-      "prompt": "Which of the three are you currently rich in that you're not spending, out of habit more than necessity?"
+      "prompt": "Which of health, money, and time are you currently rich in but not spending, out of habit more than necessity?"
     },
     {
       "id": "journal-0963",
@@ -6054,7 +6054,7 @@
     },
     {
       "id": "journal-0966",
-      "prompt": "Which resource would you trade some of the other two for right now, if you're honest about what you're actually short on?"
+      "prompt": "Which of health, money, and time would you trade the other two for right now, if you're honest about what you lack?"
     },
     {
       "id": "journal-0967",
@@ -6086,7 +6086,7 @@
     },
     {
       "id": "journal-0974",
-      "prompt": "Which of the three would your future self, missing it, most wish you'd spent more freely today?"
+      "prompt": "Which of health, money, and time would your future self, missing it, most wish you'd spent more freely today?"
     },
     {
       "id": "journal-0975",
@@ -6102,7 +6102,7 @@
     },
     {
       "id": "journal-0978",
-      "prompt": "Which of your three resources is quietly depleting while you focus all your attention on growing the other two?"
+      "prompt": "Which of your health, money, or time is quietly depleting while you focus all your attention on growing the other two?"
     },
     {
       "id": "journal-0979",
@@ -6562,11 +6562,11 @@
     },
     {
       "id": "journal-1093",
-      "prompt": "Where has your list quietly become a list of things you talk about instead of things you do?"
+      "prompt": "Where has your someday list quietly become a list of things you talk about instead of things you do?"
     },
     {
       "id": "journal-1094",
-      "prompt": "What's the oldest item on your list, and why is it still there?"
+      "prompt": "What's the oldest item on your someday list, and why is it still sitting there?"
     },
     {
       "id": "journal-1095",
@@ -6578,7 +6578,7 @@
     },
     {
       "id": "journal-1097",
-      "prompt": "Where do you keep adding to your list without ever actually subtracting from it?"
+      "prompt": "Where do you keep adding to your someday list without ever actually subtracting from it?"
     },
     {
       "id": "journal-1098",
@@ -6594,7 +6594,7 @@
     },
     {
       "id": "journal-1101",
-      "prompt": "Where does your list function more as a comfort than as an actual commitment?"
+      "prompt": "Where does your someday list function more as a comfort than as an actual commitment?"
     },
     {
       "id": "journal-1102",
@@ -6610,7 +6610,7 @@
     },
     {
       "id": "journal-1105",
-      "prompt": "Where do you keep your list private specifically so no one can ask you why it isn't moving?"
+      "prompt": "Where do you keep your someday list private specifically so no one can ask you why it isn't moving?"
     },
     {
       "id": "journal-1106",
@@ -6642,7 +6642,7 @@
     },
     {
       "id": "journal-1113",
-      "prompt": "Where do you keep researching an item on your list instead of actually booking it?"
+      "prompt": "Where do you keep researching an item on your someday list instead of actually booking it?"
     },
     {
       "id": "journal-1114",
@@ -6658,7 +6658,7 @@
     },
     {
       "id": "journal-1117",
-      "prompt": "Where does comparing your list to someone else's more impressive one talk you out of your own?"
+      "prompt": "Where does comparing your someday list to someone else's more impressive one talk you out of your own?"
     },
     {
       "id": "journal-1118",
@@ -6674,7 +6674,7 @@
     },
     {
       "id": "journal-1121",
-      "prompt": "Where do you let a fear of what people will think keep an item permanently stuck on your list?"
+      "prompt": "Where do you let a fear of what people will think keep an item permanently stuck on your someday list?"
     },
     {
       "id": "journal-1122",
@@ -6690,7 +6690,7 @@
     },
     {
       "id": "journal-1125",
-      "prompt": "Where does your list need less thinking and more scheduling?"
+      "prompt": "Where does your someday list need less thinking and more scheduling?"
     },
     {
       "id": "journal-1126",
@@ -6766,7 +6766,7 @@
     },
     {
       "id": "journal-1144",
-      "prompt": "Which accomplishment are you working toward that matters more to your résumé than to your legacy?"
+      "prompt": "Which accomplishment are you working toward that matters more to your resume than to your legacy?"
     },
     {
       "id": "journal-1145",
@@ -7882,7 +7882,7 @@
     },
     {
       "id": "journal-1423",
-      "prompt": "Which today would you handle the same way whether it earned you praise or criticism?"
+      "prompt": "Which part of today would you handle the same way whether it earned you praise or criticism?"
     },
     {
       "id": "journal-1424",
@@ -8018,7 +8018,7 @@
     },
     {
       "id": "journal-1457",
-      "prompt": "Where does your mood today depend more on being seen a certain way than on actually doing right by the day?"
+      "prompt": "Where does today's praise or criticism move you further than the actual quality of what you did?"
     },
     {
       "id": "journal-1458",
@@ -9398,7 +9398,7 @@
     },
     {
       "id": "journal-1802",
-      "prompt": "Which of today's words matched your actions, and which today quietly didn't?"
+      "prompt": "Which of today's words matched your actions, and which ones quietly didn't?"
     },
     {
       "id": "journal-1803",
@@ -9707,7 +9707,7 @@
     {
       "id": "kenya-43",
       "category": "Government",
-      "fact": "Nairobi hosts the headquarters of the United Nations Environment Programme, the only United Nations agency headquarters located anywhere in the Global South."
+      "fact": "Nairobi hosts the headquarters of both the United Nations Environment Programme and UN-Habitat, making it the UN's main hub in the Global South."
     },
     {
       "id": "kenya-44",

@@ -218,7 +218,10 @@
     _stop() { this._running = false; cancelAnimationFrame(this._raf); }
     _drawStatic() {
       if (!this._ctx || !this._w) return;
-      this._draw(BREATHE_CYCLE * 0.25); // a calm, mid-bright resting frame
+      // v1.34: was BREATHE_CYCLE * 0.25 -- _draw() divides by this._cycleMs, which is
+      // RESONANCE_CYCLE when resonance is active, so the hardcoded constant landed at
+      // breathe=0.25 instead of the intended mid-bright 0.5 whenever resonance was on.
+      this._draw(this._cycleMs * 0.25);
     }
   }
   customElements.define("mindset-figure", MindsetFigure);

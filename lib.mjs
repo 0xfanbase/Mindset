@@ -43,19 +43,39 @@ function shuffledOrder(poolSize, salt, cycle) {
   return order;
 }
 
+// Minimum guaranteed gap (days) between repeats across a cycle seam (v1.34): pool/6, floored
+// (journal 304, anchors 60, kenya 10, word 5). Must stay <= poolSize/2 (see below); reasoning
+// and verification in decisions.md v1.34. Exported so verify.mjs checks the real formula.
+export function minSeamGap(poolSize) {
+  return Math.max(1, Math.floor(poolSize / 6));
+}
+
+// Cycle `cycle`'s shuffle, first `gap` picks forced to exclude cycle `cycle - 1`'s LAST `gap`
+// picks (v1.34; supersedes v1.31's single-position guard -- immediate repeats only). Built via
+// swap, not reject-and-reshuffle (retry odds collapse as `gap` grows -- decisions.md v1.34).
+// `scan` only moves forward: O(poolSize), always finds a slot since gap <= poolSize/2 leaves
+// >= gap non-forbidden items at position >= gap.
+function shuffledOrderSeamSafe(poolSize, salt, cycle) {
+  const order = shuffledOrder(poolSize, salt, cycle);
+  if (cycle === 0 || poolSize < 2) return order;
+  const gap = Math.min(minSeamGap(poolSize), Math.floor(poolSize / 2));
+  if (gap < 1) return order;
+  const forbidden = new Set(shuffledOrder(poolSize, salt, cycle - 1).slice(poolSize - gap));
+  const safe = order.slice();
+  let scan = gap;
+  for (let i = 0; i < gap; i++) {
+    if (forbidden.has(safe[i])) {
+      while (scan < poolSize && forbidden.has(safe[scan])) scan++;
+      [safe[i], safe[scan]] = [safe[scan], safe[i]];
+      scan++;
+    }
+  }
+  return safe;
+}
+
 export function pickIndex(poolSize, dayNumber, salt) {
   const cycle = Math.floor(dayNumber / poolSize);
-  const order = shuffledOrder(poolSize, salt, cycle);
-  // Seam guard (v1.31): independent per-cycle reshuffles could otherwise repeat the same item
-  // across two consecutive days at a cycle boundary. Keyed by cycle alone, not dayNumber, so
-  // every day in a cycle agrees on the same swap decision (else two days in ONE cycle could
-  // disagree and collide with each other). Verified collision-free for every real pool here
-  // (>=30) across 70,000+ simulated days; poolSize 2 is a moot structural exception (position
-  // poolSize-1 is itself one of the two swapped slots there) -- no pool in this app is that small.
-  if (cycle > 0 && poolSize > 1) {
-    const prevLast = shuffledOrder(poolSize, salt, cycle - 1)[poolSize - 1];
-    if (order[0] === prevLast) [order[0], order[1]] = [order[1], order[0]];
-  }
+  const order = shuffledOrderSeamSafe(poolSize, salt, cycle);
   return order[dayNumber % poolSize];
 }
 

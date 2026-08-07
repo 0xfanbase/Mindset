@@ -1,5 +1,5 @@
 // app.js — UI logic: tabs, theme, date, cards, staleness (BUILD-PLAN.md §4/§6)
-import { hktDateParts, hktHour, staleness, expectedDateHKT, pickToday, isFocusWindowHKT, isDarkWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
+import { hktDateParts, hktDateString, hktHour, staleness, expectedDateHKT, pickToday, isFocusWindowHKT, isDarkWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
 import { initWeeksTab, refreshWeeksIfStale, redrawWeeksForTheme } from "./weeks.js";
 import { initMaraTab } from "./mara.js";
 
@@ -246,10 +246,20 @@ function renderValues(values) {
   });
 }
 
-async function fetchJSON(path) {
-  const res = await fetch(path, { cache: "no-store" });
-  if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
-  return res.json();
+// v1.34: bounded with a timeout -- fetch() has no default one, and an unbounded hang here left
+// dailyRefetchInFlight (below) stuck true forever, permanently disabling the next day's
+// refetch. Every caller already handles a rejection (boot's .catch(), the refetch's second
+// .then() arg), so a timeout-triggered abort just becomes an ordinary handled failure.
+async function fetchJSON(path, timeoutMs = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const res = await fetch(path, { cache: "no-store", signal: controller.signal });
+    if (!res.ok) throw new Error(`${path}: HTTP ${res.status}`);
+    return await res.json();
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // Two-state read of "what part of the day is it" -- focus (pre-09:00, Journal leads alone) or
@@ -263,6 +273,9 @@ function windowMode(now) {
 
 let paintedWindowMode = null;
 let paintedDateHKT = null;
+// Raw HKT calendar date (v1.34), distinct from paintedDateHKT's CONTENT day (05:00 pivot) --
+// initDateLine()/daysUntilKenyaTrip() pivot at midnight, a gap no trigger below used to cover.
+let paintedCalendarDateHKT = null;
 let bootedToday = null;
 
 // Offline rotation must agree with the live path on which day is "current": expectedDateHKT
@@ -299,6 +312,9 @@ function renderToday(cardsData, dailyData) {
   paintedWindowMode = winMode;
   // Content day, not raw calendar date (05:00 HKT boundary, matches staleness()).
   paintedDateHKT = expectedDateHKT(now);
+  // Raw calendar date too (v1.34) -- see paintedCalendarDateHKT's own comment above for why
+  // this is tracked separately from paintedDateHKT.
+  paintedCalendarDateHKT = hktDateString(now);
   // No syncThemeColorMeta() here (v1.33 -- removed, not reintroduced): its v1.28 rationale was
   // re-syncing --bg when data-period changed, but data-period is gone since v1.31 and --bg is
   // keyed only by [data-theme]. Every path that can actually change the theme (initTheme() at
@@ -339,11 +355,10 @@ async function boot() {
   }
 }
 
-// Installed iOS PWAs freeze JS while backgrounded and resume the frozen render — re-check
-// every boundary on return: theme window, content day, focus window (v1.28/v1.29). A
-// content-day flip REFETCHES daily.json first (the cron has almost certainly published
-// overnight; on failure the cached object stands). A mode flip alone never fetches — same
-// day, same file (v1.16).
+// Installed iOS PWAs freeze JS while backgrounded and resume the frozen render — re-check every
+// boundary on return: theme, content day, calendar day, focus window (v1.28/v1.29/v1.34). Only
+// a content-day flip REFETCHES daily.json (cron has almost certainly published overnight; on
+// failure the cached object stands) -- mode/calendar-day flips just re-render, same file.
 let dailyRefetchInFlight = false;
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
@@ -365,7 +380,9 @@ document.addEventListener("visibilitychange", () => {
           renderToday(bootedToday.cardsData, bootedToday.dailyData);
         });
     }
-  } else if (bootedToday && windowMode(now) !== paintedWindowMode) {
+  // v1.34: OR in a bare calendar-day flip, not just window-mode -- see paintedCalendarDateHKT's
+  // comment above. No refetch needed either way; same content day, same daily.json.
+  } else if (bootedToday && (windowMode(now) !== paintedWindowMode || hktDateString(now) !== paintedCalendarDateHKT)) {
     initDateLine();
     renderToday(bootedToday.cardsData, bootedToday.dailyData);
   }

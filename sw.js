@@ -1,4 +1,4 @@
-const CACHE = "mindset-v17";
+const CACHE = "mindset-v18";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs", "./weeks.js", "./mara.js",
   "./data/cards.json", "./data/values.json", "./data/daily.json", "./data/mara.json",
@@ -29,8 +29,12 @@ self.addEventListener("fetch", (e) => {
         if (res.ok) {
           const copy = res.clone();
           e.waitUntil(caches.open(CACHE).then((c) => c.put(e.request, copy)));
+          return res;
         }
-        return res;
+        // v1.34: an HTTP error is a live response, not a network failure -- .catch() below
+        // never sees it. Fall back to cache same as offline; only surface the error itself if
+        // nothing cached exists to fall back to.
+        return caches.match(e.request, { ignoreSearch: true }).then((cached) => cached || res);
       })
       .catch(() => caches.match(e.request, { ignoreSearch: true }))
   );

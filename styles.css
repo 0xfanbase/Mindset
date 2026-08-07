@@ -208,6 +208,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   font-style: italic;
   font-size: 16.5px;
   height: 44px;
+  min-width: 44px; /* v1.34: text-width sizing left "Mara" (shortest label) at 43.2px -- invariant 7 floor */
   padding: 0 2px;
   touch-action: manipulation;
   color: var(--muted);

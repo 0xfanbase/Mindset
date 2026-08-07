@@ -939,6 +939,35 @@ named in any shipped prompt text itself, matching the un-attributed voice the 40
 already had; unlike anchors, Journal has no `attribution` field). 1825 = 5 x 365, matching the
 anchors pool's own precedent of a flat 365/year with no leap-day special-casing.
 
+**Correction (v1.34):** "no repeat" as shipped here meant only within one 1825-day cycle; a
+repeat as close as 4 days was still possible at the boundary between two cycles, and a
+follow-up audit found this documented nowhere as a caveat. `lib.mjs` now guarantees at least
+305 days between any two appearances of the same entry, seam included, with the real average
+and typical gaps close to the original 5-year framing (not identical to it — see `decisions.md`
+v1.34 for the exact numbers and why an unconditional 5-year guarantee isn't achievable at all
+without giving up the per-cycle reshuffle).
+
+**Content corrections (v1.34), a second independent (Opus, "project director") audit specifically
+scoped to suitability/no-repeat/typos/UI-UX/bugs — 30 entries rewritten in place (ids unchanged,
+`audits/decisions.md`'s v1.34 entry has every before/after pair verbatim):**
+- 5 ungrammatical prompts (`journal-0221`, `-0290`, `-0366`, `-1423`, `-1802`) — broken syntax or
+  a dangling "which today" missing its noun, shipped and unreadable as the sole morning card.
+- 9 entries in the "the three" cluster (`journal-0946` through `-0978`) — written assuming the
+  batch context ("health, money, time" introduced elsewhere) that shipping one-per-day destroys;
+  rendered standalone, "the three" has no antecedent. Named explicitly in the fix.
+- 9 entries in the "your list" cluster (`journal-1093` through `-1125`) — bare "your list" is
+  ambiguous with the to-do/worry/skills lists used elsewhere in the pool; now "your someday list".
+- 4 polar (yes/no-answerable) prompts (`journal-0076`, `-0088`, `-0104`, `-0124`) — spec
+  violation, missed because this heuristic isn't mechanically checked by `verify.mjs`.
+- `journal-1457` — a real near-duplicate of `journal-0146` (both gate an internal state on
+  "being seen" rather than on action) surfaced once the near-dup threshold tightened; rewritten.
+- `journal-1144` — the pool's one non-ASCII string ("résumé"), normalized to "resume" to match
+  `journal-1135`/`journal-1395`'s spelling.
+- `journal-0899` — the one entry that read for the wrong life stage ("...or being a young
+  adult...") against the owner's actual late-30s profile.
+- `kenya-43` — factual correction: UN-Habitat is also headquartered in Nairobi, not only UNEP as
+  originally stated.
+
 **Methodology, honestly scoped — this is not a 1825-entry version of the anchors v1.14 process
 (12 research passes, 4 independent QA passes per entry).** At this volume that level of
 individual scrutiny per entry isn't practical in one round; the process instead leaned on a

@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.33)
+# MINDSET — Autonomous Build Plan (v1.34)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1709,6 +1709,58 @@ diff-vs-Stage-0 update paragraph). All five applied -- full text of each in `aud
   strengthened an existing check rather than adding one. `node --check` clean on every touched
   file.
 
+**v1.34 changelog (from v1.33, second independent audit -- Opus as owner-designated "project
+director," scoped to journal-content fit, no-repeat, typos, UI/UX, and a general bug hunt).
+Verdict: SHIP WITH FIXES, all applied:**
+
+- **Content fit judged genuinely sound** (full 1825-entry read, not a sample; Stoic/DWZ
+  substance confirmed, not just theming). Voice-drift (from the v1.33 entry) confirmed real but
+  logged as a follow-up-round candidate, not fixed here -- rushing it risked repeating the
+  v1.32 78%-pair mistake. 30 journal entries + 1 kenya fact rewritten for real defects: 5
+  ungrammatical prompts, a 9-entry "the three" cluster with zero antecedent once shipped
+  standalone (the round's highest-value catch -- a content bug of the exact "correct in
+  authoring context, silently wrong once shipped" character as the `pickIndex` seam bug), a
+  9-entry "your list" cluster, 4 polar (yes/no) prompts, one real near-duplicate
+  (`journal-1457`), one non-ASCII string, one wrong-life-stage entry, one Kenya factual error.
+  Full list and re-verification methodology in `audits/CONTENT-REVIEW.md` and `decisions.md`.
+- **A confirmed live bug: the header date and Kenya countdown could go stale up to 5 hours
+  after a backgrounded resume.** `app.js`'s two existing re-render triggers (content-day flip at
+  05:00, window-mode flip at 09:00/00:00) both miss the header/countdown's own midnight pivot --
+  reproduced live with Playwright before fixing. Fixed with a third tracked value,
+  `paintedCalendarDateHKT`, OR'd into the existing re-render branch; re-verified live plus a
+  strengthened `verify.mjs` source-pattern check.
+- **The "5-year no-repeat" claim was not actually being delivered -- fixed the mechanism, not
+  just the docs.** The v1.31 seam guard only ever proved no IMMEDIATE repeat; a real 4-day
+  repeat survived at a future seam, and the real guaranteed window averaged ~2.5 years, not 5.
+  A literal universal guarantee is mathematically impossible without one fixed repeating order
+  forever (proof sketch in decisions.md) -- so `lib.mjs` gained the strongest achievable BOUNDED
+  guarantee instead: `minSeamGap(poolSize)` (pool/6, floored) plus a deterministic swap-fixup
+  construction, verified via 100M+ simulated assertions before touching the shipped file
+  (matching the v1.31 discipline exactly) and against the real 4 pools over 80,000 days.
+  Journal's real median gap: 1817 days (~5 years, matching the original intent); minimum
+  guaranteed: 305 days. Today's already-shipped picks confirmed byte-identical, no regeneration
+  needed. Stale "expected and not a bug" guarantee text in BUILD-PLAN.md §6.2 (unedited across
+  v1.31-v1.33) corrected with the real numbers.
+- **`sw.js`:** an HTTP error response now falls back to cache instead of shadowing a good cached
+  copy (`if (res.ok)` used to guard caching only, not the fallback decision). `CACHE` bumped
+  `mindset-v17` -> `mindset-v18`.
+- **`app.js`:** `fetchJSON` gained a 15s timeout (`AbortController`) -- an unbounded hang could
+  leave `dailyRefetchInFlight` stuck true forever, permanently disabling future refetches.
+- **`styles.css`:** `.tab` gained `min-width: 44px` -- "Mara" (shortest label) measured 43.2px,
+  under invariant 7's tap-target floor.
+- **Two more cosmetic-but-real fixes found reading the code this round:** `weeks.js`'s
+  glow-vs-outline paint-order comment was backwards; `figure.js`'s `_drawStatic()` hardcoded
+  `BREATHE_CYCLE` instead of `this._cycleMs`, landing at the wrong brightness whenever
+  resonance mode was active.
+- **Invariant-12 exception: JS budget 60KB -> 65KB.** Pre-v1.34 headroom was already down to
+  603 B; this round's fixes are substantive new logic, not bloat, and needed 63,921 B even
+  after two rounds of comment-trimming. Original check text and full reasoning in
+  `audits/decisions.md`. `CLAUDE.md` invariant 6 and this file's §2 item 6 both updated.
+- **Verified:** `verify.mjs all` 86/86, check count unchanged (seam-gap, JS-budget, and app.js
+  source-pattern checks retargeted, none added). Full live Playwright pass: midnight-staleness
+  repro fixed and confirmed; all pre-existing `visibilitychange` paths unregressed; four-tab
+  sweep with live tab-dimension measurement, zero console errors throughout.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -1783,7 +1835,7 @@ The three daily cards:
 3. **Zero runtime dependencies.** Vanilla HTML/CSS/JS. No frameworks, no npm packages, no build step, no bundler, no analytics, no cookies, no third-party scripts or CDNs at runtime. `localStorage` only, keys namespaced `mindset.*`.
 4. **Node ≥ 20 built-ins only** for scripts (global `fetch`, `node:fs`, `node:test` allowed). No `npm install` at any point. When running `generate-daily.mjs` locally in this environment, set `NODE_USE_ENV_PROXY=1` so Node's built-in `fetch` honours the environment's egress proxy (GitHub Actions runners are unaffected and need no flag).
 5. **Static hosting truth:** everything must work on GitHub Pages served from `main` branch root. Include a `.nojekyll` file. All stages commit and push directly to `main` — the owner has authorized this for this repo; there is no feature-branch/PR step in this plan.
-6. **Performance budget:** total page weight ≤ 600 KB excluding fonts (raised from 350 KB in v1.32 — a logged invariant-12 exception, owner-authorized, to fit the 5-year Journal pool; see decisions.md); fonts ≤ 300 KB total; JS ≤ 60 KB total; the figure animation must pause when the tab is hidden and must honour `prefers-reduced-motion`.
+6. **Performance budget:** total page weight ≤ 600 KB excluding fonts (raised from 350 KB in v1.32 — a logged invariant-12 exception, owner-authorized, to fit the 5-year Journal pool; see decisions.md); fonts ≤ 300 KB total; JS ≤ 65 KB total (raised from 60 KB in v1.34 — a logged invariant-12 exception, to fit the widened cross-seam no-repeat guarantee plus several bug fixes; see decisions.md); the figure animation must pause when the tab is hidden and must honour `prefers-reduced-motion`.
 7. **Accessibility floor:** WCAG AA contrast for all text token pairs (verified numerically in `verify.mjs`, including `(--muted,--bg)` and `(--accent,--bg)` — not just the on-`--surface` pairs — and gated at 4.5:1 for any pair used for normal-size text, 3:1 only where the token is genuinely large-text/UI-component use), visible keyboard focus, `aria` roles on tabs and theme toggle, tap targets ≥ 44px, semantic landmarks (`header`, `main`, `nav`, `footer`).
 8. **Timezone law:** every date shown or computed is **Asia/Hong_Kong**, derived via `Intl.DateTimeFormat` with an explicit `timeZone` — never a bare `new Date().toLocaleDateString()` and never the runner's local time. `app.js`/`figure.js` must not call locale-date APIs without an explicit `timeZone` (Stage 1 verify greps for this).
 9. **Search visibility:** `<meta name="robots" content="noindex">` (public but unlisted — note: this hides the Pages URL from search, but the GitHub repo itself, including `cards.json`, remains a public, indexable, code-searchable text file regardless. Don't rely on "unlisted" as a content-privacy mechanism).
@@ -1812,7 +1864,7 @@ The three daily cards:
 │   ├── mara/                # 40 Wikimedia Commons wildlife photos, PD/CC0/CC BY/CC BY-SA only (v1.25)
 │   └── favicon.svg
 ├── data/
-│   ├── cards.json          # anchors[365], journal[1825] (v1.32 -- 5yr no-repeat), kenya[60], wordOfDay[30]
+│   ├── cards.json          # anchors[365], journal[1825] (v1.32; v1.34 -- min ~10mo gap/seam), kenya[60], wordOfDay[30]
 │   ├── values.json         # 5 values
 │   ├── mara.json           # park facts + Great Migration + 20 animals (v1.25)
 │   └── daily.json          # written by the pipeline daily
@@ -2033,7 +2085,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 | anchors | `voices` (Jay Shetty, Barack Obama, Michelle Obama, Nelson Mandela, Desmond Tutu, Fred Rogers, Viktor Frankl, Naval Ravikant; see §5.3.9) | 40 |
 | anchors | `grounding` (added v1.14 — universal sensory/body observations, no named attribution) | 35 |
 | **anchors total** | | **365** |
-| journal | — (replaced `shifts` in v1.12; expanded 40 -> 1825 in v1.32, Stoic + Die With Zero themed, 5yr no-repeat) | **1825** |
+| journal | — (replaced `shifts` in v1.12; expanded 40 -> 1825 in v1.32, Stoic + Die With Zero themed; v1.34 widened the cross-seam gap guarantee to 305+ days, see §6.2) | **1825** |
 | kenya | `Geography` (12) `Wildlife` (14) `History` (10) `Government` (8) `Culture` (8) `Economy` (4) `Sports` (4) — added v1.15 | **60** |
 | wordOfDay | — (added v1.10, replacing freshReserve) | **30** |
 
@@ -2087,7 +2139,7 @@ from any external source.
 - `hktDateString(d)` → `YYYY-MM-DD` via `Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Hong_Kong' })`.
 - `hktDayNumber(d)` → `floor(Date.UTC(y, m-1, day) / 86400000)` from the HKT date parts.
 - `hktDateParts(d)` → `{ weekday, day, month, year }` via `Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Hong_Kong', weekday:'long', day:'numeric', month:'long', year:'numeric' })`, for rendering the date line without duplicating formatting logic in `app.js`.
-- `pickIndex(poolSize, dayNumber, salt)` → per-cycle Fisher–Yates permutation seeded with `xmur3(salt + ":" + floor(dayNumber/poolSize))` feeding `mulberry32`; return `order[dayNumber % poolSize]`. **Use the reference implementation in Appendix B verbatim.** Guarantees: no repeats *within* a full cycle (adjacent cycles are independent permutations, so a repeat can occur right at a cycle boundary — roughly a 1-in-poolSize chance — this is expected and not a bug). Fully stateless, identical results in node and browser. Note for future curation (put this in the README runbook, not enforced by code): replace cards 1-for-1; adding or removing cards changes the pool size and reshuffles the whole rotation, which may repeat a recently-seen card once.
+- `pickIndex(poolSize, dayNumber, salt)` → per-cycle Fisher–Yates permutation seeded with `xmur3(salt + ":" + floor(dayNumber/poolSize))` feeding `mulberry32`; return `order[dayNumber % poolSize]`. **Use the reference implementation in Appendix B verbatim.** Guarantees, as of v1.34 (superseding the v1.0–v1.30 text this replaced, which wrongly called a cycle-boundary repeat "expected and not a bug" — a real, dated 1-day repeat is exactly what prompted the v1.31 fix below): no repeats *within* a full cycle; at a cycle SEAM, every item is guaranteed at least `minSeamGap(poolSize)` days (pool/6, floored) before it can repeat — journal 305+ days, anchors 61+, kenya 11+, word 6+ — with the REAL average gap from an arbitrary start date roughly poolSize/2 days (journal ≈ 2.5 years) and the typical (median) gap close to a full cycle (journal ≈ 5 years, matching the pool's own sizing intent). A true "zero repeats within any poolSize-day window from every possible start date" is provably impossible without abandoning per-cycle reshuffling for one exact repeating order forever (proof sketch + full verification numbers in decisions.md's v1.34 entry) — the bounded-gap guarantee above is the strongest available while keeping each cycle's shuffle genuinely independent. Fully stateless, identical results in node and browser. Note for future curation (put this in the README runbook, not enforced by code): replace cards 1-for-1; adding or removing cards changes the pool size and reshuffles the whole rotation, which may repeat a recently-seen card once.
 - Salts: `"anchor"`, `"journal"`, `"kenya"`, `"word"`.
 
 ### 6.3 Client behaviour (`app.js`)
@@ -2494,7 +2546,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v17";
+const CACHE = "mindset-v18";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
@@ -2522,8 +2574,12 @@ self.addEventListener("fetch", (e) => {
         if (res.ok) {
           const copy = res.clone();
           e.waitUntil(caches.open(CACHE).then((c) => c.put(e.request, copy)));
+          return res;
         }
-        return res;
+        // v1.34: an HTTP error is a live response, not a network failure -- .catch() below
+        // never sees it. Fall back to cache same as offline; only surface the error itself if
+        // nothing cached exists to fall back to.
+        return caches.match(e.request, { ignoreSearch: true }).then((cached) => cached || res);
       })
       .catch(() => caches.match(e.request, { ignoreSearch: true }))
   );
