@@ -154,33 +154,6 @@ function renderKenyaCard(kenya) {
   ]);
 }
 
-function speak(text, lang) {
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = lang;
-  window.speechSynthesis.speak(utter);
-}
-
-function renderWordCard(word) {
-  const titleRow = el("div", { class: "word-title-row" }, [
-    el("div", { class: "word-title", text: word.word }),
-  ]);
-  if ("speechSynthesis" in window) {
-    const speakBtn = el("button", {
-      type: "button", class: "word-speak", "aria-label": `Pronounce ${word.word}`, title: "Pronounce",
-    });
-    speakBtn.textContent = "🔊";
-    speakBtn.addEventListener("click", () => speak(word.word, word.lang));
-    titleRow.appendChild(speakBtn);
-  }
-  return el("article", { class: "card" }, [
-    el("div", { class: "card-chip", text: "WORD" }),
-    titleRow,
-    el("p", { class: "card-body", text: word.meaning }),
-    el("div", { class: "card-attr", text: `— ${word.origin}` }),
-  ]);
-}
-
 function renderErrorCard() {
   return el("article", { class: "card error-card" }, [
     el("div", { class: "error-label", text: "NO DATA" }),
@@ -289,13 +262,12 @@ function renderToday(cardsData, dailyData) {
   const now = new Date();
   let staleMode = staleness(dailyData && dailyData.dateHKT, now);
 
-  let anchor, journal, kenya, word;
+  let anchor, journal, kenya;
   if (staleMode === "fresh" || staleMode === "yesterday") {
     anchor = cardsData.anchors.find((a) => a.id === dailyData.anchorId);
     journal = cardsData.journal.find((j) => j.id === dailyData.journalId);
     kenya = cardsData.kenya.find((k) => k.id === dailyData.kenyaId);
-    word = cardsData.wordOfDay.find((w) => w.id === dailyData.wordId);
-    if (!anchor || !journal || !kenya || !word) {
+    if (!anchor || !journal || !kenya) {
       // An id that no longer resolves (pool edited, file not regenerated) is a freshness
       // problem: fall back to the offline pick, slate-chipped, not NO DATA over a loaded
       // library (v1.28); the error card is for the library itself failing (boot's catch).
@@ -303,11 +275,11 @@ function renderToday(cardsData, dailyData) {
     }
   }
   if (staleMode === "offline") {
-    ({ anchor, journal, kenya, word } = pickToday(cardsData, offlinePickReference(now)));
+    ({ anchor, journal, kenya } = pickToday(cardsData, offlinePickReference(now)));
   }
   showChip(staleMode);
 
-  const rest = [renderAnchorCard(anchor), renderKenyaCard(kenya), renderWordCard(word)];
+  const rest = [renderAnchorCard(anchor), renderKenyaCard(kenya)];
   const winMode = windowMode(now);
   paintedWindowMode = winMode;
   // Content day, not raw calendar date (05:00 HKT boundary, matches staleness()).

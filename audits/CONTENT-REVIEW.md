@@ -1129,51 +1129,64 @@ rule violation found in six entries (closing-03/17/20/25/29/34) during that same
 - **closing-33** (added 2026-07-16, moved from journal-34's original text, reworded to avoid duplicating closing-07): What's one way today quietly tested you, and how did you respond?
 - **closing-34** (added 2026-07-16, moved from journal-40's original text, rewritten, see audit above): What's the kindest thing you did today, and how did it feel to do it?
 
-## Word of the Day (added v1.10, replaces the Fresh reserve/offline-fallback pool)
+## Word of the Day (added v1.10, reworked in v1.22, retired in v1.35 — owner: "not helpful")
 
-Retires the Fresh card entirely (a daily RSS/YouTube pick, disliked in live feedback) in favor
+Retired the Fresh card entirely (a daily RSS/YouTube pick, disliked in live feedback) in favor
 of a self-authored, deterministic third card: one word worth knowing, its origin, and a
-one-line sense of its meaning (not a lifted dictionary definition). All 30 entries were
+one-line sense of its meaning (not a lifted dictionary definition). All entries were
 pre-validated against `verify.mjs`'s exact word-cap (≤20w meaning)/quote-glyph/platitude rules
 before writing, via a throwaway Node script reimplementing those checks. **v1.11 addendum:**
-each entry also carries a `lang` BCP-47 tag (mapped 1:1 from `origin` below, e.g. Japanese →
-`ja-JP`) feeding the new pronunciation button's `SpeechSynthesisUtterance.lang` — see
-`decisions.md`'s v1.11 entry for the full origin→lang mapping table. No independent QA
-pass was run beyond that mechanical validation — these are single-word etymological/
-philosophical concepts, not paraphrases of a named thinker's ideas, so the attribution-
-confidence and closeness-to-source concerns that drive the anchors' second-pass review don't
-apply the same way here.
+each entry also carried a `lang` BCP-47 tag (mapped 1:1 from `origin`, e.g. American English →
+`en-US`) feeding the pronunciation button's `SpeechSynthesisUtterance.lang`.
 
-- **word-01** — Wabi-sabi (Japanese): Finding beauty in what is imperfect, weathered, and incomplete.
-- **word-02** — Ikigai (Japanese): The reason you get up in the morning, where purpose meets daily life.
-- **word-03** — Amor fati (Latin): Loving your fate entirely, including the parts you did not choose.
-- **word-04** — Ubuntu (Nguni): I am because we are; a self formed through community, not apart from it.
-- **word-05** — Hygge (Danish): A deliberate, unhurried coziness, usually shared with people you trust.
-- **word-06** — Sisu (Finnish): Quiet, stubborn resolve that keeps going once willpower alone runs out.
-- **word-07** — Meraki (Greek): Doing something with so much soul that a piece of you ends up in it.
-- **word-08** — Saudade (Portuguese): A wistful longing for something absent, held without needing it resolved.
-- **word-09** — Komorebi (Japanese): Sunlight filtering through leaves, dappling the ground beneath a tree.
-- **word-10** — Waldeinsamkeit (German): The particular solitude of standing alone among trees.
-- **word-11** — Lagom (Swedish): Not too much, not too little; exactly enough.
-- **word-12** — Ataraxia (Greek): A settled calm, free of disturbance and anxious craving alike.
-- **word-13** — Eudaimonia (Greek): A life that flourishes because it is well lived, not merely a happy one.
-- **word-14** — Apatheia (Stoic Greek): Freedom from being ruled by disordered passion, not an absence of feeling.
-- **word-15** — Mono no aware (Japanese): A gentle sadness at the passing of things, aware that beauty is fleeting.
-- **word-16** — Gemütlichkeit (German): Warmth and belonging, the feeling of being unhurried among friends.
-- **word-17** — Kaizen (Japanese): Continuous improvement through many small, deliberate changes.
-- **word-18** — Wu wei (Chinese): Effortless action that moves with circumstance instead of forcing it.
-- **word-19** — Dharma (Sanskrit): The right conduct proper to who you are and the moment you are in.
-- **word-20** — Satori (Japanese): A sudden flash of understanding that arrives outside ordinary reasoning.
-- **word-21** — Filoxenia (Greek): Warmth extended to a stranger; hospitality treated as a form of love.
-- **word-22** — Sprezzatura (Italian): Making something difficult look effortless, without calling attention to the effort.
-- **word-23** — Duende (Spanish): A heightened, trembling passion that art can summon in whoever witnesses it.
-- **word-24** — Tsundoku (Japanese): Acquiring books faster than you read them, and letting them wait.
-- **word-25** — Fernweh (German): An ache for a distant place you have never actually seen.
-- **word-26** — Ren (Confucian Chinese): Benevolence toward others, treated as the root of genuine character.
-- **word-27** — Shibumi (Japanese): Understated, effortless elegance; beauty that does not ask to be noticed.
-- **word-28** — Metanoia (Greek): A change of heart that reorders what you value, not just what you think.
-- **word-29** — Sophrosyne (Greek): A disciplined self-awareness that keeps every impulse in proportion.
-- **word-30** — Firgun (Hebrew): Unselfish delight in someone else's good fortune, with no envy attached.
+**v1.22 correction, applied here retroactively (this section was never updated at the time —
+found and fixed only now, while writing the v1.35 retirement note, not a new gap introduced by
+it):** the original v1.10 pool below (wabi-sabi, ikigai, hygge, saudade, dharma, and 26 more
+"untranslatable feeling" loanwords) was fully replaced in v1.22 after the owner's wife's
+feedback that it did not meet the bar of "words we would see in life... meaningful and we would
+see them in daily life" — see `BUILD-PLAN.md`'s v1.22 changelog for the full account. The list
+below is the actual final content that shipped and is now retired, not the superseded v1.10
+draft this section used to (incorrectly) still show.
+
+- **word-01** — Deadline (American English, 1860s): Once a real line in Civil War camps: cross it, get shot. Now it only means a due date.
+- **word-02** — Quarantine (Venetian Italian): Forty days ships had to sit offshore during the plague before anyone could step ashore.
+- **word-03** — Bury the hatchet (Iroquois tradition): From an Iroquois peace custom — two sides literally buried a war axe to seal a truce.
+- **word-04** — Disaster (Italian): Bad star, literally — from an old belief that misfortune was written in the sky above you.
+- **word-05** — Muscle (Latin): Named for a little mouse — Latin musculus — because a flexing bicep looked like one moving.
+- **word-06** — At the eleventh hour (Biblical parable): From a parable where workers hired late in the day were paid the same as those hired first.
+- **word-07** — Curfew (Old French): From cover fire in Old French — a bell once told villagers to bank their hearths for the night.
+- **word-08** — Daisy (Old English): Day's eye in Old English — the petals close at dusk and reopen with the sun each morning.
+- **word-09** — Swan song (Ancient Greek belief): From an old, beautiful belief that a swan sings its finest song only once, right before it dies.
+- **word-10** — Panic (Greek myth): Named for Pan, the Greek god whose sudden presence in the wild sent travelers running.
+- **word-11** — Volcano (Roman myth): Named for Vulcan, Roman god of fire, whose forge was said to smolder inside one Italian island.
+- **word-12** — Saved by the bell (American boxing): From boxing, not buried coffins — a fighter knocked down could be rescued by the bell ending the round.
+- **word-13** — Cereal (Roman myth): Named for Ceres, the Roman goddess of harvest and grain, still on the breakfast table.
+- **word-14** — Mentor (Greek epic): Named for the wise friend who guided Telemachus in the Odyssey while his father was away.
+- **word-15** — Read the riot act (British law, 1714): From a real 1714 law — officials had to read a crowd a warning before forcing them to scatter.
+- **word-16** — Boycott (Irish history, 1880): Named for a real land agent in Ireland, shunned entirely by his neighbors in 1880.
+- **word-17** — Silhouette (French history, 1759): Named for a French minister so famously stingy that cheap outlines were mocked with his name.
+- **word-18** — Steal someone's thunder (English theater, 1700s): A playwright invented a thunder sound effect, then fumed when a rival show used it without him.
+- **word-19** — Sandwich (English history, 1700s): Named for an English earl said to want his meat between bread, so he would not have to stop.
+- **word-20** — Tantalize (Greek myth): Named for Tantalus, forever reaching in the myths for food and water just out of grasp.
+- **word-21** — Long in the tooth (Horse trading): From judging a horse's age by its teeth — gums recede and teeth look longer with each passing year.
+- **word-22** — Jovial (Roman astrology): Named for Jove — people born under his star were once thought naturally cheerful.
+- **word-23** — Echo (Greek myth): Named for a nymph cursed to repeat only the last words she ever heard.
+- **word-24** — Break the ice (English, 1500s): First recorded in the 1500s — opening a frozen passage so travel could begin; now it starts the conversation.
+- **word-25** — Narcissist (Greek myth): Named for the youth who loved his own reflection so much he could not look away.
+- **word-26** — Chaos (Greek myth): The Greek word for the yawning gap that existed before anything else did.
+- **word-27** — Beat around the bush (Medieval hunting): From hunters paid to beat the bushes and flush out game, without risking whatever was hiding inside.
+- **word-28** — Gossip (Old English): Once meant godparent, a person spiritually close to you — the word only turned unkind centuries later.
+- **word-29** — Companion (Old French): Literally with bread — someone you shared a meal with, long before it meant a friend.
+- **word-30** — Caught red-handed (Scottish law, 1400s): From old Scottish law, where blood literally still on your hands was proof enough of the crime.
+
+**v1.35 retirement:** owner request — "remove the word of the day block at the bottom of the
+first tab because that is not helpful... Kill it." Removed entirely: `app.js`'s `renderWordCard`/
+`speak`, `styles.css`'s `.word-*` rules, `data/cards.json`'s `wordOfDay` array (the 30 entries
+above), `wordId` from the daily pipeline and schema, and the `"word"` rotation salt (kept only
+in `verify.mjs`'s seam-gap sweep as a generic-correctness check). No content-quality issue —
+the pool itself passed both prior audits' content review without a single flag; this was a
+product decision about which cards belong on the page, not a QA finding. Full detail in
+`audits/decisions.md`'s v1.35 entry.
 
 ## Kenya facts (added v1.15, fourth Today card between Journal and Word of the Day)
 

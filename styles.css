@@ -249,13 +249,14 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 
 /* Today's items read as actual cards (v1.9) -- a surface, a shadow, room to breathe --
    distinct from the Values tab's quieter flat list, since Today is meant to be read and
-   learned from, not just glanced at as a reference. Normal mode (09:00-24:00 HKT, four
-   stacked cards -- the evening/Closing third mode was retired in v1.31) is a logged
-   exception to §4.4's one-screen rule at 390x844, like Weeks: measured 844-1020px depending
-   on the day's rotated content, so no spacing trim can guarantee the fit without gutting
-   the owner-tuned breathing room -- while focus mode (the one-card lead) fits exactly.
-   See audits/decisions.md, v1.28 (first measured) and v1.33 (re-measured -- v1.32's longer
-   Journal prompts pushed the ceiling from 996px to 1020px). */
+   learned from, not just glanced at as a reference. Normal mode (09:00-24:00 HKT, three
+   stacked cards -- the evening/Closing third mode was retired in v1.31) was a logged §4.4
+   one-screen exception from v1.28 through v1.34 (measured 844-1020px with the fourth,
+   Word-of-Day card in the stack); RESOLVED in v1.35 when that card was retired -- the true
+   worst case (longest anchor + longest journal + longest kenya, all three at once) now
+   measures exactly 844px, fitting with zero pixels to spare, no exception needed anymore.
+   Focus mode (the one-card lead) has always fit exactly regardless.
+   See audits/decisions.md, v1.28 (first measured), v1.33 (re-measured), v1.35 (resolved). */
 #cards {
   display: flex;
   flex-direction: column;
@@ -339,43 +340,6 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   font-size: 12.5px;
   color: var(--muted);
 }
-.word-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  margin-top: 8px;
-}
-.word-title {
-  font-family: "Fraunces", Georgia, serif;
-  font-style: italic;
-  font-size: 20px;
-  color: var(--ink);
-  text-align: center;
-}
-.word-speak {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  width: 44px;
-  height: 44px;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: var(--muted);
-  font-size: 16px;
-  line-height: 1;
-  cursor: pointer;
-  touch-action: manipulation;
-  border-radius: 999px;
-}
-.word-speak:active { transform: scale(0.9); }
-.word-speak:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-@media (hover: hover) {
-  .word-speak:hover { color: var(--ink); }
-}
-
 .error-card { text-align: center; }
 .error-label {
   font-family: "IBM Plex Mono", monospace;
@@ -477,7 +441,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   color: var(--muted);
 }
 /* The percent figure: Fraunces italic, the app's own "artistic" voice (already used for the
-   wordmark and Word of the Day's headline), not a bigger mono digit -- a dashboard would use
+   wordmark and card attribution lines), not a bigger mono digit -- a dashboard would use
    the latter. Large enough to clear WCAG's large-text 3:1 bar; both person colors clear the
    stricter 4.5:1 normal-text bar anyway on their own theme's backgrounds (per-theme values
    since v1.29), gated mechanically in verify.mjs. */

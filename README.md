@@ -1,11 +1,10 @@
 # Mindset
 
 A personal mindset dashboard. One page, no backend, no dependencies — a small bottle of light
-breathing slowly, the day's date in Hong Kong time, and four short cards
+breathing slowly, the day's date in Hong Kong time, and three short cards
 that refresh themselves every morning at 05:00 HKT: an **Anchor** (a timeless principle),
-a **Journal** prompt (a mindful reflection question), a **Kenya** fact (one fact about Kenya —
-geography, wildlife, history, culture, and more), and a **Word of the Day** (one word
-worth knowing, its origin, and a one-line meaning). A quiet **Values** tab sits alongside it.
+a **Journal** prompt (a mindful reflection question), and a **Kenya** fact (one fact about
+Kenya — geography, wildlife, history, culture, and more). A quiet **Values** tab sits alongside it.
 Two themes that follow the Hong Kong clock — `blossom` (soft pink) through the day, `dark`
 (warm charcoal) from 17:00 to 06:00 HKT. The header toggle overrides the schedule for the
 current visit only: nothing is stored, and every fresh load returns to the time-of-day cycle.
@@ -56,11 +55,10 @@ day is a shrug.
 
 ## Ops runbook
 
-**Add or edit cards** — edit `data/cards.json` (anchors/journal/kenya/wordOfDay) or
+**Add or edit cards** — edit `data/cards.json` (anchors/journal/kenya) or
 `data/values.json` directly, commit, push to `main`. No build step. Keep the writing rules
 in `BUILD-PLAN.md` §5.3 in mind: ≤ 40 words, no quotation marks, no banned platitudes,
-person-named attribution only when you're confident the idea is really theirs. Word of the
-Day entries have their own, shorter cap (≤ 20 words for `meaning`, §5.3.10). Kenya facts
+person-named attribution only when you're confident the idea is really theirs. Kenya facts
 (§5.3.11) share the anchors' ≤ 40 word cap, but the load-bearing rule there is correctness,
 not attribution: verify any specific number, date, or superlative claim before writing it,
 and favor durable facts over anything that could go stale (current officeholders, fast-moving
