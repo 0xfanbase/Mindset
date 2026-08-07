@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.30)
+# MINDSET — Autonomous Build Plan (v1.31)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1587,6 +1587,46 @@ root-cause trace, live Playwright before/after repro, and regression scenarios i
   window mode doesn't change either) all pass. JS 61,436 B of 61,440 (4 B headroom — tight; the
   next JS-touching round has essentially no room left).
 
+**v1.31 changelog (from v1.30, live request):** two asks — expand Journal to a 5-year no-repeat
+rotation (Stoic + Die with Zero themed), and remove the unused evening Journal (Closing) feature
+entirely. This entry covers the removal and a rotation-primitive bug fix found while scoping the
+5-year requirement; the content expansion itself is a separate, later entry once sized.
+
+- **Closing removed, not hidden:** the 34-entry `closing` pool, `closingId`, `isEveningWindowHKT`,
+  `renderClosingCard`, and the evening branch of `windowMode`/`renderToday` are all gone from
+  `data/cards.json`/`data/daily.json`/`lib.mjs`/`app.js`/`scripts/generate-daily.mjs`. `windowMode`
+  is now two states (focus/normal); normal mode spans 09:00-24:00 HKT (was 09:00-20:00). The
+  now-permanently-constant `data-period` DOM attribute is removed too (drove no CSS since v1.29;
+  with only one possible value left post-removal, "self-describing DOM" no longer justified
+  keeping it). Historical Closing content stays in full in `audits/CONTENT-REVIEW.md`, relabeled
+  retired -- the same treatment the retired Shift pool got in v1.12.
+- **A real bug found while scoping "no repeat": `pickIndex` only guaranteed uniqueness WITHIN
+  one cycle, never AT the seam between two independently-reshuffled cycles.** A pool sized to
+  exactly cover an N-day no-repeat window needs the seam closed, not just documented as a long
+  shot. First fix attempt (recurse one call back, conditionally swap) was wrong -- caught by
+  exhaustive simulation before shipping, not after: `pickIndex` recomputes from scratch every
+  call with no shared state, so the swap decided while resolving one day of a cycle didn't
+  propagate to a different call resolving another day of the SAME cycle, letting two days
+  inside one cycle disagree and collide with each other. Real fix: the swap decision is now a
+  pure function of `(poolSize, salt, cycle)` alone, never of `dayNumber`, via a new internal
+  `shuffledOrder()` helper -- every call for any day in a cycle now agrees on the same order.
+  Full trace, the wrong-first-attempt numbers, and the acknowledged poolSize-2 structural
+  exception (moot -- no pool here is under 30) are in `audits/decisions.md`.
+- **`scripts/verify.mjs`:** the removed Closing-specific check iterations are gone outright;
+  the shape assertions are inverted into `assert.equal(..., undefined, ...)` regression guards
+  instead of silently deleted. Two new seam-safety checks added (a 10-seams x 6-pool-sizes x
+  6-salts sweep, and an internal-consistency check that reconstructs each cycle's full pick
+  sequence from independent per-day calls -- a direct regression test for the caught-before-ship
+  wrong first attempt). The existing full-cycle-uniqueness check's pool list now includes the
+  real 1825/365 sizes this app uses, not just representative round numbers. Check count: 83 → 85.
+- **`sw.js` `CACHE` bumped `mindset-v15` → `mindset-v16`** (app.js/lib.mjs/styles.css changed);
+  Appendix C.2 updated to match.
+- **Verified:** `verify.mjs all` 85/85; `node --check` clean; regenerated `data/daily.json` for
+  real and confirmed today's picks are byte-identical before/after the seam fix (it only alters
+  rare seam days). JS 60,837 B of 61,440 (603 B headroom, recovered from Closing's removal after
+  the seam-fix comments were trimmed to fit). Page weight 269,453 B of 358,400 -- 88,947 B
+  (~86.9KB) headroom, the number the Journal-expansion sizing decision is computed against.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -2372,7 +2412,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v15";
+const CACHE = "mindset-v16";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",

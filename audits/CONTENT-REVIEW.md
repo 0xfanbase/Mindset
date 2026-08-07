@@ -931,7 +931,13 @@ ratchet — logged in `audits/decisions.md`, this is a count correction tracking
 content, not a loosened quality bar). `verify.mjs all` re-run clean (63/63) after every edit
 in this pass.
 
-## Closing prompts (added v1.19, shown only after 20:00 HKT)
+## Closing prompts (added v1.19, retired in v1.31 — the evening feature is unused, fully removed)
+
+Kept in full below as the historical record of this pool's authoring/QA work (the
+2026-07-16 tense audit, the count grown from 30 to 34, the yes/no-tail fixes) even though the
+`closing` data no longer ships in `cards.json` and `isEveningWindowHKT`/the Closing card/the
+evening `windowMode` no longer exist in `app.js`/`lib.mjs`. Owner feedback: the evening card
+was never actually used; removed rather than kept dormant. See `audits/decisions.md`, v1.31.
 
 An evening "close the day" reflection, mirroring the pre-09:00 HKT Journal focus window on the
 other end of the day (see `BUILD-PLAN.md` v1.19 changelog). Unlike Journal, retrospective

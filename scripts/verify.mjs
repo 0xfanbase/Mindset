@@ -513,12 +513,11 @@ function stage1() {
     assert.equal(lib.isFocusWindowHKT(new Date("2026-07-15T01:00:00Z")), false);
   });
 
-  check("stage1", "lib.mjs: isEveningWindowHKT correct at the 20:00 HKT boundary", async () => {
+  check("stage1", "lib.mjs: isEveningWindowHKT retired, not reintroduced (v1.31 -- evening/Closing removed, unused)", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    // 2026-07-15T11:59:00Z = 2026-07-15T19:59 HKT — evening window not yet open
-    assert.equal(lib.isEveningWindowHKT(new Date("2026-07-15T11:59:00Z")), false);
-    // 2026-07-15T12:00:00Z = 2026-07-15T20:00 HKT — evening window opens
-    assert.equal(lib.isEveningWindowHKT(new Date("2026-07-15T12:00:00Z")), true);
+    assert.equal(lib.isEveningWindowHKT, undefined, "isEveningWindowHKT should no longer be exported from lib.mjs");
+    assert.doesNotMatch(read("app.js"), /isEveningWindowHKT|renderClosingCard|\bcards\.closing\b/,
+      "evening/Closing must not be reintroduced into app.js");
   });
 
   check("stage1", "lib.mjs: isDarkWindowHKT correct at the 06:00 and 17:00 HKT boundaries", async () => {
@@ -650,9 +649,9 @@ function stage1() {
     assert.equal(problems.length, 0, problems.join(" | "));
   });
 
-  check("stage1", "lib.mjs: pickIndex full-cycle uniqueness for pools 120/40/10", async () => {
+  check("stage1", "lib.mjs: pickIndex full-cycle uniqueness for pools 1825/365/120/40/30/10", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    for (const poolSize of [120, 40, 10]) {
+    for (const poolSize of [1825, 365, 120, 40, 30, 10]) {
       const cycleStart = 3 * poolSize; // an arbitrary later cycle, still >= 0
       const seen = new Set();
       for (let d = cycleStart; d < cycleStart + poolSize; d++) {
@@ -662,6 +661,42 @@ function stage1() {
         seen.add(idx);
       }
       assert.equal(seen.size, poolSize);
+    }
+  });
+
+  check("stage1", "lib.mjs: pickIndex has no consecutive-day repeat across 10 cycle SEAMS per pool (v1.31 fix)", async () => {
+    // The full-cycle check above only proves uniqueness WITHIN one cycle; it can't catch a
+    // repeat AT the boundary between two independently-shuffled cycles, which is exactly the
+    // class of bug the v1.31 seam guard fixes (see lib.mjs's pickIndex comment). Sweeps 10
+    // consecutive seams (not just 1) per pool, across every salt actually used in this app, so
+    // a fix that happens to work for one lucky seed can't pass silently.
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    for (const poolSize of [1825, 365, 60, 40, 34, 30, 10, 5]) {
+      for (const salt of ["anchor", "journal", "kenya", "word", "closing", "arbitrary-salt"]) {
+        for (let cycle = 1; cycle <= 10; cycle++) {
+          const seamDay = cycle * poolSize; // first day of `cycle`, i.e. dayNumber%poolSize===0
+          const before = lib.pickIndex(poolSize, seamDay - 1, salt);
+          const after = lib.pickIndex(poolSize, seamDay, salt);
+          assert.notEqual(before, after,
+            `pool ${poolSize} salt "${salt}": day ${seamDay - 1} and day ${seamDay} (cycle seam) both picked index ${after}`);
+        }
+      }
+    }
+  });
+
+  check("stage1", "lib.mjs: pickIndex is internally consistent -- every day in a cycle agrees on that cycle's order (v1.31 regression guard)", async () => {
+    // The bug the seam fix itself had, caught before shipping: if the swap decision depended
+    // on WHICH dayNumber triggered it instead of the cycle alone, two different days inside the
+    // SAME cycle could each recompute a different order and collide with each other -- proven
+    // by reconstructing each cycle's full picked sequence from its individual per-day calls and
+    // checking it's still a genuine permutation (every index appears exactly once).
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    for (const poolSize of [1825, 365, 40, 34, 10]) {
+      for (let cycle = 0; cycle <= 4; cycle++) {
+        const picks = [];
+        for (let i = 0; i < poolSize; i++) picks.push(lib.pickIndex(poolSize, cycle * poolSize + i, "journal"));
+        assert.equal(new Set(picks).size, poolSize, `pool ${poolSize} cycle ${cycle}: per-day calls don't form a permutation`);
+      }
     }
   });
 
@@ -703,7 +738,8 @@ const KENYA_CATEGORY_COUNTS = { Geography: 12, Wildlife: 14, History: 10, Govern
 function stage3() {
   check("stage3", "data/cards.json valid JSON with required shape", () => {
     const d = readJSON("data/cards.json");
-    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.journal) && Array.isArray(d.kenya) && Array.isArray(d.wordOfDay) && Array.isArray(d.closing));
+    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.journal) && Array.isArray(d.kenya) && Array.isArray(d.wordOfDay));
+    assert.equal(d.closing, undefined, "closing pool retired in v1.31 (evening feature removed) -- must not be reintroduced");
   });
   check("stage3", "data/values.json valid JSON, exactly 5 values", () => {
     const v = readJSON("data/values.json");
@@ -722,12 +758,11 @@ function stage3() {
     assert.equal(d.anchors.length, 365, `total anchors = ${d.anchors.length}`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
-  check("stage3", "journal = 40, kenya = 60, wordOfDay = 30, closing = 34", () => {
+  check("stage3", "journal = 40, kenya = 60, wordOfDay = 30", () => {
     const d = readJSON("data/cards.json");
     assert.equal(d.journal.length, 40, `journal = ${d.journal.length}`);
     assert.equal(d.kenya.length, 60, `kenya = ${d.kenya.length}`);
     assert.equal(d.wordOfDay.length, 30, `wordOfDay = ${d.wordOfDay.length}`);
-    assert.equal(d.closing.length, 34, `closing = ${d.closing.length}`);
   });
   check("stage3", "wordOfDay entries have word/origin/lang/meaning as non-empty strings", () => {
     const d = readJSON("data/cards.json");
@@ -764,7 +799,7 @@ function stage3() {
       assert.equal(new Set(ids).size, ids.length, `${name} has duplicate ids`);
     }
   });
-  check("stage3", "word caps respected (anchors <=40w, journal/closing prompts <=25w, kenya facts<=40w, wordOfDay meaning<=20w, values essence<=14w/behaviour<=16w)", () => {
+  check("stage3", "word caps respected (anchors <=40w, journal prompts <=25w, kenya facts<=40w, wordOfDay meaning<=20w, values essence<=14w/behaviour<=16w)", () => {
     const d = readJSON("data/cards.json");
     const v = readJSON("data/values.json");
     const problems = [];
@@ -772,7 +807,6 @@ function stage3() {
     for (const j of d.journal) if (wordCount(j.prompt) > 25) problems.push(`${j.id}: ${wordCount(j.prompt)}w`);
     for (const k of d.kenya) if (wordCount(k.fact) > 40) problems.push(`${k.id}: ${wordCount(k.fact)}w`);
     for (const w of d.wordOfDay) if (wordCount(w.meaning) > 20) problems.push(`${w.id}: ${wordCount(w.meaning)}w`);
-    for (const c of d.closing) if (wordCount(c.prompt) > 25) problems.push(`${c.id}: ${wordCount(c.prompt)}w`);
     for (const val of v) {
       if (wordCount(val.essence) > 14) problems.push(`${val.name} essence: ${wordCount(val.essence)}w`);
       if (wordCount(val.behaviour) > 16) problems.push(`${val.name} behaviour: ${wordCount(val.behaviour)}w`);
@@ -788,7 +822,6 @@ function stage3() {
     for (const j of d.journal) scan(`${j.id}.prompt`, j.prompt);
     for (const k of d.kenya) { scan(`${k.id}.category`, k.category); scan(`${k.id}.fact`, k.fact); }
     for (const w of d.wordOfDay) { scan(`${w.id}.word`, w.word); scan(`${w.id}.origin`, w.origin); scan(`${w.id}.meaning`, w.meaning); }
-    for (const c of d.closing) scan(`${c.id}.prompt`, c.prompt);
     for (const val of v) { scan(`${val.name}.essence`, val.essence); scan(`${val.name}.behaviour`, val.behaviour); }
     assert.equal(problems.length, 0, problems.join(" | "));
   });
@@ -800,7 +833,6 @@ function stage3() {
     for (const j of d.journal) scan(j.id, j.prompt);
     for (const k of d.kenya) scan(k.id, k.fact);
     for (const w of d.wordOfDay) scan(w.id, w.meaning);
-    for (const c of d.closing) scan(c.id, c.prompt);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
 
@@ -932,8 +964,7 @@ function stage3() {
     const journal = d.journal[lib.pickIndex(d.journal.length, dayNumber, "journal")];
     const kenya = d.kenya[lib.pickIndex(d.kenya.length, dayNumber, "kenya")];
     const word = d.wordOfDay[lib.pickIndex(d.wordOfDay.length, dayNumber, "word")];
-    const closing = d.closing[lib.pickIndex(d.closing.length, dayNumber, "closing")];
-    assert.ok(anchor && anchor.id && journal && journal.id && kenya && kenya.id && word && word.id && closing && closing.id);
+    assert.ok(anchor && anchor.id && journal && journal.id && kenya && kenya.id && word && word.id);
   });
   check("stage3", "audits/CONTENT-REVIEW.md exists", () => assert.ok(exists("audits/CONTENT-REVIEW.md"), "missing"));
 }
@@ -962,7 +993,8 @@ function stage4() {
     const d = readJSON("data/daily.json");
     assert.match(d.dateHKT, /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(typeof d.generatedAtISO === "string" && !Number.isNaN(Date.parse(d.generatedAtISO)));
-    assert.ok(typeof d.anchorId === "string" && typeof d.journalId === "string" && typeof d.kenyaId === "string" && typeof d.wordId === "string" && typeof d.closingId === "string");
+    assert.ok(typeof d.anchorId === "string" && typeof d.journalId === "string" && typeof d.kenyaId === "string" && typeof d.wordId === "string");
+    assert.equal(d.closingId, undefined, "closingId retired in v1.31 (evening feature removed) -- must not be reintroduced");
   });
 }
 

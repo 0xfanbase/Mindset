@@ -1,5 +1,5 @@
 // app.js — UI logic: tabs, theme, date, cards, staleness (BUILD-PLAN.md §4/§6)
-import { hktDateParts, hktHour, staleness, expectedDateHKT, pickToday, isFocusWindowHKT, isEveningWindowHKT, isDarkWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
+import { hktDateParts, hktHour, staleness, expectedDateHKT, pickToday, isFocusWindowHKT, isDarkWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
 import { initWeeksTab, refreshWeeksIfStale, redrawWeeksForTheme } from "./weeks.js";
 import { initMaraTab } from "./mara.js";
 
@@ -132,13 +132,6 @@ function renderJournalCard(journal) {
   ]);
 }
 
-function renderClosingCard(closing) {
-  return el("article", { class: "card" }, [
-    el("div", { class: "card-chip", text: "CLOSING" }),
-    el("p", { class: "card-body", text: closing.prompt }),
-  ]);
-}
-
 // Countdown to the 2026-08-15 flight (v1.17) -- a negative countdown would read as a bug,
 // so the badge stops rendering once the trip passes (facts keep rotating either way).
 function kenyaCountdownText(days) {
@@ -208,8 +201,7 @@ function paintCards(nodes) {
 }
 
 // Pre-09:00 HKT: Journal stands alone, the rest behind a reveal toggle so they don't compete
-// for morning attention (v1.16). Reused for the evening Closing card (v1.19) — same "one
-// lead card, rest collapsed" layout, different lead node by time of day.
+// for morning attention (v1.16).
 function paintFocusedToday(leadNode, restNodes) {
   const host = document.getElementById("cards");
   host.classList.add("focus");
@@ -260,15 +252,13 @@ async function fetchJSON(path) {
   return res.json();
 }
 
-// Tri-state read of "what part of the day is it" -- focus (pre-09:00, Journal leads),
-// evening (>=20:00, Closing leads), or normal (flat four-card layout) (v1.19). Deliberately
-// independent of the THEME clock (dark 17:00-06:00) -- two clocks, five combined states per
-// HKT day: dark+focus 00-06, blossom+focus 06-09, blossom+normal 09-17, dark+normal 17-20,
-// dark+evening 20-24.
+// Two-state read of "what part of the day is it" -- focus (pre-09:00, Journal leads alone) or
+// normal (flat four-card layout) (v1.16; the evening/Closing third state retired in v1.31 --
+// unused). Deliberately independent of the THEME clock (dark 17:00-06:00) -- two clocks, four
+// combined states per HKT day: dark+focus 00-06, blossom+focus 06-09, blossom+normal 09-17,
+// dark+normal 17-24.
 function windowMode(now) {
-  if (isFocusWindowHKT(now)) return "focus";
-  if (isEveningWindowHKT(now)) return "evening";
-  return "normal";
+  return isFocusWindowHKT(now) ? "focus" : "normal";
 }
 
 let paintedWindowMode = null;
@@ -286,14 +276,13 @@ function renderToday(cardsData, dailyData) {
   const now = new Date();
   let staleMode = staleness(dailyData && dailyData.dateHKT, now);
 
-  let anchor, journal, kenya, word, closing;
+  let anchor, journal, kenya, word;
   if (staleMode === "fresh" || staleMode === "yesterday") {
     anchor = cardsData.anchors.find((a) => a.id === dailyData.anchorId);
     journal = cardsData.journal.find((j) => j.id === dailyData.journalId);
     kenya = cardsData.kenya.find((k) => k.id === dailyData.kenyaId);
     word = cardsData.wordOfDay.find((w) => w.id === dailyData.wordId);
-    closing = cardsData.closing.find((c) => c.id === dailyData.closingId);
-    if (!anchor || !journal || !kenya || !word || !closing) {
+    if (!anchor || !journal || !kenya || !word) {
       // An id that no longer resolves (pool edited, file not regenerated) is a freshness
       // problem: fall back to the offline pick, slate-chipped, not NO DATA over a loaded
       // library (v1.28); the error card is for the library itself failing (boot's catch).
@@ -301,7 +290,7 @@ function renderToday(cardsData, dailyData) {
     }
   }
   if (staleMode === "offline") {
-    ({ anchor, journal, kenya, word, closing } = pickToday(cardsData, offlinePickReference(now)));
+    ({ anchor, journal, kenya, word } = pickToday(cardsData, offlinePickReference(now)));
   }
   showChip(staleMode);
 
@@ -310,14 +299,9 @@ function renderToday(cardsData, dailyData) {
   paintedWindowMode = winMode;
   // Content day, not raw calendar date (05:00 HKT boundary, matches staleness()).
   paintedDateHKT = expectedDateHKT(now);
-  // data-period drives no CSS since v1.29 (the evening palette block is gone -- the dark
-  // theme owns nights now); kept because a self-describing DOM is cheap and tests read it.
-  document.documentElement.setAttribute("data-period", winMode === "evening" ? "evening" : "day");
   syncThemeColorMeta();
   if (winMode === "focus") {
     paintFocusedToday(renderJournalCard(journal), rest);
-  } else if (winMode === "evening") {
-    paintFocusedToday(renderClosingCard(closing), [renderJournalCard(journal), ...rest]);
   } else {
     paintCards([renderJournalCard(journal), ...rest]);
   }
@@ -351,8 +335,8 @@ async function boot() {
 }
 
 // Installed iOS PWAs freeze JS while backgrounded and resume the frozen render — re-check
-// every boundary on return: theme window, content day, focus/evening window (v1.28/v1.29).
-// A content-day flip REFETCHES daily.json first (the cron has almost certainly published
+// every boundary on return: theme window, content day, focus window (v1.28/v1.29). A
+// content-day flip REFETCHES daily.json first (the cron has almost certainly published
 // overnight; on failure the cached object stands). A mode flip alone never fetches — same
 // day, same file (v1.16).
 let dailyRefetchInFlight = false;
