@@ -1666,11 +1666,12 @@ verbatim as the invariant itself requires.
 - **Verified:** `verify.mjs all` 86/86 -- word cap, quote-glyph, banned-platitude, and both
   duplicate checks all pass across the real, full 1825, not a sample. Live Playwright pass
   (clock-mocked, real app.js/lib.mjs/cards.json served from disk, three HKT instants): correct
-  Journal card content, zero console errors, 194ms local load time. `data/cards.json` 419,673 B
-  (journal array 243,068 B / 1825 entries, 133.2 B/entry average -- higher than the 102.2 B/entry
-  the pre-authoring estimate assumed, which is why the shipped total landed at 554,845 B rather
-  than the ~441KB first estimated). Page weight 554,845 B of 600KB (~45KB headroom). JS budget
-  untouched this round (no JS files changed): still 60,837 B of 61,440.
+  Journal card content, zero console errors, 194ms local load time. `data/cards.json` 419,728 B
+  (journal array 243,123 B / 1825 entries, 133.2 B/entry average -- higher than the 102.2 B/entry
+  the pre-authoring estimate assumed, which is why the shipped total landed at 554,902 B rather
+  than the ~441KB first estimated). Page weight 554,902 B of 614,400 (600KB), ~58.1KB headroom
+  (an earlier draft misstated this as ~45KB -- a KB/byte slip caught during self-audit). JS
+  budget untouched this round (no JS files changed): still 60,837 B of 61,440.
 
 ---
 

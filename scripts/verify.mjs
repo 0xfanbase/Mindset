@@ -668,8 +668,10 @@ function stage1() {
     // The full-cycle check above only proves uniqueness WITHIN one cycle; it can't catch a
     // repeat AT the boundary between two independently-shuffled cycles, which is exactly the
     // class of bug the v1.31 seam guard fixes (see lib.mjs's pickIndex comment). Sweeps 10
-    // consecutive seams (not just 1) per pool, across every salt actually used in this app, so
-    // a fix that happens to work for one lucky seed can't pass silently.
+    // consecutive seams (not just 1) per pool, across every salt in current use ("closing" is
+    // retired -- kept here anyway as a generic-correctness check, proving the fix isn't
+    // accidentally salt-specific -- plus one synthetic salt), so a fix that happens to work for
+    // one lucky seed can't pass silently.
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     for (const poolSize of [1825, 365, 60, 40, 34, 30, 10, 5]) {
       for (const salt of ["anchor", "journal", "kenya", "word", "closing", "arbitrary-salt"]) {
