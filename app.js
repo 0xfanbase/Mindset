@@ -299,7 +299,12 @@ function renderToday(cardsData, dailyData) {
   paintedWindowMode = winMode;
   // Content day, not raw calendar date (05:00 HKT boundary, matches staleness()).
   paintedDateHKT = expectedDateHKT(now);
-  syncThemeColorMeta();
+  // No syncThemeColorMeta() here (v1.33 -- removed, not reintroduced): its v1.28 rationale was
+  // re-syncing --bg when data-period changed, but data-period is gone since v1.31 and --bg is
+  // keyed only by [data-theme]. Every path that can actually change the theme (initTheme() at
+  // boot, the toggle handler, the visibilitychange window re-check) already calls applyTheme ->
+  // applyThemeSideEffects -> syncThemeColorMeta itself; re-running it here on every card render
+  // was always a no-op read of whatever --bg already resolved to.
   if (winMode === "focus") {
     paintFocusedToday(renderJournalCard(journal), rest);
   } else {

@@ -964,15 +964,23 @@ knows exactly what was and wasn't done:
   near-duplicates (two prompts asking substantively the same question) were rewritten, while
   pairs that only shared common connective phrasing ("today", "you", "which of today's") but
   asked genuinely different things were left as acceptable, matching how the anchors check has
-  always treated this exact class of false positive. The two highest-overlap pairs in the final
-  corpus (82% and 80%) were both real near-duplicates and were rewritten; the highest remaining
-  overlap after that pass is 78%, spot-checked and judged a false positive (different concrete
-  content, shared sentence scaffold). `verify.mjs` gains a permanent version of this exact check
-  scoped to `journal`, at a 75% threshold (looser than anchors' 60%, calibrated to this pool's
-  actually-observed acceptable-overlap ceiling so it stays a genuinely useful signal rather than
-  a wall of routine noise) plus a hard (non-informational) exact-duplicate guard, since a literal
-  repeat in a pool explicitly sized for "no repeat" would defeat the point of the v1.31
-  `pickIndex` seam fix this same round shipped. Zero exact duplicates found or expected.
+  always treated this exact class of false positive. The two highest-overlap pairs in the first
+  full-corpus pass (82% and 80%) were both real near-duplicates and were rewritten; two more
+  survived that pass at 78%, at the time judged an acceptable shared-scaffold false positive.
+  They were not, in fact, left there: once merged into `cards.json` and re-checked against the
+  new 75%-threshold `verify.mjs` check below (78% > 75%), both were rewritten too rather than
+  left sitting past the threshold's edge — full account, including a first rewrite attempt that
+  accidentally collided with unrelated entries elsewhere in the pool before a corrected second
+  pass fixed it cleanly, in `decisions.md`'s v1.32 entry. `verify.mjs` gains a permanent version
+  of this exact check scoped to `journal`, at a 75% threshold (looser than anchors' 60%,
+  calibrated to this pool's actually-observed acceptable-overlap ceiling so it stays a genuinely
+  useful signal rather than a wall of routine noise) plus a hard (non-informational)
+  exact-duplicate guard, since a literal repeat in a pool explicitly sized for "no repeat" would
+  defeat the point of the v1.31 `pickIndex` seam fix this same round shipped. The highest
+  surviving overlap in the shipped 1825 is exactly 75.00% (`journal-0146` ~ `journal-1457` — at
+  the threshold, not above it; the check's `>` is strict, so this is a pass, not a near-miss),
+  spot-checked and judged a genuine false positive of the same shared-scaffold class. Zero exact
+  duplicates found or expected.
 - **PII/attribution swept separately:** grepped the full corpus for `marcus aurelius`, `seneca`,
   `epictetus`, `bill perkins`, `die with zero`, `stoic`, `zeno` (case-insensitive) — zero matches
   in shipped prompt text, confirming the sourcing stayed inspirational/thematic rather than

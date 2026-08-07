@@ -1,4 +1,4 @@
-# FINAL AUDIT — v1.0 (see v1.2/v1.3 updates below)
+# FINAL AUDIT — v1.0 (see v1.2/v1.3/v1.33 updates below)
 
 ## `verify.mjs` integrity (invariant 12 ratchet check)
 
@@ -21,6 +21,54 @@ entry and the anchor-total assertion changed from `exactly 120` to `exactly 129`
 documented content addition (a new `voices` anchor category, see `decisions.md`), a stricter/more
 specific check than before (one more required category, one higher required total), not a
 loosened gate. `verify.mjs all` remains 59/59 green after this change.
+
+**v1.30–v1.33 update (independent-audit finding, addressed):** this file had drifted un-updated
+since the v1.3 paragraph above — by the time this branch started, `main` was already at 82/82,
+entirely through legitimate, individually-logged invariant-12 tightenings across roughly eighteen
+intervening versions (v1.4 through v1.29). Each of those is its own dated, invariant-12-citing
+entry in `audits/decisions.md`; they are not re-verified line-by-line against Stage 0 here, since
+that is where the ground truth already lives, and re-deriving eighteen versions of history from
+scratch in this paragraph would just be a second, less authoritative copy of it. What follows
+accounts for this branch's own changes, 82 → 86:
+1. **v1.30** (+1, 82→83): one stage1 regression check pinning `app.js`'s day-flip comparison to
+   `expectedDateHKT`, not the raw calendar date — the fix for cards sticking on stale content
+   past 05:00 HKT.
+2. **v1.31** (net +0, then +2, 83→83→85): removing the `closing` pool deleted the checks that
+   iterated it outright (nothing left to check), but their three shape assertions were inverted
+   into `assert.equal(..., undefined, ...)` negative guards rather than silently dropped, so a
+   future accidental reintroduction fails loudly — a reduction handled per invariant-12
+   discipline, not a quiet deletion. Two new checks then prove the `pickIndex` cycle-seam fix: a
+   multi-pool/multi-salt seam sweep, and an internal-consistency check reconstructing each
+   cycle's full pick sequence to confirm it is still a genuine permutation (a direct regression
+   test for the specific way the first, wrong fix attempt broke this, caught before it shipped).
+3. **v1.32** (+1, 85→86): an exact-duplicate guard plus a near-duplicate proxy scoped to the
+   expanded 1825-entry `journal` pool.
+
+**The one relaxation this branch made, in full compliance with invariant 12's first clause:** the
+stage5 page-weight budget moved from `<= 350KB` to `<= 600KB`, to fit the 1825-entry Journal pool
+at full quality rather than compromise the content. The original check text (quoted verbatim),
+the owner's explicit authorization, and the real byte math behind the new ceiling are all in
+`audits/decisions.md`'s v1.32 entry, exactly as the invariant's own text requires.
+
+**v1.33 also closed the second-clause gap this very update paragraph is answering.** The check
+just above this paragraph used to assert only that the substring "verify.mjs" appears somewhere
+in this file — true forever, so it had caught nothing since v1.3, which is how this file sat
+stale for eighteen-plus versions without a single failing run. It now asserts (in `all` mode,
+where the true live total is knowable) that this file states the current live check count, so a
+future stale summary fails the suite instead of sitting quietly. This is a tightening, not a
+relaxation — no prior check was loosened to add it.
+
+One more disclosure while re-reading this file, not a new finding: the Stage-0 commit SHA quoted
+at the top (`c904f4d`) predates the v1.28 PII-purge history rewrite (`git-filter-repo`) and, per
+`decisions.md`'s v1.28 entry, no longer resolves anywhere in this repo's rewritten history —
+that entry's own blanket note already covers every pre-rewrite SHA cited anywhere, including this
+one. (Checked locally with `git cat-file -t c904f4d`, which reports no such object — but this
+session's clone is shallow with its boundary at v1.12, so a local miss doesn't independently
+prove non-resolution upstream the way a full clone would; noted here as a pointer to the existing
+documented account, not as new proof beyond it, since this file is exactly the kind of place a
+reader would go looking for that SHA.)
+
+`verify.mjs all`: **86/86**, green.
 
 ## Acceptance checklist (BUILD-PLAN.md §12)
 

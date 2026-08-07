@@ -952,8 +952,14 @@ function stage3() {
   check("stage3", "journal: exact-duplicate guard + near-duplicate proxy (v1.32, 1825 entries) — informational, non-blocking", () => {
     // Exact duplicates ARE a hard failure (unlike the fuzzy proxy below) -- a byte-identical
     // repeat in a pool explicitly sized for "no repeat" would defeat the entire point of the
-    // v1.31 pickIndex seam fix. Near-duplicates stay informational, same threshold/rationale
-    // as the anchors check above -- run once per authoring pass, not worth blocking CI on.
+    // v1.31 pickIndex seam fix. Near-duplicates stay informational -- run once per authoring
+    // pass, not worth blocking CI on. Threshold lowered 75% -> 70% in v1.33: the shipped
+    // corpus's real max was exactly 75.00% (one pair, a strict `>` away from ever firing), so
+    // the check had zero margin -- structurally unable to ever flag anything again short of a
+    // regression at exactly the ceiling. 70% still clears every false-positive pair the v1.32
+    // authoring pass already read and accepted (shared connective scaffold -- "today", "you",
+    // "which of today's" -- around substantively different content); it surfaces 12 pairs as
+    // informational notes now, a real signal instead of a check that can only ever pass silent.
     const d = readJSON("data/cards.json");
     const seen = new Map();
     const exactDupes = [];
@@ -971,10 +977,10 @@ function stage3() {
         const a = toks[i], b = toks[j];
         const overlap = [...a].filter((w) => b.has(w)).length;
         const denom = Math.min(a.size, b.size) || 1;
-        if (overlap / denom > 0.75) flagged.push(`${d.journal[i].id} ~ ${d.journal[j].id}`);
+        if (overlap / denom > 0.70) flagged.push(`${d.journal[i].id} ~ ${d.journal[j].id}`);
       }
     }
-    return flagged.length ? `flagged for human review: ${flagged.join(", ")}` : "no near-duplicates flagged (>75%)";
+    return flagged.length ? `flagged for human review: ${flagged.join(", ")}` : "no near-duplicates flagged (>70%)";
   });
   check("stage3", "rotation: three simulated dates give distinct in-range picks", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
@@ -1075,11 +1081,30 @@ function stage5() {
     assert.ok(exists("README.md"));
     assert.ok(read("README.md").length > 500, "README looks like a stub, not a runbook");
   });
-  check("stage5", "verify.mjs integrity ratchet: diff-vs-Stage-0 note present in FINAL-AUDIT", () => {
-    if (exists("audits/FINAL-AUDIT.md")) {
-      assert.match(read("audits/FINAL-AUDIT.md"), /verify\.mjs/i);
-    } else {
-      throw new Error("audits/FINAL-AUDIT.md not written yet");
+  check("stage5", "verify.mjs integrity ratchet: diff-vs-Stage-0 note present in FINAL-AUDIT, count current", () => {
+    if (!exists("audits/FINAL-AUDIT.md")) throw new Error("audits/FINAL-AUDIT.md not written yet");
+    const text = read("audits/FINAL-AUDIT.md");
+    assert.match(text, /verify\.mjs/i);
+    // v1.33 audit finding: the check above is true forever (the substring "verify.mjs" always
+    // appears somewhere), so it never actually caught FINAL-AUDIT.md going stale -- the file
+    // sat unedited from v1.12 to v1.29 while the real count moved 59 -> 82 and a real
+    // relaxation (350KB -> 600KB) shipped, and nothing here noticed. Only meaningful in "all"
+    // mode: this check is the LAST one registered in the LAST stage, so by the time its fn()
+    // runs, `results` already holds every other check's pushed result (check() pushes AFTER
+    // fn() returns) -- `results.length + 1` is therefore the true live total, computed from
+    // the actual run, not a hardcoded or source-grepped number that could itself drift. An
+    // isolated `stage5`-only run has no way to know the full-suite total, so it skips this half
+    // rather than fail on a number it structurally cannot compute -- the committed convention
+    // is always `all` (BUILD-PLAN.md Appendix A, CLAUDE.md invariant 12), so every run that
+    // matters still gets the real guard.
+    if (mode === "all") {
+      const liveTotal = results.length + 1;
+      assert.match(
+        text,
+        new RegExp(`\\b${liveTotal}/${liveTotal}\\b`),
+        `FINAL-AUDIT.md doesn't mention the current live total (${liveTotal}/${liveTotal}) -- its ` +
+        `diff-vs-Stage-0 summary is stale. Add a dated update paragraph per invariant 12's second clause.`
+      );
     }
   });
 }
@@ -1109,8 +1134,15 @@ await Promise.all([]); // allow any pending async check() promises below to be a
 // before reading results. Re-run any promise-returning results now.
 for (const r of results) {
   if (r.detail && typeof r.detail.then === "function") {
-    try { r.detail = String(await r.detail); r.pass = true; }
-    catch (e) { r.pass = false; r.detail = e.message; }
+    try {
+      const resolved = await r.detail;
+      // Same undefined -> "ok" normalization the sync path applies in check() itself (line ~51)
+      // -- without it, an async check with no explicit return value resolved to `String(undefined)`,
+      // the literal text "undefined", which the v1.33 print-loop fix below would then wrongly
+      // treat as real informational content and print on an otherwise-silent green line.
+      r.detail = resolved === undefined ? "ok" : String(resolved);
+      r.pass = true;
+    } catch (e) { r.pass = false; r.detail = e.message; }
   }
 }
 
@@ -1120,7 +1152,14 @@ console.log(`\nverify.mjs — mode: ${mode}\n`);
 for (const r of results) {
   if (!r.pass) anyFail = true;
   const icon = r.pass ? "✅" : "❌";
-  console.log(`${icon} [${r.stage}] ${r.name.padEnd(width)} ${r.pass ? "" : "— " + r.detail}`);
+  // v1.33 bug fix: this used to print `detail` only on failure, so a passing "informational,
+  // non-blocking" check (the near-duplicate proxies) could never actually inform anyone --
+  // its whole return value was computed then discarded, silently, forever. A passing check
+  // still shows nothing when its detail is the generic "ok" placeholder (the overwhelming
+  // majority of checks), so ordinary green output stays exactly as quiet as before; only a
+  // check that deliberately returns a real message, pass or fail, gets it shown.
+  const showDetail = !r.pass || r.detail !== "ok";
+  console.log(`${icon} [${r.stage}] ${r.name.padEnd(width)} ${showDetail ? "— " + r.detail : ""}`);
 }
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} checks passed.\n`);
 process.exit(anyFail ? 1 : 0);

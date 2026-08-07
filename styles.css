@@ -250,10 +250,11 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
    distinct from the Values tab's quieter flat list, since Today is meant to be read and
    learned from, not just glanced at as a reference. Normal mode (09:00-24:00 HKT, four
    stacked cards -- the evening/Closing third mode was retired in v1.31) is a logged
-   exception to §4.4's one-screen rule at 390x844, like Weeks: measured 844-996px depending
+   exception to §4.4's one-screen rule at 390x844, like Weeks: measured 844-1020px depending
    on the day's rotated content, so no spacing trim can guarantee the fit without gutting
    the owner-tuned breathing room -- while focus mode (the one-card lead) fits exactly.
-   See audits/decisions.md, v1.28. */
+   See audits/decisions.md, v1.28 (first measured) and v1.33 (re-measured -- v1.32's longer
+   Journal prompts pushed the ceiling from 996px to 1020px). */
 #cards {
   display: flex;
   flex-direction: column;

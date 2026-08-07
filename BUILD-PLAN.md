@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.32)
+# MINDSET — Autonomous Build Plan (v1.33)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1433,7 +1433,9 @@ disposition in `audits/v1.28-duo-audit.md`; per-decision reasoning in `audits/de
   breach: the real content envelope measures 844px (shortest day, exactly fits) to 996px
   (longest) at 390×844, so no spacing trim guarantees the invariant without gutting the
   owner-tuned breathing room — while focus and evening modes, the bookend states the app is
-  designed around, fit exactly. Reasoning and numbers in decisions.md.
+  designed around, fit exactly. Reasoning and numbers in decisions.md. **[Superseded by
+  v1.33: v1.32's longer Journal prompts moved the measured ceiling to 1020px — see the
+  v1.33 entry below.]**
 - **`sw.js` `CACHE` bumped `mindset-v12` → `mindset-v13`** — one bump covering this round's
   eight touched precached assets AND v1.27's own never-bumped three (an audit catch); Appendix
   C.2 updated to match verbatim.
@@ -1630,8 +1632,10 @@ entirely. This entry covers the removal and a rotation-primitive bug fix found w
 **v1.32 changelog (from v1.31, live request continued):** the Journal content expansion itself,
 sized against the v1.31 entry's headroom numbers. 1825 entries (5 x 365, matching the anchors
 pool's own flat-365/year precedent) at the existing pool's prompt quality/length would cost
-~186.5KB against ~87KB of real headroom -- presented the owner three real options plus a fourth,
-higher-risk one not recommended (full numbers, all four options, and the choice made are in
+~182KB (186,515 B) against ~87KB of real headroom (an earlier draft misstated the Journal-only
+figure as ~186.5KB -- a KB/byte slip caught during independent audit) -- presented the owner
+three real options plus a fourth, higher-risk one not recommended (full numbers, all four
+options, and the choice made are in
 `audits/decisions.md`); the owner chose to raise the page-weight budget rather than compromise
 the content. `CLAUDE.md` invariant 6 and `BUILD-PLAN.md` §2 item 6 both updated 350KB -> 600KB,
 the invariant-12 exception logged in `audits/decisions.md` quoting the original check text
@@ -1672,6 +1676,38 @@ verbatim as the invariant itself requires.
   than the ~441KB first estimated). Page weight 554,902 B of 614,400 (600KB), ~58.1KB headroom
   (an earlier draft misstated this as ~45KB -- a KB/byte slip caught during self-audit). JS
   budget untouched this round (no JS files changed): still 60,837 B of 61,440.
+
+**v1.33 changelog (from v1.32, first independent audit's fixes):** an Opus-model audit
+(owner-requested, "audited by yourself/opus as appropriate") returned SHIP WITH FIXES: five stale
+user-facing/doc items (the "Five grounding cards" copy in index.html/manifest.webmanifest/
+BUILD-PLAN.md's C.1 template, retargeted "Four"; a ~186.5KB -> ~182KB Journal-sizing KB/byte slip
+in two files; styles.css's/BUILD-PLAN.md's "844-996px" one-screen ceiling, re-measured live at
+1020px and corrected; CONTENT-REVIEW.md's self-contradicting 78%/75% paragraph, corrected to the
+true shipped max of exactly 75.00%; FINAL-AUDIT.md, untouched since v1.12's 59/59, given a real
+diff-vs-Stage-0 update paragraph). All five applied -- full text of each in `audits/decisions.md`.
+
+- **Two audit-tooling gaps closed, not just the prose they let drift:** the FINAL-AUDIT stage5
+  guard only ever checked that the substring "verify.mjs" appears somewhere in the file (true
+  forever) -- now asserts the file states the live check count, in `all` mode. Separately found
+  (not audit-reported): the runner only ever printed a check's return value on FAILURE, so both
+  "informational, non-blocking" near-dup checks had their entire findings silently discarded on
+  every green run since they shipped -- fixed to show non-"ok" detail on pass or fail alike.
+- **Journal near-dup threshold 75% -> 70%** (a tightening -- still informational, no invariant-12
+  exception needed): the shipped corpus's true max was exactly 75.00%, so the old threshold had
+  zero margin and could only ever pass silent. Surfaces 12 pairs now; nine read as the same
+  accepted false-positive class already logged for v1.32, three flagged for the next
+  content-suitability audit's judgment rather than a third solo rewrite pass this round.
+- **`app.js`:** removed a dead `syncThemeColorMeta()` call in `renderToday()` -- its v1.28
+  rationale (re-sync on `data-period` change) stopped applying once v1.31 removed `data-period`;
+  every real theme-change path already calls it via `applyTheme`.
+- **Disclosed, not fixed:** `sw.js`'s network-first/`no-store` fetch means every open re-downloads
+  the full, now ~3x larger `cards.json` -- not an invariant breach, but a recurring per-open cost
+  the v1.32 budget analysis didn't name; noted for a future round.
+- **`sw.js` `CACHE` bumped `mindset-v16` -> `mindset-v17`** (app.js bytes changed); Appendix C.2
+  updated to match.
+- **Verified:** `verify.mjs all` 86/86, check count unchanged -- every fix retargeted or
+  strengthened an existing check rather than adding one. `node --check` clean on every touched
+  file.
 
 ---
 
@@ -2441,7 +2477,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 {
   "name": "Mindset",
   "short_name": "Mindset",
-  "description": "Five grounding cards, every morning at 05:00 HKT.",
+  "description": "Four grounding cards, every morning at 05:00 HKT.",
   "display": "standalone",
   "start_url": "./",
   "scope": "./",
@@ -2458,7 +2494,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v16";
+const CACHE = "mindset-v17";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
