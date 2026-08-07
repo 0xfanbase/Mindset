@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.29)
+# MINDSET — Autonomous Build Plan (v1.30)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1555,6 +1555,38 @@ consensus.
   weeks split-cell fills AND glow-ring hue probes across a live toggle, Mara tint values,
   reduced-motion inertness, chips on dark; JS 61,337 B of 61,440 (103 B headroom).
 
+**v1.30 changelog (from v1.29, live bug report):** the owner reported the Journal card
+repeating the previous day's prompt. The rotation itself was innocent — replayed the full real
+`data/daily.json` history and every workflow run since launch, zero actual same-id repeats ever.
+Root cause was the installed-PWA-freeze resume path (`app.js`'s `visibilitychange` listener,
+the same mechanism v1.16/v1.22/v1.28 already hardened for this bug class): `paintedDateHKT`
+tracked the raw HKT calendar date, which flips at midnight, while content only rolls over at
+the 05:00 HKT boundary `staleness()` actually judges — the exact mismatch `offlinePickReference`
+was already written to guard against, on the other fallback path, just never applied here too.
+A resume during 00:00-05:00 HKT stamped tomorrow's raw date early while correctly still
+painting yesterday's cards; any later same-morning resume then compared two equal raw dates,
+skipped the refetch, and (if the window mode also hadn't changed) skipped the fallback
+re-render too — the prior day's cards stayed painted with no further recheck all day. Full
+root-cause trace, live Playwright before/after repro, and regression scenarios in
+`audits/decisions.md`.
+
+- **`app.js`:** `paintedDateHKT` now stamped from `expectedDateHKT(now)` (matching
+  `staleness()`'s own boundary), not raw `hktDateString(now)`; the `visibilitychange` day-flip
+  comparison uses the same function. `hktDateString` dropped from the import (now unused).
+  Deliberately not a live timer/`setInterval` — stays inside the existing event-driven resume
+  check, per this repo's standing rejection of that shape (v1.16's design note).
+- **`scripts/verify.mjs` tightened, not loosened (invariant 12):** new stage1 source-pattern
+  check pins `paintedDateHKT` and the day-flip comparison to `expectedDateHKT`, and asserts
+  `hktDateString` no longer appears in `app.js`. Check count: 82 → 83.
+- **`sw.js` `CACHE` bumped `mindset-v14` → `mindset-v15`** (app.js bytes changed); Appendix C.2
+  updated to match in the same change.
+- **Verified:** `verify.mjs all` 83/83; `node --check` clean; live Playwright repro against the
+  pre-fix code reproduced the stuck-prompt bug, the identical sequence against the fix resolved
+  it with zero console errors, plus three regression scenarios (no-op same-day resume fires no
+  extra fetch; a normal post-05:00 next-day resume still updates; the repro holds even when the
+  window mode doesn't change either) all pass. JS 61,436 B of 61,440 (4 B headroom — tight; the
+  next JS-touching round has essentially no room left).
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -2340,7 +2372,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v14";
+const CACHE = "mindset-v15";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",

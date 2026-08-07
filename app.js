@@ -1,5 +1,5 @@
 // app.js — UI logic: tabs, theme, date, cards, staleness (BUILD-PLAN.md §4/§6)
-import { hktDateParts, hktDateString, hktHour, staleness, pickToday, isFocusWindowHKT, isEveningWindowHKT, isDarkWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
+import { hktDateParts, hktHour, staleness, expectedDateHKT, pickToday, isFocusWindowHKT, isEveningWindowHKT, isDarkWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
 import { initWeeksTab, refreshWeeksIfStale, redrawWeeksForTheme } from "./weeks.js";
 import { initMaraTab } from "./mara.js";
 
@@ -308,7 +308,8 @@ function renderToday(cardsData, dailyData) {
   const rest = [renderAnchorCard(anchor), renderKenyaCard(kenya), renderWordCard(word)];
   const winMode = windowMode(now);
   paintedWindowMode = winMode;
-  paintedDateHKT = hktDateString(now);
+  // Content day, not raw calendar date (05:00 HKT boundary, matches staleness()).
+  paintedDateHKT = expectedDateHKT(now);
   // data-period drives no CSS since v1.29 (the evening palette block is gone -- the dark
   // theme owns nights now); kept because a self-describing DOM is cheap and tests read it.
   document.documentElement.setAttribute("data-period", winMode === "evening" ? "evening" : "day");
@@ -350,10 +351,10 @@ async function boot() {
 }
 
 // Installed iOS PWAs freeze JS while backgrounded and resume the frozen render — re-check
-// every boundary on return: theme window, HKT date, focus/evening window (v1.28/v1.29). A
-// date flip REFETCHES daily.json first (the cron has almost certainly published overnight;
-// on failure the cached object stands). A mode flip alone never fetches — same day, same
-// file (v1.16).
+// every boundary on return: theme window, content day, focus/evening window (v1.28/v1.29).
+// A content-day flip REFETCHES daily.json first (the cron has almost certainly published
+// overnight; on failure the cached object stands). A mode flip alone never fetches — same
+// day, same file (v1.16).
 let dailyRefetchInFlight = false;
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
@@ -364,7 +365,7 @@ document.addEventListener("visibilitychange", () => {
     const want = isDarkWindowHKT(now) ? "dark" : "blossom";
     if (want !== currentTheme()) applyTheme(want);
   }
-  if (bootedToday && hktDateString(now) !== paintedDateHKT) {
+  if (bootedToday && expectedDateHKT(now) !== paintedDateHKT) {
     if (!dailyRefetchInFlight) {
       dailyRefetchInFlight = true;
       fetchJSON("./data/daily.json")

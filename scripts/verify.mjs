@@ -488,6 +488,23 @@ function stage1() {
     assert.equal(lib.staleness("2026-07-15", new Date("2026-07-15T21:00:00Z")), "yesterday");
   });
 
+  check("stage1", "app.js: PWA-resume day-flip check uses expectedDateHKT, not raw hktDateString (v1.30)", () => {
+    // Bug: paintedDateHKT was stamped with the raw HKT calendar date, which flips at midnight,
+    // while content only rolls over at the 05:00 HKT boundary staleness() actually judges (the
+    // line above). A resume during 00:00-05:00 "used up" that day's flip early; a later
+    // same-morning resume (after the real 05:00 rotation, same window mode) then compared two
+    // equal raw dates, skipped the refetch, and left the prior day's cards painted with no
+    // further recheck all day -- reproduced live via Playwright clock mocking + a synthetic
+    // visibilitychange dispatch (no reload) before this check was written; see decisions.md.
+    // Source-pattern check, not a behavioral one: app.js runs in a DOM this harness lacks.
+    const src = read("app.js");
+    assert.match(src, /paintedDateHKT\s*=\s*expectedDateHKT\(now\)/,
+      "paintedDateHKT must be stamped from expectedDateHKT(now), not the raw HKT calendar date");
+    assert.match(src, /expectedDateHKT\(now\)\s*!==\s*paintedDateHKT/,
+      "the visibilitychange day-flip comparison must use expectedDateHKT(now), matching staleness()'s boundary");
+    assert.doesNotMatch(src, /\bhktDateString\b/, "hktDateString is unused in app.js now -- drop it, don't reintroduce it");
+  });
+
   check("stage1", "lib.mjs: isFocusWindowHKT correct at the 09:00 HKT boundary", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     // 2026-07-15T00:59:00Z = 2026-07-15T08:59 HKT — inside the pre-09:00 focus window
