@@ -16,6 +16,8 @@
 // same deterministic pool-rotation approach as the other four.
 // v1.31: Closing retired (the evening card was unused) -- back to four picks. Historical
 // Closing content kept, retired-labeled, in audits/CONTENT-REVIEW.md.
+// v1.35: Word of the Day retired (owner: "not helpful") -- back to three picks. Historical
+// content kept, retired-labeled, in audits/CONTENT-REVIEW.md.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -32,7 +34,6 @@ function main() {
   const anchor = cards.anchors[pickIndex(cards.anchors.length, dayNumber, "anchor")];
   const journal = cards.journal[pickIndex(cards.journal.length, dayNumber, "journal")];
   const kenya = cards.kenya[pickIndex(cards.kenya.length, dayNumber, "kenya")];
-  const word = cards.wordOfDay[pickIndex(cards.wordOfDay.length, dayNumber, "word")];
 
   const daily = {
     version: 1,
@@ -41,7 +42,6 @@ function main() {
     anchorId: anchor.id,
     journalId: journal.id,
     kenyaId: kenya.id,
-    wordId: word.id,
   };
   fs.writeFileSync(path.join(ROOT, "data/daily.json"), JSON.stringify(daily, null, 2) + "\n");
   console.log(`[generate-daily] wrote daily.json for ${dateHKT}`);

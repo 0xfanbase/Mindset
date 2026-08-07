@@ -44,8 +44,8 @@ function shuffledOrder(poolSize, salt, cycle) {
 }
 
 // Minimum guaranteed gap (days) between repeats across a cycle seam (v1.34): pool/6, floored
-// (journal 304, anchors 60, kenya 10, word 5). Must stay <= poolSize/2 (see below); reasoning
-// and verification in decisions.md v1.34. Exported so verify.mjs checks the real formula.
+// (journal 304, anchors 60, kenya 10). Must stay <= poolSize/2 (see below); reasoning and
+// verification in decisions.md v1.34. Exported so verify.mjs checks the real formula.
 export function minSeamGap(poolSize) {
   return Math.max(1, Math.floor(poolSize / 6));
 }
@@ -146,8 +146,7 @@ export function pickToday(cards, now = new Date()) {
   const anchor = cards.anchors[pickIndex(cards.anchors.length, dayNumber, "anchor")];
   const journal = cards.journal[pickIndex(cards.journal.length, dayNumber, "journal")];
   const kenya = cards.kenya[pickIndex(cards.kenya.length, dayNumber, "kenya")];
-  const word = cards.wordOfDay[pickIndex(cards.wordOfDay.length, dayNumber, "word")];
-  return { anchor, journal, kenya, word, dayNumber };
+  return { anchor, journal, kenya, dayNumber };
 }
 
 // Weeks-of-life chart (v1.22) -- "life in weeks" for J and B (initials only, never real

@@ -70,6 +70,12 @@ reader would go looking for that SHA.)
 
 `verify.mjs all`: **86/86**, green.
 
+**v1.35 update:** one further change, a genuine reduction handled per invariant-12 discipline,
+not a silent drop: retiring Word of the Day (owner: "not helpful") deleted the `wordOfDay`-shape
+check outright (nothing left to iterate once the pool's gone) while converting its count/shape
+assertions into `assert.equal(..., undefined, ...)` negative guards, the same treatment Closing's
+removal got in v1.31. Check count: 86 → 85. `verify.mjs all`: **85/85**, green.
+
 ## Acceptance checklist (BUILD-PLAN.md §12)
 
 **Machine-verifiable — all green (`verify.mjs all`, 59/59):**

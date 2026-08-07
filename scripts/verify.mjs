@@ -682,11 +682,11 @@ function stage1() {
     // stronger guarantee lib.mjs now makes (minSeamGap, also exported so this test can't drift
     // from the real formula): for every item, any two appearances within `window` days of a
     // seam are more than minSeamGap(poolSize) days apart. Swept across 8 consecutive seams per
-    // pool (not just 1) and every salt in current use ("closing" is retired -- kept here anyway
-    // as a generic-correctness check, proving the guarantee isn't accidentally salt-specific --
-    // plus one synthetic salt), so a fix that happens to work for one lucky seed can't pass
-    // silently. (This also subsumes the old no-immediate-repeat property: gap > minSeamGap >= 1
-    // rules out gap === 1 too.)
+    // pool (not just 1) and every salt ever used, current or retired ("closing" since v1.31,
+    // "word" since v1.35 -- kept here anyway as a generic-correctness check, proving the
+    // guarantee isn't accidentally salt-specific -- plus one synthetic salt), so a fix that
+    // happens to work for one lucky seed can't pass silently. (This also subsumes the old
+    // no-immediate-repeat property: gap > minSeamGap >= 1 rules out gap === 1 too.)
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     for (const poolSize of [1825, 365, 60, 40, 34, 30, 10, 5]) {
       const gap = lib.minSeamGap(poolSize);
@@ -768,8 +768,9 @@ const KENYA_CATEGORY_COUNTS = { Geography: 12, Wildlife: 14, History: 10, Govern
 function stage3() {
   check("stage3", "data/cards.json valid JSON with required shape", () => {
     const d = readJSON("data/cards.json");
-    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.journal) && Array.isArray(d.kenya) && Array.isArray(d.wordOfDay));
+    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.journal) && Array.isArray(d.kenya));
     assert.equal(d.closing, undefined, "closing pool retired in v1.31 (evening feature removed) -- must not be reintroduced");
+    assert.equal(d.wordOfDay, undefined, "wordOfDay pool retired in v1.35 (word-of-day feature removed) -- must not be reintroduced");
   });
   check("stage3", "data/values.json valid JSON, exactly 5 values", () => {
     const v = readJSON("data/values.json");
@@ -788,24 +789,10 @@ function stage3() {
     assert.equal(d.anchors.length, 365, `total anchors = ${d.anchors.length}`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
-  check("stage3", "journal = 1825, kenya = 60, wordOfDay = 30", () => {
+  check("stage3", "journal = 1825, kenya = 60", () => {
     const d = readJSON("data/cards.json");
     assert.equal(d.journal.length, 1825, `journal = ${d.journal.length}`);
     assert.equal(d.kenya.length, 60, `kenya = ${d.kenya.length}`);
-    assert.equal(d.wordOfDay.length, 30, `wordOfDay = ${d.wordOfDay.length}`);
-  });
-  check("stage3", "wordOfDay entries have word/origin/lang/meaning as non-empty strings", () => {
-    const d = readJSON("data/cards.json");
-    const problems = [];
-    for (const w of d.wordOfDay) {
-      for (const field of ["word", "origin", "lang", "meaning"]) {
-        if (typeof w[field] !== "string" || !w[field].trim()) problems.push(`${w.id}.${field} missing/empty`);
-      }
-      if (typeof w.lang === "string" && !/^[a-z]{2,3}(-[A-Z]{2})?$/.test(w.lang)) {
-        problems.push(`${w.id}.lang "${w.lang}" doesn't look like a BCP-47 tag`);
-      }
-    }
-    assert.equal(problems.length, 0, problems.join(" | "));
   });
   check("stage3", "kenya entries have category/fact as non-empty strings; category counts exact (60 total)", () => {
     const d = readJSON("data/cards.json");
@@ -829,14 +816,13 @@ function stage3() {
       assert.equal(new Set(ids).size, ids.length, `${name} has duplicate ids`);
     }
   });
-  check("stage3", "word caps respected (anchors <=40w, journal prompts <=25w, kenya facts<=40w, wordOfDay meaning<=20w, values essence<=14w/behaviour<=16w)", () => {
+  check("stage3", "word caps respected (anchors <=40w, journal prompts <=25w, kenya facts<=40w, values essence<=14w/behaviour<=16w)", () => {
     const d = readJSON("data/cards.json");
     const v = readJSON("data/values.json");
     const problems = [];
     for (const a of d.anchors) if (wordCount(a.text) > 40) problems.push(`${a.id}: ${wordCount(a.text)}w`);
     for (const j of d.journal) if (wordCount(j.prompt) > 25) problems.push(`${j.id}: ${wordCount(j.prompt)}w`);
     for (const k of d.kenya) if (wordCount(k.fact) > 40) problems.push(`${k.id}: ${wordCount(k.fact)}w`);
-    for (const w of d.wordOfDay) if (wordCount(w.meaning) > 20) problems.push(`${w.id}: ${wordCount(w.meaning)}w`);
     for (const val of v) {
       if (wordCount(val.essence) > 14) problems.push(`${val.name} essence: ${wordCount(val.essence)}w`);
       if (wordCount(val.behaviour) > 16) problems.push(`${val.name} behaviour: ${wordCount(val.behaviour)}w`);
@@ -851,7 +837,6 @@ function stage3() {
     for (const a of d.anchors) { scan(`${a.id}.text`, a.text); scan(`${a.id}.attribution`, a.attribution); }
     for (const j of d.journal) scan(`${j.id}.prompt`, j.prompt);
     for (const k of d.kenya) { scan(`${k.id}.category`, k.category); scan(`${k.id}.fact`, k.fact); }
-    for (const w of d.wordOfDay) { scan(`${w.id}.word`, w.word); scan(`${w.id}.origin`, w.origin); scan(`${w.id}.meaning`, w.meaning); }
     for (const val of v) { scan(`${val.name}.essence`, val.essence); scan(`${val.name}.behaviour`, val.behaviour); }
     assert.equal(problems.length, 0, problems.join(" | "));
   });
@@ -862,7 +847,6 @@ function stage3() {
     for (const a of d.anchors) scan(a.id, a.text);
     for (const j of d.journal) scan(j.id, j.prompt);
     for (const k of d.kenya) scan(k.id, k.fact);
-    for (const w of d.wordOfDay) scan(w.id, w.meaning);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
 
@@ -1026,8 +1010,7 @@ function stage3() {
     const anchor = d.anchors[lib.pickIndex(d.anchors.length, dayNumber, "anchor")];
     const journal = d.journal[lib.pickIndex(d.journal.length, dayNumber, "journal")];
     const kenya = d.kenya[lib.pickIndex(d.kenya.length, dayNumber, "kenya")];
-    const word = d.wordOfDay[lib.pickIndex(d.wordOfDay.length, dayNumber, "word")];
-    assert.ok(anchor && anchor.id && journal && journal.id && kenya && kenya.id && word && word.id);
+    assert.ok(anchor && anchor.id && journal && journal.id && kenya && kenya.id);
   });
   check("stage3", "audits/CONTENT-REVIEW.md exists", () => assert.ok(exists("audits/CONTENT-REVIEW.md"), "missing"));
 }
@@ -1056,8 +1039,9 @@ function stage4() {
     const d = readJSON("data/daily.json");
     assert.match(d.dateHKT, /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(typeof d.generatedAtISO === "string" && !Number.isNaN(Date.parse(d.generatedAtISO)));
-    assert.ok(typeof d.anchorId === "string" && typeof d.journalId === "string" && typeof d.kenyaId === "string" && typeof d.wordId === "string");
+    assert.ok(typeof d.anchorId === "string" && typeof d.journalId === "string" && typeof d.kenyaId === "string");
     assert.equal(d.closingId, undefined, "closingId retired in v1.31 (evening feature removed) -- must not be reintroduced");
+    assert.equal(d.wordId, undefined, "wordId retired in v1.35 (word-of-day feature removed) -- must not be reintroduced");
   });
 }
 

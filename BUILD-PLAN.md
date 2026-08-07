@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.34)
+# MINDSET — Autonomous Build Plan (v1.35)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1435,7 +1435,9 @@ disposition in `audits/v1.28-duo-audit.md`; per-decision reasoning in `audits/de
   owner-tuned breathing room — while focus and evening modes, the bookend states the app is
   designed around, fit exactly. Reasoning and numbers in decisions.md. **[Superseded by
   v1.33: v1.32's longer Journal prompts moved the measured ceiling to 1020px — see the
-  v1.33 entry below.]**
+  v1.33 entry below. Superseded again, and resolved, by v1.35: retiring the fourth (Word of
+  the Day) card brought the true worst case back to exactly 844px — no exception needed
+  anymore. See the v1.35 entry.]**
 - **`sw.js` `CACHE` bumped `mindset-v12` → `mindset-v13`** — one bump covering this round's
   eight touched precached assets AND v1.27's own never-bumped three (an audit catch); Appendix
   C.2 updated to match verbatim.
@@ -1761,6 +1763,64 @@ Verdict: SHIP WITH FIXES, all applied:**
   repro fixed and confirmed; all pre-existing `visibilitychange` paths unregressed; four-tab
   sweep with live tab-dimension measurement, zero console errors throughout.
 
+**v1.35 changelog (from v1.34, live request):** owner: "Please remove the word of the day
+block at the bottom of the first tab because that is not helpful. Kill it." Word of the Day
+(added v1.10, reworked in v1.22) removed entirely, following the same full-removal pattern as
+v1.31's Closing retirement rather than just hiding it:
+
+- **`app.js`:** `renderWordCard`/`speak` (the pronunciation-button `SpeechSynthesisUtterance`
+  wiring) deleted; the `word` destructure/guard/pick dropped from `renderToday`'s fresh,
+  offline-fallback, and staleness-check paths; the WORD chip dropped from the four-card
+  render list (now three: Journal, Anchor, Kenya).
+- **`lib.mjs`:** `pickToday` no longer picks or returns a `word`.
+- **`data/cards.json`:** the 30-entry `wordOfDay` array deleted outright (412,891 B total,
+  down from 419,728 B — the pool itself was ~6.8KB). Historical content preserved,
+  retired-labeled, in `audits/CONTENT-REVIEW.md` — which turned out to still be showing the
+  superseded v1.10 draft pool (wabi-sabi/ikigai/...), never updated when v1.22 reworked it to
+  the actually-shipped English-word/idiom pool; corrected to the real final content while
+  writing this retirement note, not a new gap introduced by it.
+- **`scripts/generate-daily.mjs`:** no longer picks or stamps `wordId`; the pipeline now
+  stamps three ids, not four.
+- **`data/daily.json`** regenerated — `wordId` gone, the other three ids unchanged (each
+  pool's rotation is independent, so removing `word`'s salt doesn't touch anchor/journal/kenya).
+- **`scripts/verify.mjs`:** the `wordOfDay`-shape/count/word-cap/quote-glyph/platitude/
+  offline-fallback checks that iterated it had that iteration deleted outright (nothing left
+  to check); the two shape assertions (`cards.json`'s `wordOfDay`, `daily.json`'s `wordId`)
+  were inverted into `assert.equal(..., undefined, ...)` negative guards, same treatment
+  Closing's got in v1.31, so an accidental reintroduction fails loudly. The `"word"` salt
+  stays in the seam-gap sweep as a generic-correctness check, joining the already-retired
+  `"closing"` salt there. Net check count: 86 → 85 (one check, "wordOfDay entries have
+  word/origin/lang/meaning...", had nothing left to iterate and was deleted, not retargeted).
+- **`styles.css`:** `.word-title-row`/`.word-title`/`.word-speak` (and its `:active`/
+  `:focus-visible`/`:hover` states) deleted outright — nothing else referenced them. `.tab`
+  gained `min-width: 44px` in v1.34 for unrelated reasons and is unaffected.
+- **A genuine, unplanned side effect: the long-standing §4.4 one-screen exception for Today's
+  normal mode is now fully resolved, not just re-measured.** That exception (logged since
+  v1.28, re-measured in v1.33 when it grew to 1020px) existed because the four-card stack
+  could run longer than 844px depending on the day's content. Re-measured live post-removal
+  against the true worst case (longest anchor + longest journal + longest kenya, all three at
+  once, forced via route interception): **exactly 844px** — the invariant now holds without
+  exception for the first time since v1.28. `styles.css`'s comment and the v1.28 changelog
+  entry above both updated to record this as resolved, not just re-superseded.
+- **Docs swept for stale "Word of the Day"/"four cards" references** across `index.html`,
+  `manifest.webmanifest`, `README.md`, and this file's live spec sections (§3 repo layout,
+  §4.5 components, §5.1/§5.2/§5.3 content spec, §6.1/§6.2/§6.3 data & logic, §7 pipeline, §9.3
+  loops) — retired-feature slots (item 4a, §5.3 rule 10) kept as retirement stubs rather than
+  renumbered, so existing cross-references elsewhere in this file stay valid. Genuinely
+  historical text (§1's Stage-0 mission summary, dated `**vX.Y changelog**` entries, the
+  original Stage 0–5 build-task list) deliberately left alone, matching how this file has
+  already treated Kenya/Weeks/Mara/Closing's own additions and removals throughout its
+  history — those were never retrofitted into §1 or the Stage tasks either.
+- **Budget impact: both ceilings gained headroom, no exception needed.** JS 63,921 B → 62,795
+  B of 66,560 (65KB) — 3,765 B headroom, up from 2,639 B. Page weight 558,370 B → 549,538 B
+  of 614,400 (600KB) — 64,862 B headroom, up from 56,030 B.
+- **`sw.js` `CACHE` bumped `mindset-v18` → `mindset-v19`** (`app.js`/`lib.mjs`/`styles.css`
+  bytes changed); Appendix C.2 updated to match.
+- **Verified:** `verify.mjs all` 85/85 (86 → 85, the one genuine removal above). `node --check`
+  clean on every touched `.js`/`.mjs` file. Live Playwright: three cards render (not four),
+  zero console errors across focus/normal windows and both themes, the re-measured 844px
+  worst-case confirmed live, four-tab sweep unregressed.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -1864,7 +1924,7 @@ The three daily cards:
 │   ├── mara/                # 40 Wikimedia Commons wildlife photos, PD/CC0/CC BY/CC BY-SA only (v1.25)
 │   └── favicon.svg
 ├── data/
-│   ├── cards.json          # anchors[365], journal[1825] (v1.32; v1.34 -- min ~10mo gap/seam), kenya[60], wordOfDay[30]
+│   ├── cards.json          # anchors[365], journal[1825] (v1.32; v1.34 -- min ~10mo gap/seam), kenya[60]
 │   ├── values.json         # 5 values
 │   ├── mara.json           # park facts + Great Migration + 20 animals (v1.25)
 │   └── daily.json          # written by the pipeline daily
@@ -1987,13 +2047,13 @@ since it's no longer adjacent to the notch/status bar).
 
 1. **Theme toggle (reworked v1.29):** pill button top-right, 44×44px. The theme DEFAULT follows the HKT clock — dark 17:00–06:00, blossom otherwise (`lib.mjs isDarkWindowHKT`; `index.html`'s pre-paint inline script computes the same window before CSS loads, sets `data-theme` + inline `color-scheme`, pre-sets `theme-color`, and removes the retired `mindset.theme` key — nothing is persisted anymore). The button is a session-only override: a tap flips the theme and suppresses the visibilitychange re-check until the next fresh load, so every reload returns to the cycle. Glyphs: ◐ while pink is active ("tap for dark"), ❀ while dark is active ("tap for pink") — the calm-era glyphs with repurposed meanings, kept because they're proven to render on the owner's device. No `aria-pressed` (an action-named control whose accessible name changes per state must not also carry a pressed state); `aria-label` and `title` are the identical pinned strings `Switch to dark theme` / `Switch to pink theme`, asserted verbatim by verify.mjs.
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Render order is **Journal, Anchor, Kenya, Word** (Journal moved to lead the list in v1.16 — see item 4b for what happens to the other three before 09:00 HKT). Header row = mono category chip (ANCHOR / JOURNAL / KENYA / WORD, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Kenya card (added v1.15) is the same minimal shape as Anchor — chip, fact in `.card-body`, category as a small `.card-attr` line (e.g. `— Wildlife`) — plus a trip-countdown pill top-right of its chip row as of v1.17 (item 4c). Word card additionally shows the word itself as a headline (`.word-title`, Fraunces, 20px, italic and centered per v1.13 — live feedback that it "sitting on the left" undersold it as a headline) inside a `.word-title-row` (also centered, v1.13) alongside a pronunciation button (`.word-speak`, v1.11 — see item 4a below), between the chip and the meaning (§5.3.10). Footer = muted attribution.
+3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Render order is **Journal, Anchor, Kenya** (Journal moved to lead the list in v1.16 — see item 4b for what happens to the other two before 09:00 HKT). Header row = mono category chip (ANCHOR / JOURNAL / KENYA, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Kenya card (added v1.15) is the same minimal shape as Anchor — chip, fact in `.card-body`, category as a small `.card-attr` line (e.g. `— Wildlife`) — plus a trip-countdown pill top-right of its chip row as of v1.17 (item 4c). Footer = muted attribution. (v1.35: Word of the Day, which used to render fourth with its own headline/pronunciation-button treatment, was retired — see item 4a.)
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 05:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 05:00 HKT, every single day.)
-   - `daily.json` unreachable, > 48h stale, or fetch fails → page computes all three cards locally via `lib.mjs` rotation → slate chip `offline rotation`. Since Word of the Day is deterministic (v1.10), this path picks the exact same word as the server would have for that date — unlike the retired Fresh card, there is no divergent "fallback" content.
+   - `daily.json` unreachable, > 48h stale, or fetch fails → page computes all three cards locally via `lib.mjs` rotation → slate chip `offline rotation`. Every pool is deterministic (v1.10 retired the old fetched-content Fresh card for exactly this property), so this path always picks the exact same content the server would have for that date — there is no divergent "fallback" content.
    - **`.chip[hidden] { display: none; }` (v1.11, real bug fix):** `#staleness-chip` keeps `class="chip"` at all times, including while hidden; `.chip`'s own `display: table` (author-origin CSS) unconditionally overrode the browser's default `[hidden] { display: none }` (user-agent-origin CSS) — author styles always win over user-agent styles at equal specificity, regardless of selector order. The hidden chip was never actually disappearing; it sat empty but still consumed its padding/margin box in the default "fresh" case, every load. Fixed with an explicit override, matching the pattern `.panel[hidden] { display: none; }` already used correctly elsewhere in the same stylesheet.
-4a. **Word pronunciation (v1.11):** a 44×44px `<button aria-label="Pronounce <word>">🔊</button>` next to the word title, calling `window.speechSynthesis.speak(new SpeechSynthesisUtterance(word))` with `utterance.lang` set from the entry's `lang` field (§5.1/§5.3.10) — a native browser API, not a dependency (same category as `fetch`/`ResizeObserver`, already used). Rendered only if `"speechSynthesis" in window` (progressive enhancement — never a dead control on an unsupported browser).
-4b. **Pre-09:00 HKT focus mode (v1.16):** `lib.mjs`'s `isFocusWindowHKT(now)` (HKT hour < 9) gates `renderToday`'s output. Inside the window: only the Journal card renders, followed by a `.reveal-rest` disclosure button (`aria-expanded`/`aria-controls`, 44px tap target, mono pill styling matching the staleness chip/theme toggle) and a `#cards-more` wrapper (`hidden` by default) holding Anchor/Kenya/Word. Clicking the button toggles `#cards-more`'s `hidden` state and flips the button's text between "show the rest" / "hide the rest" — a real disclosure, not a one-way reveal, so focus never needs to move off the button. Outside the window: renders exactly as item 3 describes, no button, no wrapper. No new `localStorage` key and no live 09:00 boundary timer — like every other time-gated render in this app (cards, date line, staleness chip), the check runs once per load, and a fresh pre-09:00 load always starts collapsed by design (the daily nudge back to Journal is the point, not a one-time dismissal).
+4a. **Word pronunciation — retired in v1.35, slot kept (not renumbered) so `item 4a`/`§4.5.4a` cross-references elsewhere in this file stay valid.** Through v1.34 this held Word of the Day's card: the word itself as a Fraunces headline (`.word-title`) plus a 44×44px pronunciation button (`.word-speak`, v1.11) calling `window.speechSynthesis.speak(...)`. Owner request: "remove the word of the day block... that is not helpful." Removed entirely — `app.js`'s `renderWordCard`/`speak`, `styles.css`'s `.word-*` rules, `data/cards.json`'s 30-entry `wordOfDay` pool, `wordId` from the daily pipeline/schema, and the `"word"` rotation salt (kept only in `verify.mjs`'s seam-gap sweep as a generic-correctness check, same treatment as the retired `"closing"` salt). Historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`. Full detail in `audits/decisions.md`'s v1.35 entry.
+4b. **Pre-09:00 HKT focus mode (v1.16):** `lib.mjs`'s `isFocusWindowHKT(now)` (HKT hour < 9) gates `renderToday`'s output. Inside the window: only the Journal card renders, followed by a `.reveal-rest` disclosure button (`aria-expanded`/`aria-controls`, 44px tap target, mono pill styling matching the staleness chip/theme toggle) and a `#cards-more` wrapper (`hidden` by default) holding Anchor/Kenya. Clicking the button toggles `#cards-more`'s `hidden` state and flips the button's text between "show the rest" / "hide the rest" — a real disclosure, not a one-way reveal, so focus never needs to move off the button. Outside the window: renders exactly as item 3 describes, no button, no wrapper. No new `localStorage` key and no live 09:00 boundary timer — like every other time-gated render in this app (cards, date line, staleness chip), the check runs once per load, and a fresh pre-09:00 load always starts collapsed by design (the daily nudge back to Journal is the point, not a one-time dismissal).
 4c. **Kenya trip countdown (v1.17):** a small mono pill (`.kenya-countdown`, 10px IBM Plex Mono 500, `--ink` text on a `--edge` accent-tinted background, `999px` border-radius) sits top-right of the Kenya card's chip row, inside a new `.card-top` flex container (`justify-content: space-between`) that wraps the existing `.card-chip`. `lib.mjs`'s `daysUntilKenyaTrip(now)` diffs the fixed trip date (`2026-08-15`, HKT-anchored) against `hktDayNumber(now)` — the same epoch-day mechanism `pickIndex`/`hktDayNumber` already use, not raw millisecond subtraction, so it can't drift on an odd local-clock offset. Renders `N DAYS` (N > 1), `1 DAY`, or `TODAY` (N = 0); once the trip has passed (N < 0) the pill simply doesn't render — a negative countdown would read as a bug, not a feature, and the Kenya facts keep rotating normally either way. `aria-label` on the pill spells out the full sentence (e.g. "31 days until the Kenya trip") for screen readers, since the visible text alone (`31 DAYS`) doesn't say what it's counting down to. No layout change to the other three cards; `.card-chip` itself is unchanged, just now wrapped in a flex row.
 5. **Values tab:** the 5 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px). **No numbering** — values are not a sequence. (Cut from 10 to 5 in v1.2 — ten read as a checklist; keep only what actually matters.)
 6. **Motion:** the figure is the primary animated element. Card/value-row entrance (v1.9, more noticeable per live feedback: "a small animation when I open up the page ... opening up of the cards") = a 500ms fade/rise/scale-in, staggered per item (90ms between Today's cards, 60ms between Values rows) so they visibly cascade in one after another rather than popping in together; nothing on scroll; respects `prefers-reduced-motion` (animation suppressed, content appears instantly). Hover lift 2px desktop only.
@@ -2065,8 +2125,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 {
   "anchors": [ { "id": "stoic-001", "category": "stoic", "text": "...", "attribution": "— after Epictetus" } ],
   "journal": [ { "id": "journal-01", "prompt": "What's one thing you're avoiding right now, and what is it costing you to keep avoiding it?" } ],
-  "kenya": [ { "id": "kenya-01", "category": "Geography", "fact": "Kenya straddles the equator, with the line crossing the country just south of Mount Kenya near the town of Nanyuki." } ],
-  "wordOfDay": [ { "id": "word-01", "word": "Wabi-sabi", "origin": "Japanese", "lang": "ja-JP", "meaning": "..." } ]
+  "kenya": [ { "id": "kenya-01", "category": "Geography", "fact": "Kenya straddles the equator, with the line crossing the country just south of Mount Kenya near the town of Nanyuki." } ]
 }
 ```
 
@@ -2087,7 +2146,8 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 | **anchors total** | | **365** |
 | journal | — (replaced `shifts` in v1.12; expanded 40 -> 1825 in v1.32, Stoic + Die With Zero themed; v1.34 widened the cross-seam gap guarantee to 305+ days, see §6.2) | **1825** |
 | kenya | `Geography` (12) `Wildlife` (14) `History` (10) `Government` (8) `Culture` (8) `Economy` (4) `Sports` (4) — added v1.15 | **60** |
-| wordOfDay | — (added v1.10, replacing freshReserve) | **30** |
+
+*(`wordOfDay` — added v1.10 replacing `freshReserve`, 30 entries — retired in v1.35, owner: "not helpful"; historical content in `audits/CONTENT-REVIEW.md`.)*
 
 A Claude Design prototype (see changelog) already produced 18 anchors (3 per category), 10
 shifts, and 4 freshReserve cards (the v1.0–v1.9 predecessor of `wordOfDay`, retired in v1.10)
@@ -2109,8 +2169,8 @@ rather than a short list of what actually matters (§5.3.6).
 7. **Attribution-confidence rule:** use a person-named attribution (`— after X`) only when you are confident the specific idea is centrally/traditionally X's (e.g. Epictetus/Seneca/Marcus Aurelius for Stoic control-of-response ideas, Bill Perkins for Die With Zero's core thesis, Dweck for growth-mindset framing, Carnegie for the specific relationship tactics from *How to Win Friends*, Housel for invisible-wealth/avoid-ruin framing, Newport for deep-work framing). Otherwise, demote to tradition-level attribution (`— Stoic tradition`, `— growth-mindset research`, `— core principle`) rather than guessing at a specific person. This is a quality/accuracy safeguard, independent of the (resolved) PII question — misattributing an idea to a real, named public figure is a credibility problem even though naming public figures itself is fine.
 8. Write anchors in six batches (one per category, extending each category's 3 seed cards to its full count). After each batch, run the normal mechanical self-review (word caps, quote marks, banned phrases — rules 1–5), **and then** a second, independent review pass per §10 Stage 3's content-QA step, before moving to the next batch.
 9. **`voices` category (added v1.3):** a 7th anchor category, 9 cards (3 each), for named living/recent public figures the owner's household specifically finds inspiring, so their thinking surfaces periodically via the same rotation — not a new subsystem, just more entries in the same `anchors` pool. Extra bar beyond rules 1–8 for this category specifically: (a) any figure who has held significant political office must be scoped strictly to personal-character themes (grief, resilience, self-belief, service) and must never reference their office, party, policies, or elections — attribution is tied to a specific, nonpartisan book/body of work (e.g. `— after X, from <book>`), not their public office; (b) rule 2's "no verbatim quotes" is enforced against the *spirit*, not just quote-mark glyphs — a paraphrase that lands close to the person's one most-famous, most-recognizable line is a violation even with zero quote marks and needs a rewrite, not just a rewording; (c) run the independent second-pass review (rule 8) with an explicit prompt to check attribution-confidence, political neutrality, and closeness-to-source — this category carries materially higher reputational risk per card than the historical-thinker categories.
-10. **`wordOfDay` (replaced `freshReserve` in v1.10, 30 entries):** `{ "id", "word", "origin" (a language/tradition, e.g. "Japanese", "Stoic Greek" — never a person's name, since this pool has no attribution-confidence question the way anchors do), "lang" (added v1.11 — a BCP-47 tag, e.g. "ja-JP", "de-DE", mapped from `origin`, feeding the pronunciation button's `SpeechSynthesisUtterance.lang` per §4.5.4a so the word is spoken in a voice matched to its actual language), "meaning" (≤ 20 words, one sentence, no verbatim dictionary-style copying — write the sense of the word, not a lifted definition) }`. Fully self-authored (no external source to fetch or verify), so it rotates deterministically exactly like anchors/journal (§6.2) rather than needing the daily pipeline to do any network work for it.
-11. **`kenya` (added v1.15, 60 entries):** `{ "id", "category" (one of `Geography`/`Wildlife`/`History`/`Government`/`Culture`/`Economy`/`Sports`, capitalized to match `wordOfDay`'s `origin` convention — rendered directly as the card's `.card-attr` line), "fact" (≤ 40 words, same cap as anchors, one self-contained factual sentence or two) }`. **Correctness is the load-bearing rule for this pool, not attribution confidence** — every specific numeric/date/superlative claim (elevations, dates, "largest"/"only"/"first" claims) must be independently verified against a real source before writing, not written from memory, and content must be chosen for durability: no named current officeholders, no fast-moving statistics or sports records, no unverified travel-blog folklore. Same mechanical rules apply otherwise (word cap, zero quotation-mark glyphs, no banned platitudes, unique ids). Rotates deterministically exactly like anchors/journal/wordOfDay (§6.2, salt `"kenya"`).
+10. **`wordOfDay` — retired in v1.35 (owner: "not helpful"), rule slot kept so §5.3.10 cross-references stay valid.** Through v1.34: `{ "id", "word", "origin", "lang", "meaning" }`, 30 self-authored entries, rotated deterministically like anchors/journal. Removed entirely from `data/cards.json`, `app.js`, `styles.css`, and the daily pipeline/schema; historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`; full detail in `audits/decisions.md`'s v1.35 entry.
+11. **`kenya` (added v1.15, 60 entries):** `{ "id", "category" (one of `Geography`/`Wildlife`/`History`/`Government`/`Culture`/`Economy`/`Sports`, capitalized — rendered directly as the card's `.card-attr` line), "fact" (≤ 40 words, same cap as anchors, one self-contained factual sentence or two) }`. **Correctness is the load-bearing rule for this pool, not attribution confidence** — every specific numeric/date/superlative claim (elevations, dates, "largest"/"only"/"first" claims) must be independently verified against a real source before writing, not written from memory, and content must be chosen for durability: no named current officeholders, no fast-moving statistics or sports records, no unverified travel-blog folklore. Same mechanical rules apply otherwise (word cap, zero quotation-mark glyphs, no banned platitudes, unique ids). Rotates deterministically exactly like anchors/journal (§6.2, salt `"kenya"`).
 
 ---
 
@@ -2125,22 +2185,21 @@ rather than a short list of what actually matters (§5.3.6).
   "generatedAtISO": "2026-07-13T22:00:41Z",
   "anchorId": "wealth-007",
   "journalId": "journal-23",
-  "kenyaId": "kenya-51",
-  "wordId": "word-16"
+  "kenyaId": "kenya-51"
 }
 ```
-All four ids are always present — unlike the retired `fresh` field (v1.0–v1.9), there is
-nothing here that can come back `null` or need URL/source validation, since `wordId`/`kenyaId`
-are deterministic picks from the app's own `wordOfDay`/`kenya` pools (§6.2), not values pulled
-from any external source.
+All three ids are always present — unlike the retired `fresh` field (v1.0–v1.9), there is
+nothing here that can come back `null` or need URL/source validation, since each id is a
+deterministic pick from the app's own pools (§6.2), not a value pulled from any external
+source. (`wordId` was a fourth id here through v1.34; retired in v1.35.)
 
 ### 6.2 Deterministic rotation (in `lib.mjs`, shared browser + node)
 
 - `hktDateString(d)` → `YYYY-MM-DD` via `Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Hong_Kong' })`.
 - `hktDayNumber(d)` → `floor(Date.UTC(y, m-1, day) / 86400000)` from the HKT date parts.
 - `hktDateParts(d)` → `{ weekday, day, month, year }` via `Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Hong_Kong', weekday:'long', day:'numeric', month:'long', year:'numeric' })`, for rendering the date line without duplicating formatting logic in `app.js`.
-- `pickIndex(poolSize, dayNumber, salt)` → per-cycle Fisher–Yates permutation seeded with `xmur3(salt + ":" + floor(dayNumber/poolSize))` feeding `mulberry32`; return `order[dayNumber % poolSize]`. **Use the reference implementation in Appendix B verbatim.** Guarantees, as of v1.34 (superseding the v1.0–v1.30 text this replaced, which wrongly called a cycle-boundary repeat "expected and not a bug" — a real, dated 1-day repeat is exactly what prompted the v1.31 fix below): no repeats *within* a full cycle; at a cycle SEAM, every item is guaranteed at least `minSeamGap(poolSize)` days (pool/6, floored) before it can repeat — journal 305+ days, anchors 61+, kenya 11+, word 6+ — with the REAL average gap from an arbitrary start date roughly poolSize/2 days (journal ≈ 2.5 years) and the typical (median) gap close to a full cycle (journal ≈ 5 years, matching the pool's own sizing intent). A true "zero repeats within any poolSize-day window from every possible start date" is provably impossible without abandoning per-cycle reshuffling for one exact repeating order forever (proof sketch + full verification numbers in decisions.md's v1.34 entry) — the bounded-gap guarantee above is the strongest available while keeping each cycle's shuffle genuinely independent. Fully stateless, identical results in node and browser. Note for future curation (put this in the README runbook, not enforced by code): replace cards 1-for-1; adding or removing cards changes the pool size and reshuffles the whole rotation, which may repeat a recently-seen card once.
-- Salts: `"anchor"`, `"journal"`, `"kenya"`, `"word"`.
+- `pickIndex(poolSize, dayNumber, salt)` → per-cycle Fisher–Yates permutation seeded with `xmur3(salt + ":" + floor(dayNumber/poolSize))` feeding `mulberry32`; return `order[dayNumber % poolSize]`. **Use the reference implementation in Appendix B verbatim.** Guarantees, as of v1.34 (superseding the v1.0–v1.30 text this replaced, which wrongly called a cycle-boundary repeat "expected and not a bug" — a real, dated 1-day repeat is exactly what prompted the v1.31 fix below): no repeats *within* a full cycle; at a cycle SEAM, every item is guaranteed at least `minSeamGap(poolSize)` days (pool/6, floored) before it can repeat — journal 305+ days, anchors 61+, kenya 11+ — with the REAL average gap from an arbitrary start date roughly poolSize/2 days (journal ≈ 2.5 years) and the typical (median) gap close to a full cycle (journal ≈ 5 years, matching the pool's own sizing intent). A true "zero repeats within any poolSize-day window from every possible start date" is provably impossible without abandoning per-cycle reshuffling for one exact repeating order forever (proof sketch + full verification numbers in decisions.md's v1.34 entry) — the bounded-gap guarantee above is the strongest available while keeping each cycle's shuffle genuinely independent. Fully stateless, identical results in node and browser. Note for future curation (put this in the README runbook, not enforced by code): replace cards 1-for-1; adding or removing cards changes the pool size and reshuffles the whole rotation, which may repeat a recently-seen card once.
+- Salts: `"anchor"`, `"journal"`, `"kenya"`. (`"word"` retired in v1.35, along with the pool it rotated.)
 
 ### 6.3 Client behaviour (`app.js`)
 
@@ -2156,26 +2215,30 @@ from any external source.
 **v1.10 note:** through v1.9, this script fetched five external RSS/YouTube feeds for the
 Fresh card, with a whole subsystem of liveness/identity verification (old §7.1), a mindset-
 relevance denylist filter (old §7.2), and a `state/fresh-history.json` idempotency file. Live
-feedback disliked the Fresh card; its replacement, Word of the Day, is a deterministic pick
-from `cards.json`'s own `wordOfDay` pool (§5.3.10) — nothing to fetch, parse, verify, or filter,
-since there's no external source that can be down, off-theme, or misidentified. All of that
-machinery is retired along with it; the script now only stamps today's four picks (a Kenya pick,
-`kenyaId`, was added in v1.15 alongside the original three):
+feedback disliked the Fresh card; its v1.10 replacement (Word of the Day, itself later retired
+in v1.35 — see below) was a deterministic pick from the app's own content — nothing to fetch,
+parse, verify, or filter, since there's no external source that can be down, off-theme, or
+misidentified. All of that machinery is retired along with it; the script now only stamps
+today's three picks (a Kenya pick, `kenyaId`, was added in v1.15 alongside the original two):
 
-1. Compute `dateHKT`, `dayNumber` via `lib.mjs`; pick `anchorId`, `journalId`, `kenyaId`, `wordId`
-   (all four via the same deterministic `pickIndex` rotation, §6.2 — no fetch, no external
+1. Compute `dateHKT`, `dayNumber` via `lib.mjs`; pick `anchorId`, `journalId`, `kenyaId`
+   (all three via the same deterministic `pickIndex` rotation, §6.2 — no fetch, no external
    dependency).
 2. Write `data/daily.json` (§6.1).
 3. Idempotent and safe to re-run any number of times same-day — the picks are a pure function
-   of `dateHKT`, so a re-run just rewrites `generatedAtISO` and reproduces the same four ids.
+   of `dateHKT`, so a re-run just rewrites `generatedAtISO` and reproduces the same three ids.
    When run locally in this environment, invoke as `NODE_USE_ENV_PROXY=1 node
    scripts/generate-daily.mjs` (§2.4) — this flag is now a no-op for this script specifically
    (nothing it does needs network access) but is still correct/harmless to pass, and remains
    required for any other script here that does use `fetch`.
 
+**v1.35 note:** Word of the Day (added v1.10) was retired — owner: "not helpful" — dropping
+`wordId` from this script and from `daily.json`'s schema. The pipeline was already this simple
+for the Fresh-card reason above; this just removes one more picked id, not any machinery.
+
 The daily Actions cron (LOOP-A, §9.3) and the watchdog's staleness check (LOOP-C) both still
 run exactly as before — `generatedAtISO`/`dateHKT` remain a genuine, useful signal that the
-automated pipeline is alive, independent of anything Word of the Day itself needs.
+automated pipeline is alive, independent of which specific cards it's stamping.
 
 ---
 
@@ -2311,7 +2374,7 @@ for stage in 0..5:
 | **LOOP-A** daily refresh | Actions cron 04:56 HKT + `workflow_dispatch` | the core auto-run |
 | **LOOP-B** stuck-build killer | `timeout-minutes: 10` + `concurrency.cancel-in-progress` | any hung/overlapping run — killed inside 10 min, never "stuck for hours" |
 | **LOOP-C** dead-man's switch | watchdog 09:00 HKT → checks the *live* site, not just git → GitHub issue (deduped) + email | silent failures LOOP-B can't see (cron never fired, push failed, **or Pages didn't redeploy**) |
-| **LOOP-D** graceful degrade | client staleness chip (boundary-aware) + offline deterministic rotation (anchor/journal/wordOfDay all alike) | everything else — the page NEVER shows an empty slot |
+| **LOOP-D** graceful degrade | client staleness chip (boundary-aware) + offline deterministic rotation (anchor/journal/kenya all alike) | everything else — the page NEVER shows an empty slot |
 
 Design consequence: the worst possible failure is one morning of yesterday's (or locally rotated) cards, visibly labelled, followed by self-healing the next cron. No standing agents, no machine that must stay awake.
 
@@ -2546,7 +2609,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v18";
+const CACHE = "mindset-v19";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
