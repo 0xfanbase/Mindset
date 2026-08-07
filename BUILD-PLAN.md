@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.29)
+# MINDSET — Autonomous Build Plan (v1.34)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1433,7 +1433,9 @@ disposition in `audits/v1.28-duo-audit.md`; per-decision reasoning in `audits/de
   breach: the real content envelope measures 844px (shortest day, exactly fits) to 996px
   (longest) at 390×844, so no spacing trim guarantees the invariant without gutting the
   owner-tuned breathing room — while focus and evening modes, the bookend states the app is
-  designed around, fit exactly. Reasoning and numbers in decisions.md.
+  designed around, fit exactly. Reasoning and numbers in decisions.md. **[Superseded by
+  v1.33: v1.32's longer Journal prompts moved the measured ceiling to 1020px — see the
+  v1.33 entry below.]**
 - **`sw.js` `CACHE` bumped `mindset-v12` → `mindset-v13`** — one bump covering this round's
   eight touched precached assets AND v1.27's own never-bumped three (an audit catch); Appendix
   C.2 updated to match verbatim.
@@ -1555,6 +1557,210 @@ consensus.
   weeks split-cell fills AND glow-ring hue probes across a live toggle, Mara tint values,
   reduced-motion inertness, chips on dark; JS 61,337 B of 61,440 (103 B headroom).
 
+**v1.30 changelog (from v1.29, live bug report):** the owner reported the Journal card
+repeating the previous day's prompt. The rotation itself was innocent — replayed the full real
+`data/daily.json` history and every workflow run since launch, zero actual same-id repeats ever.
+Root cause was the installed-PWA-freeze resume path (`app.js`'s `visibilitychange` listener,
+the same mechanism v1.16/v1.22/v1.28 already hardened for this bug class): `paintedDateHKT`
+tracked the raw HKT calendar date, which flips at midnight, while content only rolls over at
+the 05:00 HKT boundary `staleness()` actually judges — the exact mismatch `offlinePickReference`
+was already written to guard against, on the other fallback path, just never applied here too.
+A resume during 00:00-05:00 HKT stamped tomorrow's raw date early while correctly still
+painting yesterday's cards; any later same-morning resume then compared two equal raw dates,
+skipped the refetch, and (if the window mode also hadn't changed) skipped the fallback
+re-render too — the prior day's cards stayed painted with no further recheck all day. Full
+root-cause trace, live Playwright before/after repro, and regression scenarios in
+`audits/decisions.md`.
+
+- **`app.js`:** `paintedDateHKT` now stamped from `expectedDateHKT(now)` (matching
+  `staleness()`'s own boundary), not raw `hktDateString(now)`; the `visibilitychange` day-flip
+  comparison uses the same function. `hktDateString` dropped from the import (now unused).
+  Deliberately not a live timer/`setInterval` — stays inside the existing event-driven resume
+  check, per this repo's standing rejection of that shape (v1.16's design note).
+- **`scripts/verify.mjs` tightened, not loosened (invariant 12):** new stage1 source-pattern
+  check pins `paintedDateHKT` and the day-flip comparison to `expectedDateHKT`, and asserts
+  `hktDateString` no longer appears in `app.js`. Check count: 82 → 83.
+- **`sw.js` `CACHE` bumped `mindset-v14` → `mindset-v15`** (app.js bytes changed); Appendix C.2
+  updated to match in the same change.
+- **Verified:** `verify.mjs all` 83/83; `node --check` clean; live Playwright repro against the
+  pre-fix code reproduced the stuck-prompt bug, the identical sequence against the fix resolved
+  it with zero console errors, plus three regression scenarios (no-op same-day resume fires no
+  extra fetch; a normal post-05:00 next-day resume still updates; the repro holds even when the
+  window mode doesn't change either) all pass. JS 61,436 B of 61,440 (4 B headroom — tight; the
+  next JS-touching round has essentially no room left).
+
+**v1.31 changelog (from v1.30, live request):** two asks — expand Journal to a 5-year no-repeat
+rotation (Stoic + Die with Zero themed), and remove the unused evening Journal (Closing) feature
+entirely. This entry covers the removal and a rotation-primitive bug fix found while scoping the
+5-year requirement; the content expansion itself is a separate, later entry once sized.
+
+- **Closing removed, not hidden:** the 34-entry `closing` pool, `closingId`, `isEveningWindowHKT`,
+  `renderClosingCard`, and the evening branch of `windowMode`/`renderToday` are all gone from
+  `data/cards.json`/`data/daily.json`/`lib.mjs`/`app.js`/`scripts/generate-daily.mjs`. `windowMode`
+  is now two states (focus/normal); normal mode spans 09:00-24:00 HKT (was 09:00-20:00). The
+  now-permanently-constant `data-period` DOM attribute is removed too (drove no CSS since v1.29;
+  with only one possible value left post-removal, "self-describing DOM" no longer justified
+  keeping it). Historical Closing content stays in full in `audits/CONTENT-REVIEW.md`, relabeled
+  retired -- the same treatment the retired Shift pool got in v1.12.
+- **A real bug found while scoping "no repeat": `pickIndex` only guaranteed uniqueness WITHIN
+  one cycle, never AT the seam between two independently-reshuffled cycles.** A pool sized to
+  exactly cover an N-day no-repeat window needs the seam closed, not just documented as a long
+  shot. First fix attempt (recurse one call back, conditionally swap) was wrong -- caught by
+  exhaustive simulation before shipping, not after: `pickIndex` recomputes from scratch every
+  call with no shared state, so the swap decided while resolving one day of a cycle didn't
+  propagate to a different call resolving another day of the SAME cycle, letting two days
+  inside one cycle disagree and collide with each other. Real fix: the swap decision is now a
+  pure function of `(poolSize, salt, cycle)` alone, never of `dayNumber`, via a new internal
+  `shuffledOrder()` helper -- every call for any day in a cycle now agrees on the same order.
+  Full trace, the wrong-first-attempt numbers, and the acknowledged poolSize-2 structural
+  exception (moot -- no pool here is under 30) are in `audits/decisions.md`.
+- **`scripts/verify.mjs`:** the removed Closing-specific check iterations are gone outright;
+  the shape assertions are inverted into `assert.equal(..., undefined, ...)` regression guards
+  instead of silently deleted. Two new seam-safety checks added (a 10-seams x 6-pool-sizes x
+  6-salts sweep, and an internal-consistency check that reconstructs each cycle's full pick
+  sequence from independent per-day calls -- a direct regression test for the caught-before-ship
+  wrong first attempt). The existing full-cycle-uniqueness check's pool list now includes the
+  real 1825/365 sizes this app uses, not just representative round numbers. Check count: 83 → 85.
+- **`sw.js` `CACHE` bumped `mindset-v15` → `mindset-v16`** (app.js/lib.mjs/styles.css changed);
+  Appendix C.2 updated to match.
+- **Verified:** `verify.mjs all` 85/85; `node --check` clean; regenerated `data/daily.json` for
+  real and confirmed today's picks are byte-identical before/after the seam fix (it only alters
+  rare seam days). JS 60,837 B of 61,440 (603 B headroom, recovered from Closing's removal after
+  the seam-fix comments were trimmed to fit). Page weight 269,453 B of 358,400 -- 88,947 B
+  (~86.9KB) headroom, the number the Journal-expansion sizing decision is computed against.
+
+**v1.32 changelog (from v1.31, live request continued):** the Journal content expansion itself,
+sized against the v1.31 entry's headroom numbers. 1825 entries (5 x 365, matching the anchors
+pool's own flat-365/year precedent) at the existing pool's prompt quality/length would cost
+~182KB (186,515 B) against ~87KB of real headroom (an earlier draft misstated the Journal-only
+figure as ~186.5KB -- a KB/byte slip caught during independent audit) -- presented the owner
+three real options plus a fourth, higher-risk one not recommended (full numbers, all four
+options, and the choice made are in
+`audits/decisions.md`); the owner chose to raise the page-weight budget rather than compromise
+the content. `CLAUDE.md` invariant 6 and `BUILD-PLAN.md` §2 item 6 both updated 350KB -> 600KB,
+the invariant-12 exception logged in `audits/decisions.md` quoting the original check text
+verbatim as the invariant itself requires.
+
+- **`data/cards.json`:** `journal` pool replaced in full, 40 -> 1825 entries, `journal-01`..`-40`
+  -> zero-padded `journal-0001`..`-1825`. ~40 sub-themes (roughly half Stoic philosophy --
+  dichotomy of control, memento mori, impermanence, voluntary discomfort, and more; half Bill
+  Perkins's Die With Zero -- experiences now not deferred, memory dividends, giving while alive,
+  time-buckets by life stage, and more), neither source named in any shipped prompt text (Journal
+  has no `attribution` field, unlike anchors). Full sub-theme/id-range table, authoring
+  methodology, and an honestly-scoped account of what a 1825-entry round could and couldn't carry
+  over from the anchors v1.14 process (12 research passes, 4 QA passes per entry -- not
+  replicated at this volume) are in `audits/CONTENT-REVIEW.md`'s new "Journal v1.32" section.
+- **A real quality miss, caught and fixed within the round:** the first draft of the `duty`
+  sub-theme over-relied on one sentence template, producing 18 near-duplicate flags in a single
+  60-entry batch (up to 83% overlap) the moment it was actually validated. Rewritten in full with
+  deliberate structural variety before continuing; every later batch was validated per-batch
+  (not just at the end) specifically because of this catch. Two more near-duplicate pairs (82%,
+  80%) found on the first full-corpus pass were rewritten cleanly; two further pairs (78% each)
+  surfaced only after merging into `cards.json`, where the first fix attempt itself introduced
+  two NEW collisions elsewhere in the pool -- caught by re-running the full-corpus check rather
+  than assumed clean, and corrected with a second, more careful rewrite. Full sequence, not
+  smoothed over, in `audits/decisions.md`.
+- **`scripts/verify.mjs`:** `journal = 40` retargeted to `journal = 1825` (like-for-like, not
+  new). New: a hard exact-duplicate guard for `journal` (a literal repeat would defeat the point
+  of the v1.31 seam fix) plus a near-duplicate proxy scoped to `journal` at a 75% threshold
+  (looser than anchors' 60%, calibrated to this pool's own observed acceptable-overlap ceiling).
+  Check count: 85 -> 86.
+- **`data/daily.json` regenerated for real** (the previously-committed `journalId` no longer
+  existed in the new pool) -- today's pick, `journal-0684`, confirmed rendering correctly live.
+- **Verified:** `verify.mjs all` 86/86 -- word cap, quote-glyph, banned-platitude, and both
+  duplicate checks all pass across the real, full 1825, not a sample. Live Playwright pass
+  (clock-mocked, real app.js/lib.mjs/cards.json served from disk, three HKT instants): correct
+  Journal card content, zero console errors, 194ms local load time. `data/cards.json` 419,728 B
+  (journal array 243,123 B / 1825 entries, 133.2 B/entry average -- higher than the 102.2 B/entry
+  the pre-authoring estimate assumed, which is why the shipped total landed at 554,902 B rather
+  than the ~441KB first estimated). Page weight 554,902 B of 614,400 (600KB), ~58.1KB headroom
+  (an earlier draft misstated this as ~45KB -- a KB/byte slip caught during self-audit). JS
+  budget untouched this round (no JS files changed): still 60,837 B of 61,440.
+
+**v1.33 changelog (from v1.32, first independent audit's fixes):** an Opus-model audit
+(owner-requested, "audited by yourself/opus as appropriate") returned SHIP WITH FIXES: five stale
+user-facing/doc items (the "Five grounding cards" copy in index.html/manifest.webmanifest/
+BUILD-PLAN.md's C.1 template, retargeted "Four"; a ~186.5KB -> ~182KB Journal-sizing KB/byte slip
+in two files; styles.css's/BUILD-PLAN.md's "844-996px" one-screen ceiling, re-measured live at
+1020px and corrected; CONTENT-REVIEW.md's self-contradicting 78%/75% paragraph, corrected to the
+true shipped max of exactly 75.00%; FINAL-AUDIT.md, untouched since v1.12's 59/59, given a real
+diff-vs-Stage-0 update paragraph). All five applied -- full text of each in `audits/decisions.md`.
+
+- **Two audit-tooling gaps closed, not just the prose they let drift:** the FINAL-AUDIT stage5
+  guard only ever checked that the substring "verify.mjs" appears somewhere in the file (true
+  forever) -- now asserts the file states the live check count, in `all` mode. Separately found
+  (not audit-reported): the runner only ever printed a check's return value on FAILURE, so both
+  "informational, non-blocking" near-dup checks had their entire findings silently discarded on
+  every green run since they shipped -- fixed to show non-"ok" detail on pass or fail alike.
+- **Journal near-dup threshold 75% -> 70%** (a tightening -- still informational, no invariant-12
+  exception needed): the shipped corpus's true max was exactly 75.00%, so the old threshold had
+  zero margin and could only ever pass silent. Surfaces 12 pairs now; nine read as the same
+  accepted false-positive class already logged for v1.32, three flagged for the next
+  content-suitability audit's judgment rather than a third solo rewrite pass this round.
+- **`app.js`:** removed a dead `syncThemeColorMeta()` call in `renderToday()` -- its v1.28
+  rationale (re-sync on `data-period` change) stopped applying once v1.31 removed `data-period`;
+  every real theme-change path already calls it via `applyTheme`.
+- **Disclosed, not fixed:** `sw.js`'s network-first/`no-store` fetch means every open re-downloads
+  the full, now ~3x larger `cards.json` -- not an invariant breach, but a recurring per-open cost
+  the v1.32 budget analysis didn't name; noted for a future round.
+- **`sw.js` `CACHE` bumped `mindset-v16` -> `mindset-v17`** (app.js bytes changed); Appendix C.2
+  updated to match.
+- **Verified:** `verify.mjs all` 86/86, check count unchanged -- every fix retargeted or
+  strengthened an existing check rather than adding one. `node --check` clean on every touched
+  file.
+
+**v1.34 changelog (from v1.33, second independent audit -- Opus as owner-designated "project
+director," scoped to journal-content fit, no-repeat, typos, UI/UX, and a general bug hunt).
+Verdict: SHIP WITH FIXES, all applied:**
+
+- **Content fit judged genuinely sound** (full 1825-entry read, not a sample; Stoic/DWZ
+  substance confirmed, not just theming). Voice-drift (from the v1.33 entry) confirmed real but
+  logged as a follow-up-round candidate, not fixed here -- rushing it risked repeating the
+  v1.32 78%-pair mistake. 30 journal entries + 1 kenya fact rewritten for real defects: 5
+  ungrammatical prompts, a 9-entry "the three" cluster with zero antecedent once shipped
+  standalone (the round's highest-value catch -- a content bug of the exact "correct in
+  authoring context, silently wrong once shipped" character as the `pickIndex` seam bug), a
+  9-entry "your list" cluster, 4 polar (yes/no) prompts, one real near-duplicate
+  (`journal-1457`), one non-ASCII string, one wrong-life-stage entry, one Kenya factual error.
+  Full list and re-verification methodology in `audits/CONTENT-REVIEW.md` and `decisions.md`.
+- **A confirmed live bug: the header date and Kenya countdown could go stale up to 5 hours
+  after a backgrounded resume.** `app.js`'s two existing re-render triggers (content-day flip at
+  05:00, window-mode flip at 09:00/00:00) both miss the header/countdown's own midnight pivot --
+  reproduced live with Playwright before fixing. Fixed with a third tracked value,
+  `paintedCalendarDateHKT`, OR'd into the existing re-render branch; re-verified live plus a
+  strengthened `verify.mjs` source-pattern check.
+- **The "5-year no-repeat" claim was not actually being delivered -- fixed the mechanism, not
+  just the docs.** The v1.31 seam guard only ever proved no IMMEDIATE repeat; a real 4-day
+  repeat survived at a future seam, and the real guaranteed window averaged ~2.5 years, not 5.
+  A literal universal guarantee is mathematically impossible without one fixed repeating order
+  forever (proof sketch in decisions.md) -- so `lib.mjs` gained the strongest achievable BOUNDED
+  guarantee instead: `minSeamGap(poolSize)` (pool/6, floored) plus a deterministic swap-fixup
+  construction, verified via 100M+ simulated assertions before touching the shipped file
+  (matching the v1.31 discipline exactly) and against the real 4 pools over 80,000 days.
+  Journal's real median gap: 1817 days (~5 years, matching the original intent); minimum
+  guaranteed: 305 days. Today's already-shipped picks confirmed byte-identical, no regeneration
+  needed. Stale "expected and not a bug" guarantee text in BUILD-PLAN.md §6.2 (unedited across
+  v1.31-v1.33) corrected with the real numbers.
+- **`sw.js`:** an HTTP error response now falls back to cache instead of shadowing a good cached
+  copy (`if (res.ok)` used to guard caching only, not the fallback decision). `CACHE` bumped
+  `mindset-v17` -> `mindset-v18`.
+- **`app.js`:** `fetchJSON` gained a 15s timeout (`AbortController`) -- an unbounded hang could
+  leave `dailyRefetchInFlight` stuck true forever, permanently disabling future refetches.
+- **`styles.css`:** `.tab` gained `min-width: 44px` -- "Mara" (shortest label) measured 43.2px,
+  under invariant 7's tap-target floor.
+- **Two more cosmetic-but-real fixes found reading the code this round:** `weeks.js`'s
+  glow-vs-outline paint-order comment was backwards; `figure.js`'s `_drawStatic()` hardcoded
+  `BREATHE_CYCLE` instead of `this._cycleMs`, landing at the wrong brightness whenever
+  resonance mode was active.
+- **Invariant-12 exception: JS budget 60KB -> 65KB.** Pre-v1.34 headroom was already down to
+  603 B; this round's fixes are substantive new logic, not bloat, and needed 63,921 B even
+  after two rounds of comment-trimming. Original check text and full reasoning in
+  `audits/decisions.md`. `CLAUDE.md` invariant 6 and this file's §2 item 6 both updated.
+- **Verified:** `verify.mjs all` 86/86, check count unchanged (seam-gap, JS-budget, and app.js
+  source-pattern checks retargeted, none added). Full live Playwright pass: midnight-staleness
+  repro fixed and confirmed; all pre-existing `visibilitychange` paths unregressed; four-tab
+  sweep with live tab-dimension measurement, zero console errors throughout.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -1629,7 +1835,7 @@ The three daily cards:
 3. **Zero runtime dependencies.** Vanilla HTML/CSS/JS. No frameworks, no npm packages, no build step, no bundler, no analytics, no cookies, no third-party scripts or CDNs at runtime. `localStorage` only, keys namespaced `mindset.*`.
 4. **Node ≥ 20 built-ins only** for scripts (global `fetch`, `node:fs`, `node:test` allowed). No `npm install` at any point. When running `generate-daily.mjs` locally in this environment, set `NODE_USE_ENV_PROXY=1` so Node's built-in `fetch` honours the environment's egress proxy (GitHub Actions runners are unaffected and need no flag).
 5. **Static hosting truth:** everything must work on GitHub Pages served from `main` branch root. Include a `.nojekyll` file. All stages commit and push directly to `main` — the owner has authorized this for this repo; there is no feature-branch/PR step in this plan.
-6. **Performance budget:** total page weight ≤ 350 KB excluding fonts; fonts ≤ 300 KB total; JS ≤ 60 KB total; the figure animation must pause when the tab is hidden and must honour `prefers-reduced-motion`.
+6. **Performance budget:** total page weight ≤ 600 KB excluding fonts (raised from 350 KB in v1.32 — a logged invariant-12 exception, owner-authorized, to fit the 5-year Journal pool; see decisions.md); fonts ≤ 300 KB total; JS ≤ 65 KB total (raised from 60 KB in v1.34 — a logged invariant-12 exception, to fit the widened cross-seam no-repeat guarantee plus several bug fixes; see decisions.md); the figure animation must pause when the tab is hidden and must honour `prefers-reduced-motion`.
 7. **Accessibility floor:** WCAG AA contrast for all text token pairs (verified numerically in `verify.mjs`, including `(--muted,--bg)` and `(--accent,--bg)` — not just the on-`--surface` pairs — and gated at 4.5:1 for any pair used for normal-size text, 3:1 only where the token is genuinely large-text/UI-component use), visible keyboard focus, `aria` roles on tabs and theme toggle, tap targets ≥ 44px, semantic landmarks (`header`, `main`, `nav`, `footer`).
 8. **Timezone law:** every date shown or computed is **Asia/Hong_Kong**, derived via `Intl.DateTimeFormat` with an explicit `timeZone` — never a bare `new Date().toLocaleDateString()` and never the runner's local time. `app.js`/`figure.js` must not call locale-date APIs without an explicit `timeZone` (Stage 1 verify greps for this).
 9. **Search visibility:** `<meta name="robots" content="noindex">` (public but unlisted — note: this hides the Pages URL from search, but the GitHub repo itself, including `cards.json`, remains a public, indexable, code-searchable text file regardless. Don't rely on "unlisted" as a content-privacy mechanism).
@@ -1658,7 +1864,7 @@ The three daily cards:
 │   ├── mara/                # 40 Wikimedia Commons wildlife photos, PD/CC0/CC BY/CC BY-SA only (v1.25)
 │   └── favicon.svg
 ├── data/
-│   ├── cards.json          # anchors[365], journal[40], kenya[60], wordOfDay[30]
+│   ├── cards.json          # anchors[365], journal[1825] (v1.32; v1.34 -- min ~10mo gap/seam), kenya[60], wordOfDay[30]
 │   ├── values.json         # 5 values
 │   ├── mara.json           # park facts + Great Migration + 20 animals (v1.25)
 │   └── daily.json          # written by the pipeline daily
@@ -1879,7 +2085,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 | anchors | `voices` (Jay Shetty, Barack Obama, Michelle Obama, Nelson Mandela, Desmond Tutu, Fred Rogers, Viktor Frankl, Naval Ravikant; see §5.3.9) | 40 |
 | anchors | `grounding` (added v1.14 — universal sensory/body observations, no named attribution) | 35 |
 | **anchors total** | | **365** |
-| journal | — (replaced `shifts` in v1.12) | **40** |
+| journal | — (replaced `shifts` in v1.12; expanded 40 -> 1825 in v1.32, Stoic + Die With Zero themed; v1.34 widened the cross-seam gap guarantee to 305+ days, see §6.2) | **1825** |
 | kenya | `Geography` (12) `Wildlife` (14) `History` (10) `Government` (8) `Culture` (8) `Economy` (4) `Sports` (4) — added v1.15 | **60** |
 | wordOfDay | — (added v1.10, replacing freshReserve) | **30** |
 
@@ -1898,7 +2104,7 @@ rather than a short list of what actually matters (§5.3.6).
 2. Original paraphrase only; zero quotation-mark glyphs per invariant 2 (ASCII apostrophes for contractions/possessives are fine); attribution `— after <thinker>` or `— core principle`.
 3. Second person or imperative voice (`You control the response, not the event.`).
 4. **Banned platitudes** (verify.mjs greps, case-insensitive; store the list split/obfuscated in `verify.mjs` so the harness doesn't fail its own repo-wide-adjacent sweep by containing the literal strings): `believe in yourself`, `hustle`, `crush it`, `unlock your potential`, `be your best self`, `good vibes`, `grind`, `10x`, `manifest`.
-5. **Journal prompts (replaced Shift cards in v1.12):** `{ "id", "prompt" }`, `prompt` ≤ 25 words, one open-ended question per entry, second person, no yes/no questions — it should invite a few sentences of actual reflection, not a one-word answer. Concrete and specific beats abstract and general (`What's one thing you're avoiding right now, and what is it costing you to keep avoiding it?`, not `How are you feeling today?`).
+5. **Journal prompts (replaced Shift cards in v1.12; expanded to 1825 entries in v1.32):** `{ "id", "prompt" }`, `prompt` ≤ 25 words, one open-ended question per entry, second person, no yes/no questions — it should invite a few sentences of actual reflection, not a one-word answer. Concrete and specific beats abstract and general (`What's one thing you're avoiding right now, and what is it costing you to keep avoiding it?`, not `How are you feeling today?`). The 1825-entry pool (5 x 365, matching the anchors precedent of a flat 365/year with no leap-day adjustment) is organized across ~40 sub-themes drawn from two sources, named here even though attribution never appears in the shipped prompt text itself (unlike anchors): Stoic philosophy (dichotomy of control, memento mori, impermanence, virtue over reputation, voluntary discomfort, and more) and Bill Perkins's Die With Zero (experiences over deferred joy, memory dividends, giving while alive, time-buckets by life stage, and more). `journal-NNNN` ids are 4-digit zero-padded (was 2-digit at 40 entries).
 6. Values (`values.json`, exactly 5): `{ "name", "essence" (≤ 14 words), "behaviour" (≤ 16 words, observable — something a camera could see) }`. Generic-safe: no personal references to the owner. (Cut from 10 to 5 in v1.2 per live human feedback — keep the strongest 5, cut the rest rather than let the list grow back; if curating later, replace one of the 5, don't add a 6th.)
 7. **Attribution-confidence rule:** use a person-named attribution (`— after X`) only when you are confident the specific idea is centrally/traditionally X's (e.g. Epictetus/Seneca/Marcus Aurelius for Stoic control-of-response ideas, Bill Perkins for Die With Zero's core thesis, Dweck for growth-mindset framing, Carnegie for the specific relationship tactics from *How to Win Friends*, Housel for invisible-wealth/avoid-ruin framing, Newport for deep-work framing). Otherwise, demote to tradition-level attribution (`— Stoic tradition`, `— growth-mindset research`, `— core principle`) rather than guessing at a specific person. This is a quality/accuracy safeguard, independent of the (resolved) PII question — misattributing an idea to a real, named public figure is a credibility problem even though naming public figures itself is fine.
 8. Write anchors in six batches (one per category, extending each category's 3 seed cards to its full count). After each batch, run the normal mechanical self-review (word caps, quote marks, banned phrases — rules 1–5), **and then** a second, independent review pass per §10 Stage 3's content-QA step, before moving to the next batch.
@@ -1933,7 +2139,7 @@ from any external source.
 - `hktDateString(d)` → `YYYY-MM-DD` via `Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Hong_Kong' })`.
 - `hktDayNumber(d)` → `floor(Date.UTC(y, m-1, day) / 86400000)` from the HKT date parts.
 - `hktDateParts(d)` → `{ weekday, day, month, year }` via `Intl.DateTimeFormat('en-GB', { timeZone: 'Asia/Hong_Kong', weekday:'long', day:'numeric', month:'long', year:'numeric' })`, for rendering the date line without duplicating formatting logic in `app.js`.
-- `pickIndex(poolSize, dayNumber, salt)` → per-cycle Fisher–Yates permutation seeded with `xmur3(salt + ":" + floor(dayNumber/poolSize))` feeding `mulberry32`; return `order[dayNumber % poolSize]`. **Use the reference implementation in Appendix B verbatim.** Guarantees: no repeats *within* a full cycle (adjacent cycles are independent permutations, so a repeat can occur right at a cycle boundary — roughly a 1-in-poolSize chance — this is expected and not a bug). Fully stateless, identical results in node and browser. Note for future curation (put this in the README runbook, not enforced by code): replace cards 1-for-1; adding or removing cards changes the pool size and reshuffles the whole rotation, which may repeat a recently-seen card once.
+- `pickIndex(poolSize, dayNumber, salt)` → per-cycle Fisher–Yates permutation seeded with `xmur3(salt + ":" + floor(dayNumber/poolSize))` feeding `mulberry32`; return `order[dayNumber % poolSize]`. **Use the reference implementation in Appendix B verbatim.** Guarantees, as of v1.34 (superseding the v1.0–v1.30 text this replaced, which wrongly called a cycle-boundary repeat "expected and not a bug" — a real, dated 1-day repeat is exactly what prompted the v1.31 fix below): no repeats *within* a full cycle; at a cycle SEAM, every item is guaranteed at least `minSeamGap(poolSize)` days (pool/6, floored) before it can repeat — journal 305+ days, anchors 61+, kenya 11+, word 6+ — with the REAL average gap from an arbitrary start date roughly poolSize/2 days (journal ≈ 2.5 years) and the typical (median) gap close to a full cycle (journal ≈ 5 years, matching the pool's own sizing intent). A true "zero repeats within any poolSize-day window from every possible start date" is provably impossible without abandoning per-cycle reshuffling for one exact repeating order forever (proof sketch + full verification numbers in decisions.md's v1.34 entry) — the bounded-gap guarantee above is the strongest available while keeping each cycle's shuffle genuinely independent. Fully stateless, identical results in node and browser. Note for future curation (put this in the README runbook, not enforced by code): replace cards 1-for-1; adding or removing cards changes the pool size and reshuffles the whole rotation, which may repeat a recently-seen card once.
 - Salts: `"anchor"`, `"journal"`, `"kenya"`, `"word"`.
 
 ### 6.3 Client behaviour (`app.js`)
@@ -2323,7 +2529,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 {
   "name": "Mindset",
   "short_name": "Mindset",
-  "description": "Five grounding cards, every morning at 05:00 HKT.",
+  "description": "Four grounding cards, every morning at 05:00 HKT.",
   "display": "standalone",
   "start_url": "./",
   "scope": "./",
@@ -2340,7 +2546,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v14";
+const CACHE = "mindset-v18";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
@@ -2368,8 +2574,12 @@ self.addEventListener("fetch", (e) => {
         if (res.ok) {
           const copy = res.clone();
           e.waitUntil(caches.open(CACHE).then((c) => c.put(e.request, copy)));
+          return res;
         }
-        return res;
+        // v1.34: an HTTP error is a live response, not a network failure -- .catch() below
+        // never sees it. Fall back to cache same as offline; only surface the error itself if
+        // nothing cached exists to fall back to.
+        return caches.match(e.request, { ignoreSearch: true }).then((cached) => cached || res);
       })
       .catch(() => caches.match(e.request, { ignoreSearch: true }))
   );

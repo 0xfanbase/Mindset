@@ -208,6 +208,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   font-style: italic;
   font-size: 16.5px;
   height: 44px;
+  min-width: 44px; /* v1.34: text-width sizing left "Mara" (shortest label) at 43.2px -- invariant 7 floor */
   padding: 0 2px;
   touch-action: manipulation;
   color: var(--muted);
@@ -248,11 +249,13 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 
 /* Today's items read as actual cards (v1.9) -- a surface, a shadow, room to breathe --
    distinct from the Values tab's quieter flat list, since Today is meant to be read and
-   learned from, not just glanced at as a reference. Normal mode (09:00-20:00 HKT, four
-   stacked cards) is a logged exception to §4.4's one-screen rule at 390x844, like Weeks:
-   measured 844-996px depending on the day's rotated content, so no spacing trim can
-   guarantee the fit without gutting the owner-tuned breathing room -- while focus and
-   evening modes (the bookend states) fit exactly. See audits/decisions.md, v1.28. */
+   learned from, not just glanced at as a reference. Normal mode (09:00-24:00 HKT, four
+   stacked cards -- the evening/Closing third mode was retired in v1.31) is a logged
+   exception to §4.4's one-screen rule at 390x844, like Weeks: measured 844-1020px depending
+   on the day's rotated content, so no spacing trim can guarantee the fit without gutting
+   the owner-tuned breathing room -- while focus mode (the one-card lead) fits exactly.
+   See audits/decisions.md, v1.28 (first measured) and v1.33 (re-measured -- v1.32's longer
+   Journal prompts pushed the ceiling from 996px to 1020px). */
 #cards {
   display: flex;
   flex-direction: column;

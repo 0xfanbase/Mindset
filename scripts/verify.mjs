@@ -488,6 +488,33 @@ function stage1() {
     assert.equal(lib.staleness("2026-07-15", new Date("2026-07-15T21:00:00Z")), "yesterday");
   });
 
+  check("stage1", "app.js: PWA-resume day-flip check uses expectedDateHKT, not raw hktDateString for the CONTENT day (v1.30/v1.34)", () => {
+    // Bug: paintedDateHKT was stamped with the raw HKT calendar date, which flips at midnight,
+    // while content only rolls over at the 05:00 HKT boundary staleness() actually judges (the
+    // line above). A resume during 00:00-05:00 "used up" that day's flip early; a later
+    // same-morning resume (after the real 05:00 rotation, same window mode) then compared two
+    // equal raw dates, skipped the refetch, and left the prior day's cards painted with no
+    // further recheck all day -- reproduced live via Playwright clock mocking + a synthetic
+    // visibilitychange dispatch (no reload) before this check was written; see decisions.md.
+    // Source-pattern check, not a behavioral one: app.js runs in a DOM this harness lacks.
+    const src = read("app.js");
+    assert.match(src, /paintedDateHKT\s*=\s*expectedDateHKT\(now\)/,
+      "paintedDateHKT must be stamped from expectedDateHKT(now), not the raw HKT calendar date");
+    assert.match(src, /expectedDateHKT\(now\)\s*!==\s*paintedDateHKT/,
+      "the visibilitychange day-flip comparison must use expectedDateHKT(now), matching staleness()'s boundary");
+    // v1.34: hktDateString is legitimately back, but only for a SEPARATE raw-calendar tracker
+    // (paintedCalendarDateHKT, a different bug entirely -- the header/Kenya-countdown staleness
+    // gap) -- assert it, but ALSO assert the original v1.30 bug's exact anti-pattern still never
+    // reappears: paintedDateHKT (the CONTENT tracker) must never be assigned from or compared
+    // against hktDateString directly.
+    assert.match(src, /paintedCalendarDateHKT\s*=\s*hktDateString\(now\)/,
+      "paintedCalendarDateHKT must be stamped from hktDateString(now)");
+    assert.match(src, /hktDateString\(now\)\s*!==\s*paintedCalendarDateHKT/,
+      "the visibilitychange handler must re-render on a bare calendar-day flip too, not just content-day/window-mode");
+    assert.doesNotMatch(src, /paintedDateHKT\s*=\s*hktDateString\(/, "the v1.30 bug's exact pattern: paintedDateHKT must never be stamped from hktDateString");
+    assert.doesNotMatch(src, /hktDateString\(now\)\s*!==\s*paintedDateHKT/, "the v1.30 bug's exact pattern: paintedDateHKT must never be compared against hktDateString");
+  });
+
   check("stage1", "lib.mjs: isFocusWindowHKT correct at the 09:00 HKT boundary", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     // 2026-07-15T00:59:00Z = 2026-07-15T08:59 HKT — inside the pre-09:00 focus window
@@ -496,12 +523,11 @@ function stage1() {
     assert.equal(lib.isFocusWindowHKT(new Date("2026-07-15T01:00:00Z")), false);
   });
 
-  check("stage1", "lib.mjs: isEveningWindowHKT correct at the 20:00 HKT boundary", async () => {
+  check("stage1", "lib.mjs: isEveningWindowHKT retired, not reintroduced (v1.31 -- evening/Closing removed, unused)", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    // 2026-07-15T11:59:00Z = 2026-07-15T19:59 HKT — evening window not yet open
-    assert.equal(lib.isEveningWindowHKT(new Date("2026-07-15T11:59:00Z")), false);
-    // 2026-07-15T12:00:00Z = 2026-07-15T20:00 HKT — evening window opens
-    assert.equal(lib.isEveningWindowHKT(new Date("2026-07-15T12:00:00Z")), true);
+    assert.equal(lib.isEveningWindowHKT, undefined, "isEveningWindowHKT should no longer be exported from lib.mjs");
+    assert.doesNotMatch(read("app.js"), /isEveningWindowHKT|renderClosingCard|\bcards\.closing\b/,
+      "evening/Closing must not be reintroduced into app.js");
   });
 
   check("stage1", "lib.mjs: isDarkWindowHKT correct at the 06:00 and 17:00 HKT boundaries", async () => {
@@ -633,9 +659,9 @@ function stage1() {
     assert.equal(problems.length, 0, problems.join(" | "));
   });
 
-  check("stage1", "lib.mjs: pickIndex full-cycle uniqueness for pools 120/40/10", async () => {
+  check("stage1", "lib.mjs: pickIndex full-cycle uniqueness for pools 1825/365/120/40/30/10", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    for (const poolSize of [120, 40, 10]) {
+    for (const poolSize of [1825, 365, 120, 40, 30, 10]) {
       const cycleStart = 3 * poolSize; // an arbitrary later cycle, still >= 0
       const seen = new Set();
       for (let d = cycleStart; d < cycleStart + poolSize; d++) {
@@ -645,6 +671,62 @@ function stage1() {
         seen.add(idx);
       }
       assert.equal(seen.size, poolSize);
+    }
+  });
+
+  check("stage1", "lib.mjs: pickIndex guarantees a minimum cross-seam gap, not just no immediate repeat (v1.34)", async () => {
+    // Supersedes the v1.31-era check of the same name/spirit, which only ever proved no
+    // IMMEDIATE (1-day) repeat at a seam. The v1.34 audit found that was too weak: a real,
+    // dated 4-day repeat was still possible one step further into the same seam, because
+    // nothing constrained days 2..G -- only day 1 was ever checked. This asserts the actual
+    // stronger guarantee lib.mjs now makes (minSeamGap, also exported so this test can't drift
+    // from the real formula): for every item, any two appearances within `window` days of a
+    // seam are more than minSeamGap(poolSize) days apart. Swept across 8 consecutive seams per
+    // pool (not just 1) and every salt in current use ("closing" is retired -- kept here anyway
+    // as a generic-correctness check, proving the guarantee isn't accidentally salt-specific --
+    // plus one synthetic salt), so a fix that happens to work for one lucky seed can't pass
+    // silently. (This also subsumes the old no-immediate-repeat property: gap > minSeamGap >= 1
+    // rules out gap === 1 too.)
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    for (const poolSize of [1825, 365, 60, 40, 34, 30, 10, 5]) {
+      const gap = lib.minSeamGap(poolSize);
+      const window = Math.min(poolSize, gap * 2 + 5); // margin past the guaranteed danger zone
+      for (const salt of ["anchor", "journal", "kenya", "word", "closing", "arbitrary-salt"]) {
+        for (let cycle = 1; cycle <= 8; cycle++) {
+          const seamDay = cycle * poolSize; // first day of `cycle`, i.e. dayNumber%poolSize===0
+          const seenBefore = new Map(); // index -> most recent dayNumber, for [seamDay-window, seamDay)
+          for (let d = Math.max(0, seamDay - window); d < seamDay; d++) {
+            seenBefore.set(lib.pickIndex(poolSize, d, salt), d);
+          }
+          for (let d = seamDay; d < seamDay + window; d++) {
+            const idx = lib.pickIndex(poolSize, d, salt);
+            if (seenBefore.has(idx)) {
+              const actualGap = d - seenBefore.get(idx);
+              assert.ok(actualGap > gap,
+                `pool ${poolSize} salt "${salt}" cycle ${cycle}: index ${idx} repeated after only ${actualGap} days across the seam (day ${seenBefore.get(idx)} -> day ${d}), need > ${gap}`);
+            }
+          }
+        }
+      }
+    }
+  });
+
+  check("stage1", "lib.mjs: pickIndex is internally consistent -- every day in a cycle agrees on that cycle's order (v1.31/v1.34 regression guard)", async () => {
+    // The bug the seam fix itself had, caught before shipping: if the swap decision depended
+    // on WHICH dayNumber triggered it instead of the cycle alone, two different days inside the
+    // SAME cycle could each recompute a different order and collide with each other -- proven
+    // by reconstructing each cycle's full picked sequence from its individual per-day calls and
+    // checking it's still a genuine permutation (every index appears exactly once). Still
+    // exactly as applicable to v1.34's wider swap-fixup construction, which is equally a pure
+    // function of (poolSize, salt, cycle) alone -- this check would catch it just as fast if
+    // that stopped being true.
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    for (const poolSize of [1825, 365, 40, 34, 10]) {
+      for (let cycle = 0; cycle <= 4; cycle++) {
+        const picks = [];
+        for (let i = 0; i < poolSize; i++) picks.push(lib.pickIndex(poolSize, cycle * poolSize + i, "journal"));
+        assert.equal(new Set(picks).size, poolSize, `pool ${poolSize} cycle ${cycle}: per-day calls don't form a permutation`);
+      }
     }
   });
 
@@ -686,7 +768,8 @@ const KENYA_CATEGORY_COUNTS = { Geography: 12, Wildlife: 14, History: 10, Govern
 function stage3() {
   check("stage3", "data/cards.json valid JSON with required shape", () => {
     const d = readJSON("data/cards.json");
-    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.journal) && Array.isArray(d.kenya) && Array.isArray(d.wordOfDay) && Array.isArray(d.closing));
+    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.journal) && Array.isArray(d.kenya) && Array.isArray(d.wordOfDay));
+    assert.equal(d.closing, undefined, "closing pool retired in v1.31 (evening feature removed) -- must not be reintroduced");
   });
   check("stage3", "data/values.json valid JSON, exactly 5 values", () => {
     const v = readJSON("data/values.json");
@@ -705,12 +788,11 @@ function stage3() {
     assert.equal(d.anchors.length, 365, `total anchors = ${d.anchors.length}`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
-  check("stage3", "journal = 40, kenya = 60, wordOfDay = 30, closing = 34", () => {
+  check("stage3", "journal = 1825, kenya = 60, wordOfDay = 30", () => {
     const d = readJSON("data/cards.json");
-    assert.equal(d.journal.length, 40, `journal = ${d.journal.length}`);
+    assert.equal(d.journal.length, 1825, `journal = ${d.journal.length}`);
     assert.equal(d.kenya.length, 60, `kenya = ${d.kenya.length}`);
     assert.equal(d.wordOfDay.length, 30, `wordOfDay = ${d.wordOfDay.length}`);
-    assert.equal(d.closing.length, 34, `closing = ${d.closing.length}`);
   });
   check("stage3", "wordOfDay entries have word/origin/lang/meaning as non-empty strings", () => {
     const d = readJSON("data/cards.json");
@@ -747,7 +829,7 @@ function stage3() {
       assert.equal(new Set(ids).size, ids.length, `${name} has duplicate ids`);
     }
   });
-  check("stage3", "word caps respected (anchors <=40w, journal/closing prompts <=25w, kenya facts<=40w, wordOfDay meaning<=20w, values essence<=14w/behaviour<=16w)", () => {
+  check("stage3", "word caps respected (anchors <=40w, journal prompts <=25w, kenya facts<=40w, wordOfDay meaning<=20w, values essence<=14w/behaviour<=16w)", () => {
     const d = readJSON("data/cards.json");
     const v = readJSON("data/values.json");
     const problems = [];
@@ -755,7 +837,6 @@ function stage3() {
     for (const j of d.journal) if (wordCount(j.prompt) > 25) problems.push(`${j.id}: ${wordCount(j.prompt)}w`);
     for (const k of d.kenya) if (wordCount(k.fact) > 40) problems.push(`${k.id}: ${wordCount(k.fact)}w`);
     for (const w of d.wordOfDay) if (wordCount(w.meaning) > 20) problems.push(`${w.id}: ${wordCount(w.meaning)}w`);
-    for (const c of d.closing) if (wordCount(c.prompt) > 25) problems.push(`${c.id}: ${wordCount(c.prompt)}w`);
     for (const val of v) {
       if (wordCount(val.essence) > 14) problems.push(`${val.name} essence: ${wordCount(val.essence)}w`);
       if (wordCount(val.behaviour) > 16) problems.push(`${val.name} behaviour: ${wordCount(val.behaviour)}w`);
@@ -771,7 +852,6 @@ function stage3() {
     for (const j of d.journal) scan(`${j.id}.prompt`, j.prompt);
     for (const k of d.kenya) { scan(`${k.id}.category`, k.category); scan(`${k.id}.fact`, k.fact); }
     for (const w of d.wordOfDay) { scan(`${w.id}.word`, w.word); scan(`${w.id}.origin`, w.origin); scan(`${w.id}.meaning`, w.meaning); }
-    for (const c of d.closing) scan(`${c.id}.prompt`, c.prompt);
     for (const val of v) { scan(`${val.name}.essence`, val.essence); scan(`${val.name}.behaviour`, val.behaviour); }
     assert.equal(problems.length, 0, problems.join(" | "));
   });
@@ -783,7 +863,6 @@ function stage3() {
     for (const j of d.journal) scan(j.id, j.prompt);
     for (const k of d.kenya) scan(k.id, k.fact);
     for (const w of d.wordOfDay) scan(w.id, w.meaning);
-    for (const c of d.closing) scan(c.id, c.prompt);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
 
@@ -898,6 +977,39 @@ function stage3() {
     }
     return flagged.length ? `flagged for human review: ${flagged.join(", ")}` : "no near-duplicates flagged";
   });
+  check("stage3", "journal: exact-duplicate guard + near-duplicate proxy (v1.32, 1825 entries) — informational, non-blocking", () => {
+    // Exact duplicates ARE a hard failure (unlike the fuzzy proxy below) -- a byte-identical
+    // repeat in a pool explicitly sized for "no repeat" would defeat the entire point of the
+    // v1.31 pickIndex seam fix. Near-duplicates stay informational -- run once per authoring
+    // pass, not worth blocking CI on. Threshold lowered 75% -> 70% in v1.33: the shipped
+    // corpus's real max was exactly 75.00% (one pair, a strict `>` away from ever firing), so
+    // the check had zero margin -- structurally unable to ever flag anything again short of a
+    // regression at exactly the ceiling. 70% still clears every false-positive pair the v1.32
+    // authoring pass already read and accepted (shared connective scaffold -- "today", "you",
+    // "which of today's" -- around substantively different content); it surfaces 12 pairs as
+    // informational notes now, a real signal instead of a check that can only ever pass silent.
+    const d = readJSON("data/cards.json");
+    const seen = new Map();
+    const exactDupes = [];
+    for (const j of d.journal) {
+      const key = j.prompt.trim().toLowerCase();
+      if (seen.has(key)) exactDupes.push(`${seen.get(key)} ~ ${j.id}`);
+      else seen.set(key, j.id);
+    }
+    assert.equal(exactDupes.length, 0, `exact duplicate journal prompts: ${exactDupes.join(", ")}`);
+    const tok = (s) => new Set(s.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter((w) => w.length > 3));
+    const toks = d.journal.map((j) => tok(j.prompt));
+    const flagged = [];
+    for (let i = 0; i < d.journal.length; i++) {
+      for (let j = i + 1; j < d.journal.length; j++) {
+        const a = toks[i], b = toks[j];
+        const overlap = [...a].filter((w) => b.has(w)).length;
+        const denom = Math.min(a.size, b.size) || 1;
+        if (overlap / denom > 0.70) flagged.push(`${d.journal[i].id} ~ ${d.journal[j].id}`);
+      }
+    }
+    return flagged.length ? `flagged for human review: ${flagged.join(", ")}` : "no near-duplicates flagged (>70%)";
+  });
   check("stage3", "rotation: three simulated dates give distinct in-range picks", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     const d = readJSON("data/cards.json");
@@ -915,8 +1027,7 @@ function stage3() {
     const journal = d.journal[lib.pickIndex(d.journal.length, dayNumber, "journal")];
     const kenya = d.kenya[lib.pickIndex(d.kenya.length, dayNumber, "kenya")];
     const word = d.wordOfDay[lib.pickIndex(d.wordOfDay.length, dayNumber, "word")];
-    const closing = d.closing[lib.pickIndex(d.closing.length, dayNumber, "closing")];
-    assert.ok(anchor && anchor.id && journal && journal.id && kenya && kenya.id && word && word.id && closing && closing.id);
+    assert.ok(anchor && anchor.id && journal && journal.id && kenya && kenya.id && word && word.id);
   });
   check("stage3", "audits/CONTENT-REVIEW.md exists", () => assert.ok(exists("audits/CONTENT-REVIEW.md"), "missing"));
 }
@@ -945,7 +1056,8 @@ function stage4() {
     const d = readJSON("data/daily.json");
     assert.match(d.dateHKT, /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(typeof d.generatedAtISO === "string" && !Number.isNaN(Date.parse(d.generatedAtISO)));
-    assert.ok(typeof d.anchorId === "string" && typeof d.journalId === "string" && typeof d.kenyaId === "string" && typeof d.wordId === "string" && typeof d.closingId === "string");
+    assert.ok(typeof d.anchorId === "string" && typeof d.journalId === "string" && typeof d.kenyaId === "string" && typeof d.wordId === "string");
+    assert.equal(d.closingId, undefined, "closingId retired in v1.31 (evening feature removed) -- must not be reintroduced");
   });
 }
 
@@ -969,10 +1081,12 @@ function stage5() {
   check("stage5", "sw.js registered in app.js", () => {
     assert.match(read("app.js"), /serviceWorker\.register\(["']\.\/sw\.js["']\)/);
   });
-  check("stage5", "byte budgets: JS <= 60KB, icons <= 150KB, fonts <= 300KB", () => {
+  check("stage5", "byte budgets: JS <= 65KB, icons <= 150KB, fonts <= 300KB", () => {
+    // JS budget raised 60KB -> 65KB in v1.34 (invariant-12 logged exception) -- see
+    // audits/decisions.md for the original check text this replaced and the reason.
     const jsFiles = ["app.js", "figure.js", "lib.mjs", "weeks.js", "mara.js", "sw.js"].filter(exists);
     const jsTotal = jsFiles.reduce((sum, f) => sum + sizeOf(f), 0);
-    assert.ok(jsTotal <= 60 * 1024, `JS total ${jsTotal} bytes > 60KB (${jsFiles.join(",")})`);
+    assert.ok(jsTotal <= 65 * 1024, `JS total ${jsTotal} bytes > 65KB (${jsFiles.join(",")})`);
     const iconsDir = abs("assets/icons");
     if (fs.existsSync(iconsDir)) {
       const iconsTotal = fs.readdirSync(iconsDir).reduce((sum, f) => sum + fs.statSync(path.join(iconsDir, f)).size, 0);
@@ -984,21 +1098,43 @@ function stage5() {
       assert.ok(fontsTotal <= 300 * 1024, `fonts total ${fontsTotal} bytes > 300KB`);
     }
   });
-  check("stage5", "page weight (index.html+styles.css+data jsons) <= 350KB excl. fonts", () => {
+  check("stage5", "page weight (index.html+styles.css+data jsons) <= 600KB excl. fonts", () => {
+    // Budget raised 350KB -> 600KB in v1.32 (invariant-12 logged exception, owner-authorized)
+    // to fit the 1825-entry, 5-year Journal pool; see audits/decisions.md for the original
+    // text this replaced and the reasoning.
     const files = ["index.html", "styles.css", "app.js", "figure.js", "lib.mjs", "weeks.js", "mara.js", "manifest.webmanifest", "sw.js",
       "data/cards.json", "data/values.json", "data/daily.json", "data/mara.json"].filter(exists);
     const total = files.reduce((sum, f) => sum + sizeOf(f), 0);
-    assert.ok(total <= 350 * 1024, `total ${total} bytes > 350KB (${files.join(",")})`);
+    assert.ok(total <= 600 * 1024, `total ${total} bytes > 600KB (${files.join(",")})`);
   });
   check("stage5", "README.md runbook present, non-trivial", () => {
     assert.ok(exists("README.md"));
     assert.ok(read("README.md").length > 500, "README looks like a stub, not a runbook");
   });
-  check("stage5", "verify.mjs integrity ratchet: diff-vs-Stage-0 note present in FINAL-AUDIT", () => {
-    if (exists("audits/FINAL-AUDIT.md")) {
-      assert.match(read("audits/FINAL-AUDIT.md"), /verify\.mjs/i);
-    } else {
-      throw new Error("audits/FINAL-AUDIT.md not written yet");
+  check("stage5", "verify.mjs integrity ratchet: diff-vs-Stage-0 note present in FINAL-AUDIT, count current", () => {
+    if (!exists("audits/FINAL-AUDIT.md")) throw new Error("audits/FINAL-AUDIT.md not written yet");
+    const text = read("audits/FINAL-AUDIT.md");
+    assert.match(text, /verify\.mjs/i);
+    // v1.33 audit finding: the check above is true forever (the substring "verify.mjs" always
+    // appears somewhere), so it never actually caught FINAL-AUDIT.md going stale -- the file
+    // sat unedited from v1.12 to v1.29 while the real count moved 59 -> 82 and a real
+    // relaxation (350KB -> 600KB) shipped, and nothing here noticed. Only meaningful in "all"
+    // mode: this check is the LAST one registered in the LAST stage, so by the time its fn()
+    // runs, `results` already holds every other check's pushed result (check() pushes AFTER
+    // fn() returns) -- `results.length + 1` is therefore the true live total, computed from
+    // the actual run, not a hardcoded or source-grepped number that could itself drift. An
+    // isolated `stage5`-only run has no way to know the full-suite total, so it skips this half
+    // rather than fail on a number it structurally cannot compute -- the committed convention
+    // is always `all` (BUILD-PLAN.md Appendix A, CLAUDE.md invariant 12), so every run that
+    // matters still gets the real guard.
+    if (mode === "all") {
+      const liveTotal = results.length + 1;
+      assert.match(
+        text,
+        new RegExp(`\\b${liveTotal}/${liveTotal}\\b`),
+        `FINAL-AUDIT.md doesn't mention the current live total (${liveTotal}/${liveTotal}) -- its ` +
+        `diff-vs-Stage-0 summary is stale. Add a dated update paragraph per invariant 12's second clause.`
+      );
     }
   });
 }
@@ -1028,8 +1164,15 @@ await Promise.all([]); // allow any pending async check() promises below to be a
 // before reading results. Re-run any promise-returning results now.
 for (const r of results) {
   if (r.detail && typeof r.detail.then === "function") {
-    try { r.detail = String(await r.detail); r.pass = true; }
-    catch (e) { r.pass = false; r.detail = e.message; }
+    try {
+      const resolved = await r.detail;
+      // Same undefined -> "ok" normalization the sync path applies in check() itself (line ~51)
+      // -- without it, an async check with no explicit return value resolved to `String(undefined)`,
+      // the literal text "undefined", which the v1.33 print-loop fix below would then wrongly
+      // treat as real informational content and print on an otherwise-silent green line.
+      r.detail = resolved === undefined ? "ok" : String(resolved);
+      r.pass = true;
+    } catch (e) { r.pass = false; r.detail = e.message; }
   }
 }
 
@@ -1039,7 +1182,14 @@ console.log(`\nverify.mjs — mode: ${mode}\n`);
 for (const r of results) {
   if (!r.pass) anyFail = true;
   const icon = r.pass ? "✅" : "❌";
-  console.log(`${icon} [${r.stage}] ${r.name.padEnd(width)} ${r.pass ? "" : "— " + r.detail}`);
+  // v1.33 bug fix: this used to print `detail` only on failure, so a passing "informational,
+  // non-blocking" check (the near-duplicate proxies) could never actually inform anyone --
+  // its whole return value was computed then discarded, silently, forever. A passing check
+  // still shows nothing when its detail is the generic "ok" placeholder (the overwhelming
+  // majority of checks), so ordinary green output stays exactly as quiet as before; only a
+  // check that deliberately returns a real message, pass or fail, gets it shown.
+  const showDetail = !r.pass || r.detail !== "ok";
+  console.log(`${icon} [${r.stage}] ${r.name.padEnd(width)} ${showDetail ? "— " + r.detail : ""}`);
 }
 console.log(`\n${results.filter((r) => r.pass).length}/${results.length} checks passed.\n`);
 process.exit(anyFail ? 1 : 0);

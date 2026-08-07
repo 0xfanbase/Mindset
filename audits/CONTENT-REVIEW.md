@@ -832,7 +832,7 @@ prompt — see the new "Journal prompts" section immediately after this one.
 - **shift-039**: Half-listening while you plan your reply → Fully listening before you respond
 - **shift-040**: Reacting to every request → Protecting one deep work block
 
-## Journal prompts (added v1.12, replaces Shifts above)
+## Journal prompts v1.12–v1.31 (40 entries, retired in v1.32, replaced by the 1825-entry pool below)
 
 Retires the Shift card (a "From X → To Y" reframe, present since v1.0) in favor of a mindful
 reflection prompt, after live feedback that Shift "seems to be not so helpful." Each entry is
@@ -931,7 +931,157 @@ ratchet — logged in `audits/decisions.md`, this is a count correction tracking
 content, not a loosened quality bar). `verify.mjs all` re-run clean (63/63) after every edit
 in this pass.
 
-## Closing prompts (added v1.19, shown only after 20:00 HKT)
+## Journal v1.32 (1825 entries, full replacement — 5-year no-repeat rotation, Stoic + Die With Zero)
+
+Owner request: expand Journal to cover 5 years of daily rotation with no repeat, themed on
+Stoic philosophy and Bill Perkins's Die With Zero (as named here for the record — neither is
+named in any shipped prompt text itself, matching the un-attributed voice the 40-entry pool
+already had; unlike anchors, Journal has no `attribution` field). 1825 = 5 x 365, matching the
+anchors pool's own precedent of a flat 365/year with no leap-day special-casing.
+
+**Correction (v1.34):** "no repeat" as shipped here meant only within one 1825-day cycle; a
+repeat as close as 4 days was still possible at the boundary between two cycles, and a
+follow-up audit found this documented nowhere as a caveat. `lib.mjs` now guarantees at least
+305 days between any two appearances of the same entry, seam included, with the real average
+and typical gaps close to the original 5-year framing (not identical to it — see `decisions.md`
+v1.34 for the exact numbers and why an unconditional 5-year guarantee isn't achievable at all
+without giving up the per-cycle reshuffle).
+
+**Content corrections (v1.34), a second independent (Opus, "project director") audit specifically
+scoped to suitability/no-repeat/typos/UI-UX/bugs — 30 entries rewritten in place (ids unchanged,
+`audits/decisions.md`'s v1.34 entry has every before/after pair verbatim):**
+- 5 ungrammatical prompts (`journal-0221`, `-0290`, `-0366`, `-1423`, `-1802`) — broken syntax or
+  a dangling "which today" missing its noun, shipped and unreadable as the sole morning card.
+- 9 entries in the "the three" cluster (`journal-0946` through `-0978`) — written assuming the
+  batch context ("health, money, time" introduced elsewhere) that shipping one-per-day destroys;
+  rendered standalone, "the three" has no antecedent. Named explicitly in the fix.
+- 9 entries in the "your list" cluster (`journal-1093` through `-1125`) — bare "your list" is
+  ambiguous with the to-do/worry/skills lists used elsewhere in the pool; now "your someday list".
+- 4 polar (yes/no-answerable) prompts (`journal-0076`, `-0088`, `-0104`, `-0124`) — spec
+  violation, missed because this heuristic isn't mechanically checked by `verify.mjs`.
+- `journal-1457` — a real near-duplicate of `journal-0146` (both gate an internal state on
+  "being seen" rather than on action) surfaced once the near-dup threshold tightened; rewritten.
+- `journal-1144` — the pool's one non-ASCII string ("résumé"), normalized to "resume" to match
+  `journal-1135`/`journal-1395`'s spelling.
+- `journal-0899` — the one entry that read for the wrong life stage ("...or being a young
+  adult...") against the owner's actual late-30s profile.
+- `kenya-43` — factual correction: UN-Habitat is also headquartered in Nairobi, not only UNEP as
+  originally stated.
+
+**Methodology, honestly scoped — this is not a 1825-entry version of the anchors v1.14 process
+(12 research passes, 4 independent QA passes per entry).** At this volume that level of
+individual scrutiny per entry isn't practical in one round; the process instead leaned on a
+structural variety framework plus exhaustive automated QA, described in full so a future pass
+knows exactly what was and wasn't done:
+
+- **~40 sub-themes, roughly split Stoic/Die With Zero, each authored as its own batch** (listed
+  below with id ranges) — deliberately more, smaller batches rather than fewer large ones,
+  after the first attempt at a broad theme ("duty") produced 18 near-duplicate flags in one
+  batch from over-relying on a single sentence template; every batch after that was written
+  with more deliberate structural variety (opener word, sentence shape, concrete life domain)
+  and re-validated before moving on.
+- **Every entry, individually, machine-checked against the exact same rules `verify.mjs`
+  enforces** (word cap ≤25, zero quote glyphs including the paired-apostrophe check, no banned
+  platitude substring, second-person, not yes/no-answerable, ends in a question mark) via a
+  standalone validator script mirroring `verify.mjs`'s own logic, run after every batch, not
+  just once at the end — the "duty" batch's 18-flag catch above only happened because of this
+  per-batch discipline, not a final pass.
+- **Near-duplicate detection at three widening scopes:** within each new batch, against all
+  previously-written batches combined, and a final full-corpus pass across all 1825 at once. The
+  same token-overlap proxy `verify.mjs` already uses for anchors (informational, not a hard
+  gate) — every pair above 60% was individually read and judged, not just counted; genuine
+  near-duplicates (two prompts asking substantively the same question) were rewritten, while
+  pairs that only shared common connective phrasing ("today", "you", "which of today's") but
+  asked genuinely different things were left as acceptable, matching how the anchors check has
+  always treated this exact class of false positive. The two highest-overlap pairs in the first
+  full-corpus pass (82% and 80%) were both real near-duplicates and were rewritten; two more
+  survived that pass at 78%, at the time judged an acceptable shared-scaffold false positive.
+  They were not, in fact, left there: once merged into `cards.json` and re-checked against the
+  new 75%-threshold `verify.mjs` check below (78% > 75%), both were rewritten too rather than
+  left sitting past the threshold's edge — full account, including a first rewrite attempt that
+  accidentally collided with unrelated entries elsewhere in the pool before a corrected second
+  pass fixed it cleanly, in `decisions.md`'s v1.32 entry. `verify.mjs` gains a permanent version
+  of this exact check scoped to `journal`, at a 75% threshold (looser than anchors' 60%,
+  calibrated to this pool's actually-observed acceptable-overlap ceiling so it stays a genuinely
+  useful signal rather than a wall of routine noise) plus a hard (non-informational)
+  exact-duplicate guard, since a literal repeat in a pool explicitly sized for "no repeat" would
+  defeat the point of the v1.31 `pickIndex` seam fix this same round shipped. The highest
+  surviving overlap in the shipped 1825 is exactly 75.00% (`journal-0146` ~ `journal-1457` — at
+  the threshold, not above it; the check's `>` is strict, so this is a pass, not a near-miss),
+  spot-checked and judged a genuine false positive of the same shared-scaffold class. Zero exact
+  duplicates found or expected.
+- **PII/attribution swept separately:** grepped the full corpus for `marcus aurelius`, `seneca`,
+  `epictetus`, `bill perkins`, `die with zero`, `stoic`, `zeno` (case-insensitive) — zero matches
+  in shipped prompt text, confirming the sourcing stayed inspirational/thematic rather than
+  drifting into attribution or (invariant 2) verbatim-quote risk.
+- **Not done, flagged rather than silently skipped:** no independent second-model audit pass (no
+  Fable/Opus co-review this round, unlike major feature rounds); no fact-checking pass (moot —
+  these are open-ended questions, not factual claims, so there's nothing to verify the way
+  Kenya's numeric claims need); no read-aloud/voice-consistency pass beyond the random-sample
+  spot checks noted per batch below.
+
+**Sub-theme breakdown (id ranges reflect final merge order, not authoring order for the two
+mid-stream renumbers — see decisions.md for the "duty" rewrite and the two 78%+ dedup rewrites
+after the corpus-wide pass):**
+
+| id range | count | theme |
+|---|---|---|
+| journal-0001..0075 | 75 | Stoic: dichotomy of control |
+| journal-0076..0136 | 61 | Stoic: memento mori |
+| journal-0137..0197 | 61 | Stoic: virtue over reputation |
+| journal-0198..0256 | 59 | Stoic: amor fati / acceptance |
+| journal-0257..0316 | 60 | Stoic: view from above |
+| journal-0317..0374 | 58 | Stoic: impermanence |
+| journal-0375..0434 | 60 | Stoic: present-moment focus |
+| journal-0435..0494 | 60 | Stoic: the obstacle is the way |
+| journal-0495..0554 | 60 | Stoic: emotional regulation |
+| journal-0555..0614 | 60 | Stoic: honest self-examination |
+| journal-0615..0674 | 60 | Stoic: duty and service (rewritten once in full — see decisions.md) |
+| journal-0675..0734 | 60 | Stoic: tranquility / enough |
+| journal-0735..0785 | 51 | Die With Zero: experiences now, not deferred |
+| journal-0786..0825 | 40 | Die With Zero: memory dividends |
+| journal-0826..0865 | 40 | Die With Zero: giving while alive |
+| journal-0866..0903 | 38 | Die With Zero: time buckets / life stages |
+| journal-0904..0941 | 38 | Die With Zero: cost of over-saving/over-working |
+| journal-0942..0978 | 37 | Die With Zero: health-wealth-time alignment |
+| journal-0979..1015 | 37 | Die With Zero: net worth zeroing on purpose |
+| journal-1016..1052 | 37 | Die With Zero: true cost of a missed experience |
+| journal-1053..1089 | 37 | Die With Zero: permission for small luxuries now |
+| journal-1090..1126 | 37 | Die With Zero: bucket-list urgency |
+| journal-1127..1163 | 37 | Die With Zero: legacy vs. actually living |
+| journal-1164..1200 | 37 | Die With Zero: recognizing sufficiency |
+| journal-1201..1237 | 37 | Die With Zero: spending time on people, not just money |
+| journal-1238..1274 | 37 | Die With Zero: weighing the risk of regret |
+| journal-1275..1311 | 37 | Die With Zero: celebrate milestones as they happen |
+| journal-1312..1348 | 37 | Die With Zero: spending health/energy deliberately |
+| journal-1349..1385 | 37 | Stoic: voluntary discomfort |
+| journal-1386..1422 | 37 | Stoic: what is truly yours |
+| journal-1423..1459 | 37 | Stoic: equanimity under praise and blame |
+| journal-1460..1496 | 37 | Die With Zero: money as a tool for living |
+| journal-1497..1533 | 37 | Stoic: fairness and goodwill toward others |
+| journal-1534..1570 | 37 | Stoic: self-forgiveness |
+| journal-1571..1607 | 37 | Stoic: the courage to begin |
+| journal-1608..1644 | 37 | Stoic: simplicity |
+| journal-1645..1681 | 37 | Combined: today is the only day you have |
+| journal-1682..1718 | 37 | Stoic: your own path, not a borrowed timeline |
+| journal-1719..1755 | 37 | Combined: a well-used day |
+| journal-1756..1776 | 21 | Combined: the throughline to your future self (cut from 36 to 21 -- see decisions.md) |
+| journal-1777..1825 | 49 | Stoic: integrity of word |
+
+**Verified:** `verify.mjs all` 86/86 (85 -> 86: the new journal-scoped duplicate/near-duplicate
+check). Word cap, quote-glyph, and banned-platitude checks all pass across the full 1825, not
+sampled. Live-rendered via Playwright (clock-mocked, real `app.js`/`lib.mjs` served from disk):
+confirmed the actual daily-rotated prompt renders correctly in the Journal card, zero console
+errors, 194ms load time locally. Full budget and rotation-correctness detail in
+`audits/decisions.md`.
+
+## Closing prompts (added v1.19, retired in v1.31 — the evening feature is unused, fully removed)
+
+Kept in full below as the historical record of this pool's authoring/QA work (the
+2026-07-16 tense audit, the count grown from 30 to 34, the yes/no-tail fixes) even though the
+`closing` data no longer ships in `cards.json` and `isEveningWindowHKT`/the Closing card/the
+evening `windowMode` no longer exist in `app.js`/`lib.mjs`. Owner feedback: the evening card
+was never actually used; removed rather than kept dormant. See `audits/decisions.md`, v1.31.
 
 An evening "close the day" reflection, mirroring the pre-09:00 HKT Journal focus window on the
 other end of the day (see `BUILD-PLAN.md` v1.19 changelog). Unlike Journal, retrospective

@@ -94,8 +94,9 @@ function makeGlowSprite(hex) {
   c.width = c.height = size;
   const gctx = c.getContext("2d");
   const grad = gctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  // Peak alpha 0.28, not 0.55 -- the glow sits UNDER an outline whose point is an unfilled
-  // center; a strong glow visibly refilled it and bled into neighboring cells (tested live).
+  // Peak alpha 0.28, not 0.55 -- the glow paints OVER an outline whose point is an unfilled
+  // center (v1.34: corrected from "UNDER" -- stampGlow runs after strokeRect); a strong glow
+  // visibly refilled that center and bled into neighboring cells (tested live).
   grad.addColorStop(0, `rgba(${r},${g},${b},0.28)`);
   grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
   gctx.fillStyle = grad;

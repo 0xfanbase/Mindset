@@ -33,14 +33,49 @@ function mulberry32(a) {
   };
 }
 
-export function pickIndex(poolSize, dayNumber, salt) {
-  const cycle = Math.floor(dayNumber / poolSize);
+function shuffledOrder(poolSize, salt, cycle) {
   const rand = mulberry32(xmur3(`${salt}:${cycle}`)());
   const order = [...Array(poolSize).keys()];
   for (let i = poolSize - 1; i > 0; i--) {
     const j = Math.floor(rand() * (i + 1));
     [order[i], order[j]] = [order[j], order[i]];
   }
+  return order;
+}
+
+// Minimum guaranteed gap (days) between repeats across a cycle seam (v1.34): pool/6, floored
+// (journal 304, anchors 60, kenya 10, word 5). Must stay <= poolSize/2 (see below); reasoning
+// and verification in decisions.md v1.34. Exported so verify.mjs checks the real formula.
+export function minSeamGap(poolSize) {
+  return Math.max(1, Math.floor(poolSize / 6));
+}
+
+// Cycle `cycle`'s shuffle, first `gap` picks forced to exclude cycle `cycle - 1`'s LAST `gap`
+// picks (v1.34; supersedes v1.31's single-position guard -- immediate repeats only). Built via
+// swap, not reject-and-reshuffle (retry odds collapse as `gap` grows -- decisions.md v1.34).
+// `scan` only moves forward: O(poolSize), always finds a slot since gap <= poolSize/2 leaves
+// >= gap non-forbidden items at position >= gap.
+function shuffledOrderSeamSafe(poolSize, salt, cycle) {
+  const order = shuffledOrder(poolSize, salt, cycle);
+  if (cycle === 0 || poolSize < 2) return order;
+  const gap = Math.min(minSeamGap(poolSize), Math.floor(poolSize / 2));
+  if (gap < 1) return order;
+  const forbidden = new Set(shuffledOrder(poolSize, salt, cycle - 1).slice(poolSize - gap));
+  const safe = order.slice();
+  let scan = gap;
+  for (let i = 0; i < gap; i++) {
+    if (forbidden.has(safe[i])) {
+      while (scan < poolSize && forbidden.has(safe[scan])) scan++;
+      [safe[i], safe[scan]] = [safe[scan], safe[i]];
+      scan++;
+    }
+  }
+  return safe;
+}
+
+export function pickIndex(poolSize, dayNumber, salt) {
+  const cycle = Math.floor(dayNumber / poolSize);
+  const order = shuffledOrderSeamSafe(poolSize, salt, cycle);
   return order[dayNumber % poolSize];
 }
 
@@ -71,14 +106,6 @@ export function expectedDateHKT(now = new Date()) {
 // cards behind a reveal toggle so they don't compete with the journal prompt (v1.16).
 export function isFocusWindowHKT(now = new Date()) {
   return hktHour(now) < 9;
-}
-
-// After 20:00 HKT: a "Closing" reflection leads. Content-window boundary only since v1.29 —
-// v1.19's paired evening palette shift is superseded by the dark THEME's earlier 17:00 window
-// (isDarkWindowHKT below; the two clocks are deliberately independent). Non-overlapping with
-// isFocusWindowHKT by construction (hktHour is never simultaneously < 9 and >= 20).
-export function isEveningWindowHKT(now = new Date()) {
-  return hktHour(now) >= 20;
 }
 
 // Dark theme 17:00 HKT through 06:00 HKT (wraps midnight); blossom the rest. The two
@@ -120,8 +147,7 @@ export function pickToday(cards, now = new Date()) {
   const journal = cards.journal[pickIndex(cards.journal.length, dayNumber, "journal")];
   const kenya = cards.kenya[pickIndex(cards.kenya.length, dayNumber, "kenya")];
   const word = cards.wordOfDay[pickIndex(cards.wordOfDay.length, dayNumber, "word")];
-  const closing = cards.closing[pickIndex(cards.closing.length, dayNumber, "closing")];
-  return { anchor, journal, kenya, word, closing, dayNumber };
+  return { anchor, journal, kenya, word, dayNumber };
 }
 
 // Weeks-of-life chart (v1.22) -- "life in weeks" for J and B (initials only, never real
