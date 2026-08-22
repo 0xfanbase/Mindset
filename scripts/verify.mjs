@@ -849,13 +849,18 @@ function stage3() {
     assert.equal(problems.length, 0, problems.join(" | "));
   });
 
-  check("stage3", "Mara tab retired (v1.36): data/mara.json and assets/mara/ do not exist", () => {
+  check("stage3", "Mara tab retired (v1.36): mara.js, data/mara.json, assets/mara/ do not exist", () => {
     // Same treatment as v1.31/v1.35's closing/wordOfDay negative guards: the five mara.json
     // shape checks and the photo-budget check have nothing left to iterate now that the file
     // and the asset directory are gone, so they're deleted outright rather than left dead --
     // but a bare deletion risks a future accidental reintroduction (a bad merge, a stray
-    // revert) going unnoticed. This guard fails loudly if either ever reappears without the
-    // tab being rebuilt around them.
+    // revert) going unnoticed. This guard fails loudly if any of the three ever reappear
+    // without the tab being rebuilt around them. mara.js itself is included (not just its
+    // data) because it had also been dropped from three other hardcoded file-list sweeps
+    // (the localStorage scan, the bare-locale-date scan, the JS budget sum) -- a lone
+    // mara.js reappearing would otherwise pass 80/80 while silently escaping all three
+    // (v1.36 audit finding).
+    assert.ok(!exists("mara.js"), "mara.js exists but the Mara tab was retired in v1.36");
     assert.ok(!exists("data/mara.json"), "data/mara.json exists but the Mara tab was retired in v1.36");
     assert.ok(!fs.existsSync(abs("assets/mara")), "assets/mara/ exists but the Mara tab was retired in v1.36");
   });

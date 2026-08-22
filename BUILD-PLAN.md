@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.35)
+# MINDSET — Autonomous Build Plan (v1.36)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1892,13 +1892,18 @@ needed touching for this ask.
   all edits returns zero hits outside this file's own historical changelog prose, the pre-existing
   historical audit files (`audits/decisions.md`, `audits/v1.28-duo-audit.md`, etc. — left alone
   per the docs-sweep convention above), and `data/cards.json`'s three Kenya facts that happen to
-  mention "Maasai Mara" as a place name (unrelated content, not the tab — left as-is). No headless
-  browser pass was run for this round: the environment's Playwright is the pre-installed Chromium
-  binary only, with no `playwright` npm package available to drive it, and CLAUDE.md invariant 3/
-  4 bar `npm install` to fetch one — logged here as an honest verification gap rather than a
-  claimed pass, not a decisions-worthy pivot (nothing about this change is UI-behavior-risky
-  enough to need it: it is a deletion of an isolated, non-shared subsystem plus mechanical file-
-  list edits, not new logic).
+  mention "Maasai Mara" as a place name (unrelated content, not the tab — left as-is). **Live
+  Playwright pass at 390×844** (an independent v1.36 audit found `playwright` genuinely available
+  globally in this environment — `/opt/node22/lib/node_modules/playwright`, no `npm install`
+  needed — correcting this entry's own first-draft claim that it wasn't; browsers pre-installed
+  at `/opt/pw-browsers`, requests routed straight from disk per this project's established
+  no-dev-server convention, BUILD-PLAN.md README's "Local development" section): 17/17 checks —
+  exactly 3 tabs (Today/Values/Weeks, no `#tab-mara`/`#panel-mara` anywhere in the DOM), all
+  `aria-controls` resolve, 3 Today cards (JOURNAL/ANCHOR/KENYA) settle to full opacity after the
+  entrance stagger, the Kenya countdown pill correctly absent (trip date is past), one-screen
+  layout holds exactly (`scrollHeight` 844), all surviving tabs clear the 44px tap-target floor,
+  arrow-key roving focus wraps correctly across exactly 3 tabs, Values renders 5 rows, Weeks
+  renders its canvas, zero requests for any deleted file, zero 404s, zero console/page errors.
 
 ---
 
