@@ -248,8 +248,9 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
    `both` deliberately — its scanline's end state is NOT its natural state. */
 
 /* Today's items read as actual cards (v1.9) -- a surface, a shadow, room to breathe --
-   distinct from the Values tab's quieter flat list, since Today is meant to be read and
-   learned from, not just glanced at as a reference. Normal mode (09:00-24:00 HKT, three
+   since Today is meant to be read and learned from, not just glanced at as a reference
+   (v1.8 briefly flattened them to match the now-retired Values tab's quieter row style;
+   live feedback reversed that, see v1.9's changelog entry). Normal mode (09:00-24:00 HKT, three
    stacked cards -- the evening/Closing third mode was retired in v1.31) was a logged §4.4
    one-screen exception from v1.28 through v1.34 (measured 844-1020px with the fourth,
    Word-of-Day card in the stack); RESOLVED in v1.35 when that card was retired -- the true
@@ -357,49 +358,13 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   max-width: 250px;
 }
 
-.value-row {
-  padding: 15px 0;
-  border-bottom: 1px solid var(--hairline);
-  animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-.value-row:last-child { border-bottom: none; }
-.value-name {
-  font-family: "Fraunces", Georgia, serif;
-  font-size: 17px;
-  color: var(--ink);
-}
-.value-essence {
-  font-family: "Fraunces", Georgia, serif;
-  font-style: italic;
-  font-size: 13.5px;
-  line-height: 1.5;
-  color: var(--ink);
-  opacity: 0.8;
-  margin-top: 3px;
-}
-.value-behaviour {
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--muted);
-  margin-top: 3px;
-}
-/* Values' own quiet failure state (v1.28), needed once the values fetch was decoupled
-   from Today's so one failed file can't blank both tabs. */
-.values-empty {
-  font-family: "Fraunces", Georgia, serif;
-  font-style: italic;
-  font-size: 15px;
-  color: var(--muted);
-  text-align: center;
-  padding: 40px 20px;
-}
-
 /* Weeks tab (v1.23) — one combined life-in-weeks grid for J and B, canvas-rendered by
    weeks.js. Panel content deliberately exceeds one screen and scrolls within .panel's
-   existing overflow-y (the same mechanism Values already relies on) — see
-   audits/decisions.md for why this tab is a deliberate exception to §4.4's single-screen
-   framing, and for the full combined-cell-state / hover-focus / entrance-animation
-   rationale (v1.22 shipped two separate grids; this redesign combines them). */
+   existing overflow-y (the same mechanism the rest of this app's tabs already rely on
+   whenever their content runs long) — see audits/decisions.md for why this tab is a
+   deliberate exception to §4.4's single-screen framing, and for the full combined-cell-
+   state / hover-focus / entrance-animation rationale (v1.22 shipped two separate grids;
+   this redesign combines them). */
 .weeks-root {
   display: flex;
   flex-direction: column;
@@ -513,7 +478,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 /* Entrance reveal (v1.23): the grid is drawn once (instant, correct) and revealed via a
    top-down clip-path sweep with a synced scanline riding the edge -- GPU-composited, no
    per-cell JS animation. Replays on every tab visit for free via the same display:none
-   animation-restart the app already relies on for .card/.value-row (v1.16's audit).
+   animation-restart the app already relies on for .card (v1.16's audit).
    1400ms cubic-bezier(0.65,0,0.35,1), not the house cardIn easing -- Fable's UX audit found
    the original 1100ms/cardIn-curve reveal ~70% done by 180ms, rushing past the lived rows
    (the entire point) and leaving the last second crawling through empty future cells; this
@@ -632,13 +597,13 @@ footer {
   }
 }
 
-/* Kept last on purpose: .card/.value-row/.reveal-rest each set their own `animation:
+/* Kept last on purpose: .card/.reveal-rest each set their own `animation:
    cardIn ...` at equal specificity, so this override must win the cascade by source
    order, not just exist somewhere in the file (a bug found and fixed during v1.18 --
-   this rule previously sat right after @keyframes cardIn, before any of those three
+   this rule previously sat right after @keyframes cardIn, before both of those
    base rules, so it silently never took effect). */
 @media (prefers-reduced-motion: reduce) {
-  .card, .value-row, .reveal-rest { animation: none; }
+  .card, .reveal-rest { animation: none; }
   /* Cancelling the animation alone is not enough here (unlike the rule above): the reveal's
      `from` state is fully clipped/invisible, so a reduced-motion viewer must also get the
      resting "fully visible" state explicitly, not just an animation-free freeze on frame

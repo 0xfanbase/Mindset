@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.36)
+# MINDSET — Autonomous Build Plan (v1.37)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1905,6 +1905,75 @@ needed touching for this ask.
   arrow-key roving focus wraps correctly across exactly 3 tabs, Values renders 5 rows, Weeks
   renders its canvas, zero requests for any deleted file, zero 404s, zero console/page errors.
 
+**v1.37 changelog (from v1.36, live feature request):** the owner asked for the Values tab to
+be removed — "we rarely refer to it." Values has been part of this app since v1.0 (§1's original
+"Two tabs: Today and Values" framing, values.json cut from 10 to 5 entries in v1.2), so unlike
+Mara this touches content genuinely woven through the original spec, not a late addition — the
+docs sweep below is correspondingly wider.
+
+- **Removed outright:** `app.js`'s `renderValues`/`renderValuesError` and the `boot()` fetch of
+  `data/values.json`; `index.html`'s `#tab-values`/`#panel-values` (nav button + tabpanel) —
+  `role="tablist"` now holds two tabs, Today and Weeks; `styles.css`'s `.value-row`/`.value-name`/
+  `.value-essence`/`.value-behaviour`/`.values-empty` rules (26 lines) and the retargeted reduced-
+  motion/fill-mode selector lists that used to include `.value-row`; `data/values.json` itself
+  (deleted, 779 bytes); `sw.js`'s `ASSETS` entry for it. Five surviving comments that cited
+  Values as a worked example for unrelated rules (Today-card styling rationale, the Weeks
+  overflow-y precedent, the v1.16 animation-restart note, the "kept last on purpose" cascade-order
+  note, the tabs-array boolean-vs-array note) were reworded to drop the now-dead reference rather
+  than left dangling — same treatment as the three Mara-citing comments in v1.36. `README.md`'s
+  intro paragraph ("A quiet Values tab sits alongside it"), its "A third tab, Weeks" (now the
+  *second* tab) line, and its Ops-runbook mention of editing `data/values.json` were all updated
+  too — omitted from this entry's first draft, caught and added per the v1.37 audit below.
+- **`verify.mjs`, net unchanged at 80 checks, tightened not loosened per the invariant-12
+  ratchet:** unlike Mara's checks (all standalone), Values' checks were interleaved into shared
+  ones — the dedicated `"data/values.json valid JSON, exactly 5 values"` check was deleted
+  outright (1 check), and the values-scanning clauses inside the shared word-cap and quote-glyph
+  checks (which also cover anchors/journal/kenya) were removed, narrowing those checks' scope
+  without deleting them (0 checks). One new negative-guard check was added, mirroring the Mara/
+  Closing/Word-of-Day precedent: `data/values.json` must not exist, so an accidental
+  reintroduction (a bad merge, a stray revert) fails loudly. Net: 80 → 80 (1 removed, 1 added) —
+  see `audits/decisions.md`'s v1.37 entry for the full accounting.
+- **`BUILD-PLAN.md` docs swept for live-spec references, historical text left alone** (matching
+  the v1.35/v1.36 precedent): §3 repo layout (`values.json` tree line removed), §4.3 typography
+  (Fraunces role list and the type-scale line both dropped their values-specific entries), §4.5
+  Components item 3 (Cards, which used to define its own styling by contrast with "the Values
+  tab's quieter flat list" — reworded to stand on its own, same fix already made to its styles.css
+  twin comment) and item 5 (Values tab) and §5.3 Writing Rules item 6 (Values schema) — item 5 and
+  item 6 both converted to retirement stubs, slot kept, not renumbered, same pattern as v1.35's
+  `item 4a`/`§5.3.10` for Word of the Day. Unlike item 4a, no live `§4.5.5` cross-reference was
+  ever found to actually require this (checked directly: nothing in this file cites `§4.5.5` or
+  `item 5`) — the slot is kept anyway for consistency with item 4a's established treatment, not
+  because renumbering would break a real pointer. `§5.3.6` is different: §5.2's Claude-Design-
+  prototype origin note genuinely cites it by number, so that slot's preservation is load-bearing,
+  not just stylistic. §4.5 item 6 (Motion) and §6.3 item 1 (client fetch
+  list) both dropped their Values-specific clauses. **Deliberately left alone, on the same basis
+  established across every prior addition/removal (Kenya, Weeks, Mara-add, Mara-remove, Closing,
+  Word of Day):** §1's mission summary (still says "Two tabs: Today and Values" — frozen v1.0
+  text, never retrofitted for any of the last five tab/card changes either), the §4.4 ASCII
+  one-screen mockup (still shows only "Today / Values"), the original Stage 0–5 build-task list
+  (Stage 3/5's "real values"/"edit values" task prose), §13's human review checklist (item 5,
+  "Open the Values tab" — already stale for Weeks/Mara/Kenya before this round, not newly broken
+  by it), and Appendix A's `verify.mjs` requirements (already frozen at the original 350KB/60KB
+  budget figures and the original three-data-file scope, predating every budget raise and content
+  addition since — not just this one). All of these were re-confirmed un-retrofitted for Kenya/
+  Weeks/Mara/Closing/Word-of-Day before this round, so leaving them for Values keeps the file
+  internally consistent rather than fixing one stale reference while five others remain.
+- **Budget impact, informational only — both ceilings gained headroom:** JS 51,633 B of 66,560
+  (65KB) — up from 14,013 B headroom (post-v1.36) to 14,927 B. Page weight 487,801 B of 614,400
+  (600KB) — up from 123,862 B headroom to 126,599 B.
+- **`sw.js` `CACHE` bumped `mindset-v20` → `mindset-v21`** (`data/values.json` dropped from
+  `ASSETS` entirely); Appendix C.2 updated to match.
+- **Verified:** `verify.mjs all` 80/80. `node --check` clean on `app.js`/`sw.js`/
+  `scripts/verify.mjs`. A repo-wide case-insensitive grep for `values` after all edits returns
+  zero hits outside historical changelog/audit prose, the sections listed as deliberately-left-
+  alone above, and unrelated uses of the word ("CSS property value," "hex values," "wordId
+  values," `Object.values()`). Live Playwright pass at 390×844 (routed straight from disk, same
+  method as v1.36): **11/11** — exactly 2 tabs (Today/Weeks, no `#tab-values`/`#panel-values`
+  anywhere in the DOM), 3 Today cards render and settle to full opacity, one-screen layout holds
+  (`scrollHeight` 844), both tabs clear the 44px tap-target floor, arrow-key roving focus wraps
+  correctly across exactly 2 tabs, Weeks renders its canvas, zero requests for the deleted file,
+  zero 404s, zero console errors.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -2007,7 +2076,6 @@ The three daily cards:
 │   └── favicon.svg
 ├── data/
 │   ├── cards.json          # anchors[365], journal[1825] (v1.32; v1.34 -- min ~10mo gap/seam), kenya[60]
-│   ├── values.json         # 5 values
 │   └── daily.json          # written by the pipeline daily
 ├── scripts/
 │   ├── generate-daily.mjs
@@ -2023,6 +2091,7 @@ The three daily cards:
 ├── CLAUDE.md               # created in Stage 0: invariants summary + pointer here
 ├── BUILD-PLAN.md           # this file
 ├── .nojekyll
+├── .gitignore              # .claude/ only (added v1.37 -- agent-worktree tooling state, never shipped)
 └── README.md
 ```
 
@@ -2079,13 +2148,13 @@ measured ratio is tabulated in `audits/decisions.md` (2026-07-25, v1.29).
 
 ### 4.3 Typography (three deliberate roles)
 
-1. **Display / card voice:** `Fraunces` (variable, optical size on, italic used for the wordmark) — headings, card body text, value names, wordmark. Literary and warm: the cards are book-derived wisdom, so the type is bookish.
+1. **Display / card voice:** `Fraunces` (variable, optical size on, italic used for the wordmark) — headings, card body text, wordmark. Literary and warm: the cards are book-derived wisdom, so the type is bookish.
 2. **Utility / telemetry:** `IBM Plex Mono` — the date line, category chips, staleness chip, footer "refreshed 05:00 HKT" line. The page is machine-refreshed; the mono face *says* that truthfully.
 3. **Body / everything else:** system sans stack (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`).
 
 Self-host both webfonts as woff2 in `assets/fonts/` with `font-display: swap` and their OFL licence files. **Exit ramp:** if woff2 files cannot be fetched within the attempt budget (§9.2), ship the system stack for all roles, log it in `decisions.md`, and continue — fonts are never a blocker.
 
-Type scale (px): 10 (mono meta chips) · 12–13 (mono date line, values essence/behaviour) · 15.5 (anchor/journal/word card text, error state) · 17–18 (values name, wordmark) · 20 (word title) — line-height ~1.45–1.5 body/card text.
+Type scale (px): 10 (mono meta chips) · 12–13 (mono date line) · 15.5 (anchor/journal/word card text, error state) · 17–18 (wordmark) · 20 (word title) — line-height ~1.45–1.5 body/card text.
 
 ### 4.4 Layout — one no-scroll screen (390×844 baseline)
 
@@ -2128,7 +2197,7 @@ since it's no longer adjacent to the notch/status bar).
 
 1. **Theme toggle (reworked v1.29):** pill button top-right, 44×44px. The theme DEFAULT follows the HKT clock — dark 17:00–06:00, blossom otherwise (`lib.mjs isDarkWindowHKT`; `index.html`'s pre-paint inline script computes the same window before CSS loads, sets `data-theme` + inline `color-scheme`, pre-sets `theme-color`, and removes the retired `mindset.theme` key — nothing is persisted anymore). The button is a session-only override: a tap flips the theme and suppresses the visibilitychange re-check until the next fresh load, so every reload returns to the cycle. Glyphs: ◐ while pink is active ("tap for dark"), ❀ while dark is active ("tap for pink") — the calm-era glyphs with repurposed meanings, kept because they're proven to render on the owner's device. No `aria-pressed` (an action-named control whose accessible name changes per state must not also carry a pressed state); `aria-label` and `title` are the identical pinned strings `Switch to dark theme` / `Switch to pink theme`, asserted verbatim by verify.mjs.
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards (v1.9 — restored as actual cards, deliberately distinct from the Values tab):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly unified Today's cards with the Values tab's flat/hairline row style; live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, Values stays a quieter reference list, so the two tabs are now intentionally different rather than identical. Render order is **Journal, Anchor, Kenya** (Journal moved to lead the list in v1.16 — see item 4b for what happens to the other two before 09:00 HKT). Header row = mono category chip (ANCHOR / JOURNAL / KENYA, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Kenya card (added v1.15) is the same minimal shape as Anchor — chip, fact in `.card-body`, category as a small `.card-attr` line (e.g. `— Wildlife`) — plus a trip-countdown pill top-right of its chip row as of v1.17 (item 4c). Footer = muted attribution. (v1.35: Word of the Day, which used to render fourth with its own headline/pronunciation-button treatment, was retired — see item 4a.)
+3. **Cards (v1.9 — restored as actual cards):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, 14px gap between stacked cards (`#cards { display:flex; flex-direction:column; gap:14px }`). v1.8 had briefly flattened Today's cards to match the now-retired Values tab's flat/hairline row style (§4.5 item 5); live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, not just glanced at as a reference. Render order is **Journal, Anchor, Kenya** (Journal moved to lead the list in v1.16 — see item 4b for what happens to the other two before 09:00 HKT). Header row = mono category chip (ANCHOR / JOURNAL / KENYA, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. Kenya card (added v1.15) is the same minimal shape as Anchor — chip, fact in `.card-body`, category as a small `.card-attr` line (e.g. `— Wildlife`) — plus a trip-countdown pill top-right of its chip row as of v1.17 (item 4c). Footer = muted attribution. (v1.35: Word of the Day, which used to render fourth with its own headline/pronunciation-button treatment, was retired — see item 4a.)
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 05:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 05:00 HKT, every single day.)
    - `daily.json` unreachable, > 48h stale, or fetch fails → page computes all three cards locally via `lib.mjs` rotation → slate chip `offline rotation`. Every pool is deterministic (v1.10 retired the old fetched-content Fresh card for exactly this property), so this path always picks the exact same content the server would have for that date — there is no divergent "fallback" content.
@@ -2136,8 +2205,8 @@ since it's no longer adjacent to the notch/status bar).
 4a. **Word pronunciation — retired in v1.35, slot kept (not renumbered) so `item 4a`/`§4.5.4a` cross-references elsewhere in this file stay valid.** Through v1.34 this held Word of the Day's card: the word itself as a Fraunces headline (`.word-title`) plus a 44×44px pronunciation button (`.word-speak`, v1.11) calling `window.speechSynthesis.speak(...)`. Owner request: "remove the word of the day block... that is not helpful." Removed entirely — `app.js`'s `renderWordCard`/`speak`, `styles.css`'s `.word-*` rules, `data/cards.json`'s 30-entry `wordOfDay` pool, `wordId` from the daily pipeline/schema, and the `"word"` rotation salt (kept only in `verify.mjs`'s seam-gap sweep as a generic-correctness check, same treatment as the retired `"closing"` salt). Historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`. Full detail in `audits/decisions.md`'s v1.35 entry.
 4b. **Pre-09:00 HKT focus mode (v1.16):** `lib.mjs`'s `isFocusWindowHKT(now)` (HKT hour < 9) gates `renderToday`'s output. Inside the window: only the Journal card renders, followed by a `.reveal-rest` disclosure button (`aria-expanded`/`aria-controls`, 44px tap target, mono pill styling matching the staleness chip/theme toggle) and a `#cards-more` wrapper (`hidden` by default) holding Anchor/Kenya. Clicking the button toggles `#cards-more`'s `hidden` state and flips the button's text between "show the rest" / "hide the rest" — a real disclosure, not a one-way reveal, so focus never needs to move off the button. Outside the window: renders exactly as item 3 describes, no button, no wrapper. No new `localStorage` key and no live 09:00 boundary timer — like every other time-gated render in this app (cards, date line, staleness chip), the check runs once per load, and a fresh pre-09:00 load always starts collapsed by design (the daily nudge back to Journal is the point, not a one-time dismissal).
 4c. **Kenya trip countdown (v1.17):** a small mono pill (`.kenya-countdown`, 10px IBM Plex Mono 500, `--ink` text on a `--edge` accent-tinted background, `999px` border-radius) sits top-right of the Kenya card's chip row, inside a new `.card-top` flex container (`justify-content: space-between`) that wraps the existing `.card-chip`. `lib.mjs`'s `daysUntilKenyaTrip(now)` diffs the fixed trip date (`2026-08-15`, HKT-anchored) against `hktDayNumber(now)` — the same epoch-day mechanism `pickIndex`/`hktDayNumber` already use, not raw millisecond subtraction, so it can't drift on an odd local-clock offset. Renders `N DAYS` (N > 1), `1 DAY`, or `TODAY` (N = 0); once the trip has passed (N < 0) the pill simply doesn't render — a negative countdown would read as a bug, not a feature, and the Kenya facts keep rotating normally either way. `aria-label` on the pill spells out the full sentence (e.g. "31 days until the Kenya trip") for screen readers, since the visible text alone (`31 DAYS`) doesn't say what it's counting down to. No layout change to the other three cards; `.card-chip` itself is unchanged, just now wrapped in a flex row.
-5. **Values tab:** the 5 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px). **No numbering** — values are not a sequence. (Cut from 10 to 5 in v1.2 — ten read as a checklist; keep only what actually matters.)
-6. **Motion:** the figure is the primary animated element. Card/value-row entrance (v1.9, more noticeable per live feedback: "a small animation when I open up the page ... opening up of the cards") = a 500ms fade/rise/scale-in, staggered per item (90ms between Today's cards, 60ms between Values rows) so they visibly cascade in one after another rather than popping in together; nothing on scroll; respects `prefers-reduced-motion` (animation suppressed, content appears instantly). Hover lift 2px desktop only.
+5. **Values tab — retired in v1.37, slot kept (not renumbered), matching item 4a's treatment of Word of the Day** (unlike item 4a, no live `§4.5.5` cross-reference was actually found requiring this — checked directly, nothing in this file cites it by number — the slot is kept for consistency with the established pattern regardless). Through v1.36: the 5 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px), no numbering (values are not a sequence; cut from 10 to 5 in v1.2 — ten read as a checklist, keep only what actually matters). Owner request: "we rarely refer to it." Removed entirely — `app.js`'s `renderValues`/`renderValuesError`, `styles.css`'s `.value-row`/`.value-name`/`.value-essence`/`.value-behaviour`/`.values-empty` rules, `data/values.json` (deleted), and `index.html`'s `#tab-values`/`#panel-values`. Full detail in `audits/decisions.md`'s v1.37 entry.
+6. **Motion:** the figure is the primary animated element. Today's card entrance (v1.9, more noticeable per live feedback: "a small animation when I open up the page ... opening up of the cards") = a 500ms fade/rise/scale-in, staggered per card (90ms between Today's cards) so they visibly cascade in one after another rather than popping in together; nothing on scroll; respects `prefers-reduced-motion` (animation suppressed, content appears instantly). Hover lift 2px desktop only.
 
 ### 4.6 The figure (signature element — `figure.js`, was the water drop in v1.1, "the brain" in v1.0)
 
@@ -2246,7 +2315,7 @@ rather than a short list of what actually matters (§5.3.6).
 3. Second person or imperative voice (`You control the response, not the event.`).
 4. **Banned platitudes** (verify.mjs greps, case-insensitive; store the list split/obfuscated in `verify.mjs` so the harness doesn't fail its own repo-wide-adjacent sweep by containing the literal strings): `believe in yourself`, `hustle`, `crush it`, `unlock your potential`, `be your best self`, `good vibes`, `grind`, `10x`, `manifest`.
 5. **Journal prompts (replaced Shift cards in v1.12; expanded to 1825 entries in v1.32):** `{ "id", "prompt" }`, `prompt` ≤ 25 words, one open-ended question per entry, second person, no yes/no questions — it should invite a few sentences of actual reflection, not a one-word answer. Concrete and specific beats abstract and general (`What's one thing you're avoiding right now, and what is it costing you to keep avoiding it?`, not `How are you feeling today?`). The 1825-entry pool (5 x 365, matching the anchors precedent of a flat 365/year with no leap-day adjustment) is organized across ~40 sub-themes drawn from two sources, named here even though attribution never appears in the shipped prompt text itself (unlike anchors): Stoic philosophy (dichotomy of control, memento mori, impermanence, virtue over reputation, voluntary discomfort, and more) and Bill Perkins's Die With Zero (experiences over deferred joy, memory dividends, giving while alive, time-buckets by life stage, and more). `journal-NNNN` ids are 4-digit zero-padded (was 2-digit at 40 entries).
-6. Values (`values.json`, exactly 5): `{ "name", "essence" (≤ 14 words), "behaviour" (≤ 16 words, observable — something a camera could see) }`. Generic-safe: no personal references to the owner. (Cut from 10 to 5 in v1.2 per live human feedback — keep the strongest 5, cut the rest rather than let the list grow back; if curating later, replace one of the 5, don't add a 6th.)
+6. **Values — retired in v1.37 (owner: "we rarely refer to it"), rule slot kept so §5.3.6 cross-references stay valid.** Through v1.36: `{ "name", "essence" (≤ 14 words), "behaviour" (≤ 16 words, observable — something a camera could see) }`, 5 entries in `data/values.json`, generic-safe (no personal references to the owner), cut from 10 to 5 in v1.2 per live human feedback. Removed entirely — `data/values.json` (deleted), `index.html`/`app.js`/`styles.css`'s Values-tab UI, and `sw.js`'s offline shell. Full detail in `audits/decisions.md`'s v1.37 entry.
 7. **Attribution-confidence rule:** use a person-named attribution (`— after X`) only when you are confident the specific idea is centrally/traditionally X's (e.g. Epictetus/Seneca/Marcus Aurelius for Stoic control-of-response ideas, Bill Perkins for Die With Zero's core thesis, Dweck for growth-mindset framing, Carnegie for the specific relationship tactics from *How to Win Friends*, Housel for invisible-wealth/avoid-ruin framing, Newport for deep-work framing). Otherwise, demote to tradition-level attribution (`— Stoic tradition`, `— growth-mindset research`, `— core principle`) rather than guessing at a specific person. This is a quality/accuracy safeguard, independent of the (resolved) PII question — misattributing an idea to a real, named public figure is a credibility problem even though naming public figures itself is fine.
 8. Write anchors in six batches (one per category, extending each category's 3 seed cards to its full count). After each batch, run the normal mechanical self-review (word caps, quote marks, banned phrases — rules 1–5), **and then** a second, independent review pass per §10 Stage 3's content-QA step, before moving to the next batch.
 9. **`voices` category (added v1.3):** a 7th anchor category, 9 cards (3 each), for named living/recent public figures the owner's household specifically finds inspiring, so their thinking surfaces periodically via the same rotation — not a new subsystem, just more entries in the same `anchors` pool. Extra bar beyond rules 1–8 for this category specifically: (a) any figure who has held significant political office must be scoped strictly to personal-character themes (grief, resilience, self-belief, service) and must never reference their office, party, policies, or elections — attribution is tied to a specific, nonpartisan book/body of work (e.g. `— after X, from <book>`), not their public office; (b) rule 2's "no verbatim quotes" is enforced against the *spirit*, not just quote-mark glyphs — a paraphrase that lands close to the person's one most-famous, most-recognizable line is a violation even with zero quote marks and needs a rewrite, not just a rewording; (c) run the independent second-pass review (rule 8) with an explicit prompt to check attribution-confidence, political neutrality, and closeness-to-source — this category carries materially higher reputational risk per card than the historical-thinker categories.
@@ -2284,7 +2353,7 @@ source. (`wordId` was a fourth id here through v1.34; retired in v1.35.)
 
 ### 6.3 Client behaviour (`app.js`)
 
-1. Fetch `data/daily.json` (+ `cards.json`, `values.json`) with `cache: "no-store"`.
+1. Fetch `data/daily.json` (+ `cards.json`) with `cache: "no-store"`.
 2. Compare `daily.dateHKT` against the expected-refresh-boundary date (§4.5.4) → render as-is, or apply staleness rules.
 3. Any fetch failure → full offline rotation from `cards.json`; if that also fails, show a calm inline error state: `Couldn't load today's cards. Refresh, or check back tomorrow.`
 4. The staleness/offline-fallback selection logic must live as pure functions in `lib.mjs` (not inline in `app.js`'s DOM code), so Stage 3's `node:test` coverage can actually exercise it headlessly.
@@ -2690,7 +2759,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v20";
+const CACHE = "mindset-v21";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
@@ -2730,7 +2799,7 @@ self.addEventListener("fetch", (e) => {
 });
 ```
 
-Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request. Fable's audit sharpened the reasoning: Chromium-family browsers fetch tab favicons outside the page's service-worker `fetch` handler entirely, so network-first was never actually going to self-heal `favicon.svg` — the bump is the only reliable path. Bumped again to `"mindset-v7"` in v1.21 for the same reason: `favicon.svg`'s content changed again (lion mark → cat-photo mark) when the owner redirected mid-session, before v1.20's lion ever shipped. Bumped again to `"mindset-v8"` in v1.22: `weeks.js` (the new Weeks tab's module) was added to `ASSETS` so it's part of the offline shell from first install, same reasoning as every prior content-driven bump. Bumped again to `"mindset-v9"` in v1.23: `weeks.js`'s own content changed substantially (the combined-grid redesign) — same reasoning again. Bumped `"mindset-v10"`–`"mindset-v13"` across v1.24–v1.28 (each logged in its own changelog entry), and to `"mindset-v14"` in v1.29: the calm→dark theme retoken changed `styles.css`/`app.js`/`index.html` bytes app-wide. Bumped `"mindset-v15"`–`"mindset-v19"` across v1.30–v1.35 (each logged in its own changelog entry), and to `"mindset-v20"` in v1.36: the Mara tab was retired and `mara.js`/`data/mara.json` dropped out of `ASSETS` entirely, so old clients need the purge to stop serving the now-404ing files from cache.
+Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request. Fable's audit sharpened the reasoning: Chromium-family browsers fetch tab favicons outside the page's service-worker `fetch` handler entirely, so network-first was never actually going to self-heal `favicon.svg` — the bump is the only reliable path. Bumped again to `"mindset-v7"` in v1.21 for the same reason: `favicon.svg`'s content changed again (lion mark → cat-photo mark) when the owner redirected mid-session, before v1.20's lion ever shipped. Bumped again to `"mindset-v8"` in v1.22: `weeks.js` (the new Weeks tab's module) was added to `ASSETS` so it's part of the offline shell from first install, same reasoning as every prior content-driven bump. Bumped again to `"mindset-v9"` in v1.23: `weeks.js`'s own content changed substantially (the combined-grid redesign) — same reasoning again. Bumped `"mindset-v10"`–`"mindset-v13"` across v1.24–v1.28 (each logged in its own changelog entry), and to `"mindset-v14"` in v1.29: the calm→dark theme retoken changed `styles.css`/`app.js`/`index.html` bytes app-wide. Bumped `"mindset-v15"`–`"mindset-v19"` across v1.30–v1.35 (each logged in its own changelog entry), and to `"mindset-v20"` in v1.36: the Mara tab was retired and `mara.js`/`data/mara.json` dropped out of `ASSETS` entirely, so old clients need the purge to stop serving the now-404ing files from cache. Bumped again to `"mindset-v21"` in v1.37: the Values tab was retired and `data/values.json` dropped out of `ASSETS`, same reasoning.
 
 ### C.3 Registration (last lines of `app.js`)
 

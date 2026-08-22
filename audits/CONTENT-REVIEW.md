@@ -1,4 +1,4 @@
-# Content Review — cards.json / values.json
+# Content Review — cards.json (values.json retired in v1.37, historical record kept below)
 
 Every card below was authored per BUILD-PLAN.md §5, then passed through an independent
 fresh-context QA review (a separate reviewer, not the author, checking specifically for
@@ -1297,7 +1297,7 @@ entry for the full reasoning.
 - **kenya-59**: Training at altitude in Kenya's Rift Valley highlands is thought to boost runners' oxygen-carrying capacity, an edge some athletes chase by relocating there for months at a time.
 - **kenya-60**: Kenya's first Olympic medal came at the 1964 Tokyo Games, a bronze in the 800 meters; distance running has remained the country's most decorated event ever since.
 
-## Values
+## Values (retired in v1.37 — owner: "we rarely refer to it")
 
 Cut from 10 to 5 in v1.2 per live human feedback (ten read as a checklist, not a short list of
 what actually matters). The 5 shipped values:
