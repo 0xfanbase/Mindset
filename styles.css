@@ -248,7 +248,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 /* Today's items read as actual cards (v1.9) -- a surface, a shadow, room to breathe --
    since Today is meant to be read and learned from, not just glanced at as a reference
    (v1.8 briefly flattened them to match the now-retired Values tab's quieter row style;
-   live feedback reversed that, see v1.9's changelog entry). Normal mode (09:00-24:00 HKT, three
+   live feedback reversed that, see v1.9's changelog entry). Normal mode (09:00-24:00 HKT, two
    stacked cards -- the evening/Closing third mode was retired in v1.31) was a logged §4.4
    one-screen exception from v1.28 through v1.34 (measured 844-1020px with the fourth,
    Word-of-Day card in the stack); RESOLVED in v1.35 when that card was retired, re-confirmed
@@ -274,8 +274,8 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 }
 .card { transition: transform 0.15s ease; }
 
-/* Pre-09:00 HKT focus mode (v1.16): Journal card stands alone, the other three
-   collapse behind this disclosure so they don't compete for morning attention. */
+/* Pre-09:00 HKT focus mode (v1.16): Journal card stands alone, the other card
+   collapses behind this disclosure so it doesn't compete for morning attention. */
 .reveal-rest {
   align-self: center;
   display: inline-flex;

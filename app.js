@@ -199,7 +199,7 @@ async function fetchJSON(path, timeoutMs = 15000) {
 }
 
 // Two-state read of "what part of the day is it" -- focus (pre-09:00, Journal leads alone) or
-// normal (flat four-card layout) (v1.16; the evening/Closing third state retired in v1.31 --
+// normal (flat two-card layout) (v1.16; the evening/Closing third state retired in v1.31 --
 // unused). Deliberately independent of the THEME clock (dark 17:00-06:00) -- two clocks, four
 // combined states per HKT day: dark+focus 00-06, blossom+focus 06-09, blossom+normal 09-17,
 // dark+normal 17-24.

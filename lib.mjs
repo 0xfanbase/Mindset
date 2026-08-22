@@ -102,8 +102,8 @@ export function expectedDateHKT(now = new Date()) {
   return hktDateString(yesterday);
 }
 
-// Pre-09:00 HKT "focus window" — Journal-first morning UI hides the other three
-// cards behind a reveal toggle so they don't compete with the journal prompt (v1.16).
+// Pre-09:00 HKT "focus window" — Journal-first morning UI hides the other card
+// behind a reveal toggle so it doesn't compete with the journal prompt (v1.16).
 export function isFocusWindowHKT(now = new Date()) {
   return hktHour(now) < 9;
 }
