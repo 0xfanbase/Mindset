@@ -1,5 +1,5 @@
 // app.js — UI logic: tabs, theme, date, cards, staleness (BUILD-PLAN.md §4/§6)
-import { hktDateParts, hktDateString, hktHour, staleness, expectedDateHKT, pickToday, isFocusWindowHKT, isDarkWindowHKT, daysUntilKenyaTrip } from "./lib.mjs";
+import { hktDateParts, hktDateString, hktHour, staleness, expectedDateHKT, pickToday, isFocusWindowHKT, isDarkWindowHKT } from "./lib.mjs";
 import { initWeeksTab, refreshWeeksIfStale, redrawWeeksForTheme } from "./weeks.js";
 
 function el(tag, props = {}, children = []) {
@@ -131,28 +131,6 @@ function renderJournalCard(journal) {
   ]);
 }
 
-// Countdown to the 2026-08-15 flight (v1.17) -- a negative countdown would read as a bug,
-// so the badge stops rendering once the trip passes (facts keep rotating either way).
-function kenyaCountdownText(days) {
-  if (days > 1) return { label: `${days} DAYS`, aria: `${days} days until the Kenya trip` };
-  if (days === 1) return { label: "1 DAY", aria: "1 day until the Kenya trip" };
-  if (days === 0) return { label: "TODAY", aria: "The Kenya trip departs today" };
-  return null;
-}
-
-function renderKenyaCard(kenya) {
-  const top = el("div", { class: "card-top" }, [el("div", { class: "card-chip", text: "KENYA" })]);
-  const countdown = kenyaCountdownText(daysUntilKenyaTrip(new Date()));
-  if (countdown) {
-    top.appendChild(el("div", { class: "kenya-countdown", "aria-label": countdown.aria, text: countdown.label }));
-  }
-  return el("article", { class: "card" }, [
-    top,
-    el("p", { class: "card-body", text: kenya.fact }),
-    el("div", { class: "card-attr", text: `— ${kenya.category}` }),
-  ]);
-}
-
 function renderErrorCard() {
   return el("article", { class: "card error-card" }, [
     el("div", { class: "error-label", text: "NO DATA" }),
@@ -221,7 +199,7 @@ async function fetchJSON(path, timeoutMs = 15000) {
 }
 
 // Two-state read of "what part of the day is it" -- focus (pre-09:00, Journal leads alone) or
-// normal (flat four-card layout) (v1.16; the evening/Closing third state retired in v1.31 --
+// normal (flat two-card layout) (v1.16; the evening/Closing third state retired in v1.31 --
 // unused). Deliberately independent of the THEME clock (dark 17:00-06:00) -- two clocks, four
 // combined states per HKT day: dark+focus 00-06, blossom+focus 06-09, blossom+normal 09-17,
 // dark+normal 17-24.
@@ -232,7 +210,7 @@ function windowMode(now) {
 let paintedWindowMode = null;
 let paintedDateHKT = null;
 // Raw HKT calendar date (v1.34), distinct from paintedDateHKT's CONTENT day (05:00 pivot) --
-// initDateLine()/daysUntilKenyaTrip() pivot at midnight, a gap no trigger below used to cover.
+// initDateLine() pivots at midnight, a gap no trigger below used to cover.
 let paintedCalendarDateHKT = null;
 let bootedToday = null;
 
@@ -247,12 +225,11 @@ function renderToday(cardsData, dailyData) {
   const now = new Date();
   let staleMode = staleness(dailyData && dailyData.dateHKT, now);
 
-  let anchor, journal, kenya;
+  let anchor, journal;
   if (staleMode === "fresh" || staleMode === "yesterday") {
     anchor = cardsData.anchors.find((a) => a.id === dailyData.anchorId);
     journal = cardsData.journal.find((j) => j.id === dailyData.journalId);
-    kenya = cardsData.kenya.find((k) => k.id === dailyData.kenyaId);
-    if (!anchor || !journal || !kenya) {
+    if (!anchor || !journal) {
       // An id that no longer resolves (pool edited, file not regenerated) is a freshness
       // problem: fall back to the offline pick, slate-chipped, not NO DATA over a loaded
       // library (v1.28); the error card is for the library itself failing (boot's catch).
@@ -260,11 +237,11 @@ function renderToday(cardsData, dailyData) {
     }
   }
   if (staleMode === "offline") {
-    ({ anchor, journal, kenya } = pickToday(cardsData, offlinePickReference(now)));
+    ({ anchor, journal } = pickToday(cardsData, offlinePickReference(now)));
   }
   showChip(staleMode);
 
-  const rest = [renderAnchorCard(anchor), renderKenyaCard(kenya)];
+  const rest = [renderAnchorCard(anchor)];
   const winMode = windowMode(now);
   paintedWindowMode = winMode;
   // Content day, not raw calendar date (05:00 HKT boundary, matches staleness()).

@@ -1188,7 +1188,7 @@ the pool itself passed both prior audits' content review without a single flag; 
 product decision about which cards belong on the page, not a QA finding. Full detail in
 `audits/decisions.md`'s v1.35 entry.
 
-## Kenya facts (added v1.15, fourth Today card between Journal and Word of the Day)
+## Kenya facts (added v1.15, retired in v1.38 — owner: "remove the Kenya block as well")
 
 Added at live request ahead of a trip to Kenya (Masai Mara) — one new fact about Kenya per day,
 spanning animals, geography, politics, history, and more, with correctness as the explicit bar.

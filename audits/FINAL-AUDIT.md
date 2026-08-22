@@ -99,6 +99,20 @@ log" — not v1.13, which changed no check at all that round). Full accounting i
 `audits/decisions.md`'s v1.37 entry. `verify.mjs all`: **80/80**,
 green.
 
+**v1.38 update:** the Kenya card was retired (owner: "remove the Kenya block as well ... ensure
+this removal doesn't break anything"). Unlike Mara/Values (dedicated standalone checks), Kenya's
+checks were both interleaved (word-cap/quote-glyph/platitude, narrowed without touching
+anchors/journal) and structurally closer to Closing/Word-of-Day than to Mara/Values: it was a
+pool inside `cards.json` and a field inside `daily.json`, not its own file, so its negative
+guards are inline `assert.equal(..., undefined, ...)` assertions folded into the existing shape/
+schema checks (v1.31/v1.35's pattern), not a new dedicated existence check (v1.36/v1.37's
+pattern). Three checks had nothing left to check and were removed outright: the composited-
+`--edge`-pill contrast check (Kenya's pill was the last consumer of `--edge` in the app), the
+`daysUntilKenyaTrip` known-instants check, and the dedicated kenya shape/category check. Check
+count: **80 → 77** (3 removed, 0 added). Full accounting, including a test-suite bug caught and
+fixed before shipping (an unmocked clock silently drifted one verification pass into testing the
+wrong day-window), in `audits/decisions.md`'s v1.38 entry. `verify.mjs all`: **77/77**, green.
+
 ## Acceptance checklist (BUILD-PLAN.md §12)
 
 **Machine-verifiable — all green (`verify.mjs all`, 59/59):**
