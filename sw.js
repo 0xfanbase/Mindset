@@ -1,7 +1,7 @@
-const CACHE = "mindset-v19";
+const CACHE = "mindset-v20";
 const ASSETS = [
-  "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs", "./weeks.js", "./mara.js",
-  "./data/cards.json", "./data/values.json", "./data/daily.json", "./data/mara.json",
+  "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs", "./weeks.js",
+  "./data/cards.json", "./data/values.json", "./data/daily.json",
   "./manifest.webmanifest", "./assets/favicon.svg",
   "./assets/fonts/fraunces-normal.woff2", "./assets/fonts/fraunces-italic.woff2",
   "./assets/fonts/ibm-plex-mono-400.woff2", "./assets/fonts/ibm-plex-mono-500.woff2",

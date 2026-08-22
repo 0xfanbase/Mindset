@@ -76,6 +76,16 @@ check outright (nothing left to iterate once the pool's gone) while converting i
 assertions into `assert.equal(..., undefined, ...)` negative guards, the same treatment Closing's
 removal got in v1.31. Check count: 86 → 85. `verify.mjs all`: **85/85**, green.
 
+**v1.36 update:** the Mara tab was retired (owner: the Masai Mara trip is over). Same discipline
+again: the five `data/mara.json` shape/content checks and the `assets/mara/` photo-budget check
+had nothing left to check once the file and directory were deleted, so they were removed outright
+and replaced with one negative-guard check (`data/mara.json`/`assets/mara/` must not exist),
+mirroring v1.31/v1.35's treatment of Closing/Word of the Day. Four other checks that scanned
+`mara.js`/`data/mara.json` alongside still-live files had those two filenames dropped from their
+file-list arrays — the checks themselves are unchanged in strictness for every file that remains.
+Check count: 85 → 80 (6 removed, 1 added). Full accounting in `audits/decisions.md`'s v1.36 entry.
+`verify.mjs all`: **80/80**, green.
+
 ## Acceptance checklist (BUILD-PLAN.md §12)
 
 **Machine-verifiable — all green (`verify.mjs all`, 59/59):**

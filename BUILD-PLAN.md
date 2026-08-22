@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.35)
+# MINDSET — Autonomous Build Plan (v1.36)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -1821,6 +1821,90 @@ v1.31's Closing retirement rather than just hiding it:
   zero console errors across focus/normal windows and both themes, the re-measured 844px
   worst-case confirmed live, four-tab sweep unregressed.
 
+**v1.36 changelog (from v1.35, live feature request):** the owner's Masai Mara trip (flew out
+2026-08-15, per v1.17) is over; asked for the Mara tab to be removed. Scoped deliberately to
+**only** the fourth nav tab (`mara.js`, `data/mara.json`, `assets/mara/`, the animal reference/
+index/detail UI) — **not** Today's Kenya card (item 3/4c, §4.5), which the owner did not ask to
+remove and which was already designed to age past the trip gracefully: its general Kenya facts
+(geography/wildlife/history/government/culture/economy/sports) were written to be evergreen
+(v1.15: "deliberately avoided anything likely to go stale"), and `daysUntilKenyaTrip`'s
+countdown pill already just stops rendering once the trip date is past (v1.17) — nothing there
+needed touching for this ask.
+
+- **Removed outright:** `mara.js` (10.0KB), `data/mara.json` (park facts + 20 animals, 35.1KB),
+  `assets/mara/` (40 Wikimedia Commons photos, 3.2MB — never counted against the page-weight
+  budget, which only ever tracked core JS/data, but real disk weight nonetheless). `index.html`'s
+  `#tab-mara`/`#panel-mara` (nav button + tabpanel) deleted; the `role="tablist"` now holds three
+  tabs (Today, Values, Weeks) instead of four. `app.js`'s `mara.js` import and both `initMaraTab`
+  call sites (the tab array, the `show()` branch) removed. `styles.css`'s entire Mara section —
+  `#mara-root` through `.mara-empty` (index/detail layout, sort control, sighting-likelihood
+  pills, Big Five badge, the `@media (min-width:900px)` sidebar override) — deleted, ~350 lines
+  across two contiguous blocks; three surviving comments that cited `.mara-tile`/`.mara-empty`/
+  "Mara" as a worked example for unrelated rules (the `cardIn`/`:active` fill-mode note, Values'
+  quiet-failure-state note, `.tab`'s `min-width:44px` note) were reworded to drop the now-dead
+  reference rather than left dangling. `sw.js`'s `ASSETS` dropped `./mara.js`/`./data/mara.json`;
+  `.github/workflows/pages-deploy.yml`'s runtime-file `cp` line dropped `mara.js` (the `cp -r
+  data assets` line needed no change — it already copies whole directories, so the deleted
+  `data/mara.json`/`assets/mara/` just aren't there to copy anymore). `README.md`'s "fourth tab"
+  paragraph and its Mara-photo-credit clause removed; the surviving "no verbatim PII" sentence no
+  longer needs a Mara-specific carve-out since there's no more Wikimedia attribution text on the
+  page to reference.
+- **`verify.mjs` tightened net, not loosened, per the invariant-12 ratchet:** the five
+  `data/mara.json` shape/content checks (park+animals JSON shape, per-animal required fields +
+  sighting score, exactly-2-photos-with-metadata, fieldNotes word cap, quote-glyph/platitude
+  scan) and the `assets/mara/` photo-budget check had nothing left to check once the file and
+  directory are gone, so — same treatment as v1.31's Closing removal and v1.35's Word of the Day
+  removal — they were deleted outright rather than left dead, and replaced with **one** new
+  negative-guard check asserting `data/mara.json` and `assets/mara/` do NOT exist, so a future
+  accidental reintroduction (a bad merge, a stray revert) fails loudly instead of silently
+  resurrecting an orphaned data file with no tab wired to it. The three multi-file sweep checks
+  that listed `mara.js` alongside `app.js`/`figure.js`/`weeks.js`/`sw.js` (the localStorage-usage
+  scan, the bare-locale-date scan, the JS byte-budget sum) and the page-weight sum (which also
+  listed `data/mara.json`) had `mara.js`/`data/mara.json` dropped from their file arrays — those
+  checks stay exactly as strict for the files that remain, they just no longer scan files that no
+  longer exist. The composited-`--edge`-pill contrast check's description dropped its "(Mara
+  pressed pill)" clause (the check itself is unchanged and still guards the surviving Kenya
+  countdown pill, which shares the same `--edge`/`--ink` pattern). Check count: 85 → 80 (6
+  removed, 1 added) — a legitimate removal, not a loosening of any check that still applies. Full
+  reasoning logged in `audits/decisions.md`'s v1.36 entry per invariant 12's second clause, and
+  `audits/FINAL-AUDIT.md` gained a dated update paragraph so the ratchet's own self-check
+  (asserting this file states the live total) stays green.
+- **Budget impact, informational only — both ceilings gained substantial headroom:** JS
+  52,547 B of 66,560 (65KB) — up from 3,765 B headroom to 14,013 B. Page weight 490,538 B of
+  614,400 (600KB) — up from 64,862 B headroom to 123,862 B. No exception needed or taken; noted
+  only because a budget getting *tighter* would need one, and this is the opposite.
+- **`sw.js` `CACHE` bumped `mindset-v19` → `mindset-v20`** (`mara.js`/`data/mara.json` dropped
+  from `ASSETS` entirely, not just changed bytes — old installed clients need the purge so they
+  stop serving the now-404ing files from their offline cache); Appendix C.2 updated to match.
+- **Docs swept for stale Mara references** in this file's live spec sections — §3 repo layout
+  (the `mara.js`/`assets/mara/`/`data/mara.json` tree lines removed). §4.5 Components was
+  checked and never listed Mara as a numbered item to begin with (it documents Today's cards,
+  the staleness chip, and the Values tab; Weeks and Mara were always specified only in their own
+  dedicated sections/changelog entries, never retrofitted into §4.5's list), so nothing there
+  needed changing. Genuinely historical text — every prior `**vX.YY changelog**` entry, §1's
+  Stage-0 mission summary, the original Stage 0–5 build-task list, and the §4.4 ASCII one-screen
+  mockup (which still shows only "Today / Values" and was never retrofitted for Weeks or Mara
+  either) — deliberately left alone, matching how this file has always treated retired-feature
+  docs sweeps (v1.35's entry above; the Word of the Day precedent it in turn cites).
+- **Verified:** `verify.mjs all` 80/80 (85 → 80: 6 checks removed, 1 negative-guard check added,
+  per the ratchet accounting above). `node --check` clean on every touched `.js`/`.mjs` file
+  (`app.js`, `sw.js`, `scripts/verify.mjs`). A repo-wide case-insensitive grep for `mara` after
+  all edits returns zero hits outside this file's own historical changelog prose, the pre-existing
+  historical audit files (`audits/decisions.md`, `audits/v1.28-duo-audit.md`, etc. — left alone
+  per the docs-sweep convention above), and `data/cards.json`'s three Kenya facts that happen to
+  mention "Maasai Mara" as a place name (unrelated content, not the tab — left as-is). **Live
+  Playwright pass at 390×844** (an independent v1.36 audit found `playwright` genuinely available
+  globally in this environment — `/opt/node22/lib/node_modules/playwright`, no `npm install`
+  needed — correcting this entry's own first-draft claim that it wasn't; browsers pre-installed
+  at `/opt/pw-browsers`, requests routed straight from disk per this project's established
+  no-dev-server convention, BUILD-PLAN.md README's "Local development" section): 17/17 checks —
+  exactly 3 tabs (Today/Values/Weeks, no `#tab-mara`/`#panel-mara` anywhere in the DOM), all
+  `aria-controls` resolve, 3 Today cards (JOURNAL/ANCHOR/KENYA) settle to full opacity after the
+  entrance stagger, the Kenya countdown pill correctly absent (trip date is past), one-screen
+  layout holds exactly (`scrollHeight` 844), all surviving tabs clear the 44px tap-target floor,
+  arrow-key roving focus wraps correctly across exactly 3 tabs, Values renders 5 rows, Weeks
+  renders its canvas, zero requests for any deleted file, zero 404s, zero console/page errors.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -1914,19 +1998,16 @@ The three daily cards:
 ├── app.js                  # UI logic: tabs, theme, date, cards, staleness
 ├── figure.js               # canvas glowing-bottle animation (the signature element — was drop.js/brain.js)
 ├── weeks.js                # Weeks tab: combined canvas life-in-weeks grid (J, B), zoom, stats (v1.22-1.24)
-├── mara.js                 # Mara tab: animal reference + Great Migration facts, index/detail views (v1.25)
 ├── lib.mjs                 # SHARED pure functions: HKT date, day number, rotation (imported by browser AND node)
 ├── manifest.webmanifest    # home-screen installability (Appendix C)
 ├── sw.js                   # offline shell, network-first (Appendix C, verbatim)
 ├── assets/
 │   ├── fonts/              # self-hosted woff2 + OFL.txt licences
 │   ├── icons/              # icon-192.png, icon-512.png, apple-touch-icon.png (180)
-│   ├── mara/                # 40 Wikimedia Commons wildlife photos, PD/CC0/CC BY/CC BY-SA only (v1.25)
 │   └── favicon.svg
 ├── data/
 │   ├── cards.json          # anchors[365], journal[1825] (v1.32; v1.34 -- min ~10mo gap/seam), kenya[60]
 │   ├── values.json         # 5 values
-│   ├── mara.json           # park facts + Great Migration + 20 animals (v1.25)
 │   └── daily.json          # written by the pipeline daily
 ├── scripts/
 │   ├── generate-daily.mjs
@@ -2609,7 +2690,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v19";
+const CACHE = "mindset-v20";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs",
   "./data/cards.json", "./data/values.json", "./data/daily.json",
@@ -2649,7 +2730,7 @@ self.addEventListener("fetch", (e) => {
 });
 ```
 
-Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request. Fable's audit sharpened the reasoning: Chromium-family browsers fetch tab favicons outside the page's service-worker `fetch` handler entirely, so network-first was never actually going to self-heal `favicon.svg` — the bump is the only reliable path. Bumped again to `"mindset-v7"` in v1.21 for the same reason: `favicon.svg`'s content changed again (lion mark → cat-photo mark) when the owner redirected mid-session, before v1.20's lion ever shipped. Bumped again to `"mindset-v8"` in v1.22: `weeks.js` (the new Weeks tab's module) was added to `ASSETS` so it's part of the offline shell from first install, same reasoning as every prior content-driven bump. Bumped again to `"mindset-v9"` in v1.23: `weeks.js`'s own content changed substantially (the combined-grid redesign) — same reasoning again. Bumped `"mindset-v10"`–`"mindset-v13"` across v1.24–v1.28 (each logged in its own changelog entry), and to `"mindset-v14"` in v1.29: the calm→dark theme retoken changed `styles.css`/`app.js`/`index.html` bytes app-wide.
+Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request. Fable's audit sharpened the reasoning: Chromium-family browsers fetch tab favicons outside the page's service-worker `fetch` handler entirely, so network-first was never actually going to self-heal `favicon.svg` — the bump is the only reliable path. Bumped again to `"mindset-v7"` in v1.21 for the same reason: `favicon.svg`'s content changed again (lion mark → cat-photo mark) when the owner redirected mid-session, before v1.20's lion ever shipped. Bumped again to `"mindset-v8"` in v1.22: `weeks.js` (the new Weeks tab's module) was added to `ASSETS` so it's part of the offline shell from first install, same reasoning as every prior content-driven bump. Bumped again to `"mindset-v9"` in v1.23: `weeks.js`'s own content changed substantially (the combined-grid redesign) — same reasoning again. Bumped `"mindset-v10"`–`"mindset-v13"` across v1.24–v1.28 (each logged in its own changelog entry), and to `"mindset-v14"` in v1.29: the calm→dark theme retoken changed `styles.css`/`app.js`/`index.html` bytes app-wide. Bumped `"mindset-v15"`–`"mindset-v19"` across v1.30–v1.35 (each logged in its own changelog entry), and to `"mindset-v20"` in v1.36: the Mara tab was retired and `mara.js`/`data/mara.json` dropped out of `ASSETS` entirely, so old clients need the purge to stop serving the now-404ing files from cache.
 
 ### C.3 Registration (last lines of `app.js`)
 
