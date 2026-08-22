@@ -4,12 +4,12 @@ A personal mindset dashboard. One page, no backend, no dependencies — a small 
 breathing slowly, the day's date in Hong Kong time, and three short cards
 that refresh themselves every morning at 05:00 HKT: an **Anchor** (a timeless principle),
 a **Journal** prompt (a mindful reflection question), and a **Kenya** fact (one fact about
-Kenya — geography, wildlife, history, culture, and more). A quiet **Values** tab sits alongside it.
+Kenya — geography, wildlife, history, culture, and more).
 Two themes that follow the Hong Kong clock — `blossom` (soft pink) through the day, `dark`
 (warm charcoal) from 17:00 to 06:00 HKT. The header toggle overrides the schedule for the
 current visit only: nothing is stored, and every fresh load returns to the time-of-day cycle.
 
-A third tab, **Weeks**, is a combined life-in-weeks chart for J and B — one 90-year grid of
+A second tab, **Weeks**, is a combined life-in-weeks chart for J and B — one 90-year grid of
 small squares, one square per week, filled pink-and-blue as each week passes (split cells
 where both have lived a week, solid blue where only B has so far — he's older), zoomable and
 scrollable, with a big percent-of-life-spent figure for each person at the top and a tap/hover
@@ -43,8 +43,8 @@ day is a shrug.
 
 ## Ops runbook
 
-**Add or edit cards** — edit `data/cards.json` (anchors/journal/kenya) or
-`data/values.json` directly, commit, push to `main`. No build step. Keep the writing rules
+**Add or edit cards** — edit `data/cards.json` (anchors/journal/kenya)
+directly, commit, push to `main`. No build step. Keep the writing rules
 in `BUILD-PLAN.md` §5.3 in mind: ≤ 40 words, no quotation marks, no banned platitudes,
 person-named attribution only when you're confident the idea is really theirs. Kenya facts
 (§5.3.11) share the anchors' ≤ 40 word cap, but the load-bearing rule there is correctness,

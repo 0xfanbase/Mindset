@@ -771,12 +771,6 @@ function stage3() {
     assert.equal(d.closing, undefined, "closing pool retired in v1.31 (evening feature removed) -- must not be reintroduced");
     assert.equal(d.wordOfDay, undefined, "wordOfDay pool retired in v1.35 (word-of-day feature removed) -- must not be reintroduced");
   });
-  check("stage3", "data/values.json valid JSON, exactly 5 values", () => {
-    const v = readJSON("data/values.json");
-    assert.ok(Array.isArray(v));
-    assert.equal(v.length, 5, `expected 5 values, got ${v.length}`);
-  });
-
   check("stage3", "anchor category counts exact (365 total)", () => {
     const d = readJSON("data/cards.json");
     const counts = {};
@@ -815,28 +809,21 @@ function stage3() {
       assert.equal(new Set(ids).size, ids.length, `${name} has duplicate ids`);
     }
   });
-  check("stage3", "word caps respected (anchors <=40w, journal prompts <=25w, kenya facts<=40w, values essence<=14w/behaviour<=16w)", () => {
+  check("stage3", "word caps respected (anchors <=40w, journal prompts <=25w, kenya facts<=40w)", () => {
     const d = readJSON("data/cards.json");
-    const v = readJSON("data/values.json");
     const problems = [];
     for (const a of d.anchors) if (wordCount(a.text) > 40) problems.push(`${a.id}: ${wordCount(a.text)}w`);
     for (const j of d.journal) if (wordCount(j.prompt) > 25) problems.push(`${j.id}: ${wordCount(j.prompt)}w`);
     for (const k of d.kenya) if (wordCount(k.fact) > 40) problems.push(`${k.id}: ${wordCount(k.fact)}w`);
-    for (const val of v) {
-      if (wordCount(val.essence) > 14) problems.push(`${val.name} essence: ${wordCount(val.essence)}w`);
-      if (wordCount(val.behaviour) > 16) problems.push(`${val.name} behaviour: ${wordCount(val.behaviour)}w`);
-    }
     assert.equal(problems.length, 0, problems.join(" | "));
   });
-  check("stage3", "zero quotation-mark glyphs in card/value string fields", () => {
+  check("stage3", "zero quotation-mark glyphs in card string fields", () => {
     const d = readJSON("data/cards.json");
-    const v = readJSON("data/values.json");
     const problems = [];
     const scan = (label, s) => { if (s && hasQuoteGlyph(s)) problems.push(`${label}: ${s}`); };
     for (const a of d.anchors) { scan(`${a.id}.text`, a.text); scan(`${a.id}.attribution`, a.attribution); }
     for (const j of d.journal) scan(`${j.id}.prompt`, j.prompt);
     for (const k of d.kenya) { scan(`${k.id}.category`, k.category); scan(`${k.id}.fact`, k.fact); }
-    for (const val of v) { scan(`${val.name}.essence`, val.essence); scan(`${val.name}.behaviour`, val.behaviour); }
     assert.equal(problems.length, 0, problems.join(" | "));
   });
   check("stage3", "no banned platitudes", () => {
@@ -863,6 +850,16 @@ function stage3() {
     assert.ok(!exists("mara.js"), "mara.js exists but the Mara tab was retired in v1.36");
     assert.ok(!exists("data/mara.json"), "data/mara.json exists but the Mara tab was retired in v1.36");
     assert.ok(!fs.existsSync(abs("assets/mara")), "assets/mara/ exists but the Mara tab was retired in v1.36");
+  });
+
+  check("stage3", "Values tab retired (v1.37): data/values.json does not exist", () => {
+    // Same treatment as the Mara guard directly above (and v1.31/v1.35's closing/wordOfDay
+    // guards before it): the values.json shape/word-cap/quote-glyph checks had nothing left
+    // to iterate once the file is gone, so their values-specific clauses were removed from
+    // the shared word-cap/quote-glyph checks (which still cover anchors/journal/kenya) rather
+    // than left dead. This guard fails loudly if the file is ever reintroduced without the
+    // tab being rebuilt around it.
+    assert.ok(!exists("data/values.json"), "data/values.json exists but the Values tab was retired in v1.37");
   });
 
   check("stage3", "near-duplicate proxy (token-overlap) — informational, non-blocking", () => {
@@ -1005,7 +1002,7 @@ function stage5() {
     // to fit the 1825-entry, 5-year Journal pool; see audits/decisions.md for the original
     // text this replaced and the reasoning.
     const files = ["index.html", "styles.css", "app.js", "figure.js", "lib.mjs", "weeks.js", "manifest.webmanifest", "sw.js",
-      "data/cards.json", "data/values.json", "data/daily.json"].filter(exists);
+      "data/cards.json", "data/daily.json"].filter(exists);
     const total = files.reduce((sum, f) => sum + sizeOf(f), 0);
     assert.ok(total <= 600 * 1024, `total ${total} bytes > 600KB (${files.join(",")})`);
   });

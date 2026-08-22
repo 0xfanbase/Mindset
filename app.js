@@ -76,11 +76,12 @@ function initDateLine() {
     `${p.weekday} · ${p.day} ${p.month} ${p.year}`.toUpperCase();
 }
 
-// Ordered array, not a hardcoded boolean toggle -- the Weeks tab (v1.22) made a two-way
-// today/values flip insufficient. Arrow keys roll with wraparound, matching the standard
-// ARIA tablist roving-focus pattern.
+// Ordered array, not a hardcoded boolean toggle -- back to two tabs post-Values (v1.37),
+// but kept generic since it was already proven to scale to four (Weeks, Mara) without a
+// rewrite. Arrow keys roll with wraparound, matching the standard ARIA tablist roving-focus
+// pattern.
 function initTabs() {
-  const tabs = ["today", "values", "weeks"].map((name) => ({
+  const tabs = ["today", "weeks"].map((name) => ({
     name,
     btn: document.getElementById(`tab-${name}`),
     panel: document.getElementById(`panel-${name}`),
@@ -203,20 +204,6 @@ function paintFocusedToday(leadNode, restNodes) {
   host.appendChild(more);
 }
 
-function renderValues(values) {
-  const host = document.getElementById("values-list");
-  host.textContent = "";
-  values.forEach((v, i) => {
-    const row = el("div", { class: "value-row" }, [
-      el("div", { class: "value-name", text: v.name }),
-      el("div", { class: "value-essence", text: v.essence }),
-      el("div", { class: "value-behaviour", text: v.behaviour }),
-    ]);
-    row.style.animationDelay = `${i * 0.06}s`;
-    host.appendChild(row);
-  });
-}
-
 // v1.34: bounded with a timeout -- fetch() has no default one, and an unbounded hang here left
 // dailyRefetchInFlight (below) stuck true forever, permanently disabling the next day's
 // refetch. Every caller already handles a rejection (boot's .catch(), the refetch's second
@@ -298,20 +285,10 @@ function renderToday(cardsData, dailyData) {
   }
 }
 
-function renderValuesError() {
-  const host = document.getElementById("values-list");
-  host.textContent = "";
-  host.appendChild(el("p", { class: "values-empty", text: "Couldn't load values. Refresh to try again." }));
-}
-
 async function boot() {
   initTheme();
   initDateLine();
   initTabs();
-
-  // Values renders (or quietly fails) on its own — one bad values.json must not blank
-  // Today, nor a Today failure blank Values (v1.28; one Promise.all coupled all three).
-  fetchJSON("./data/values.json").then(renderValues).catch(renderValuesError);
 
   try {
     const [dailyData, cardsData] = await Promise.all([

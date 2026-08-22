@@ -86,6 +86,17 @@ file-list arrays — the checks themselves are unchanged in strictness for every
 Check count: 85 → 80 (6 removed, 1 added). Full accounting in `audits/decisions.md`'s v1.36 entry.
 `verify.mjs all`: **80/80**, green.
 
+**v1.37 update:** the Values tab was retired (owner: "we rarely refer to it"). Unlike v1.36's
+standalone checks, Values' were interleaved into shared ones: the dedicated
+`"data/values.json valid JSON, exactly 5 values"` check was removed outright, and the
+values-scanning clauses inside the shared word-cap and quote-glyph checks (which also cover
+anchors/journal/kenya) were narrowed without deleting those checks — anchors/journal/kenya
+coverage is untouched. One negative-guard check was added (`data/values.json` must not exist),
+mirroring v1.31/v1.35/v1.36's treatment of Closing/Word of the Day/Mara. Check count: 80 → 80
+(1 removed, 1 added — logged despite the net-zero total, matching v1.13's same-count-retarget
+precedent). Full accounting in `audits/decisions.md`'s v1.37 entry. `verify.mjs all`: **80/80**,
+green.
+
 ## Acceptance checklist (BUILD-PLAN.md §12)
 
 **Machine-verifiable — all green (`verify.mjs all`, 59/59):**
