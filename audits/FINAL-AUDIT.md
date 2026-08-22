@@ -93,8 +93,10 @@ values-scanning clauses inside the shared word-cap and quote-glyph checks (which
 anchors/journal/kenya) were narrowed without deleting those checks — anchors/journal/kenya
 coverage is untouched. One negative-guard check was added (`data/values.json` must not exist),
 mirroring v1.31/v1.35/v1.36's treatment of Closing/Word of the Day/Mara. Check count: 80 → 80
-(1 removed, 1 added — logged despite the net-zero total, matching v1.13's same-count-retarget
-precedent). Full accounting in `audits/decisions.md`'s v1.37 entry. `verify.mjs all`: **80/80**,
+(1 removed, 1 added — logged despite the net-zero total, matching this same file's own v1.2/v1.3
+precedent above of logging a same-count change rather than treating "net zero" as "nothing to
+log" — not v1.13, which changed no check at all that round). Full accounting in
+`audits/decisions.md`'s v1.37 entry. `verify.mjs all`: **80/80**,
 green.
 
 ## Acceptance checklist (BUILD-PLAN.md §12)
