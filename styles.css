@@ -14,7 +14,6 @@
   --muted: #7A6870;
   --accent: #B84870;
   --pulse: #F2A9C6;
-  --edge: rgba(201, 79, 124, 0.16);
   --hairline: rgba(36, 26, 32, 0.10);
   --shadow: rgba(36, 26, 32, 0.07);
   --week-future: rgba(36, 26, 32, 0.12);
@@ -41,7 +40,6 @@
   --muted: #A8A093;
   --accent: #DE8A68;
   --pulse: #F0AD82;
-  --edge: rgba(222, 138, 104, 0.16);
   --hairline: rgba(237, 233, 225, 0.11);
   --shadow: rgba(0, 0, 0, 0.40);
   --week-future: rgba(237, 233, 225, 0.13);
@@ -253,11 +251,12 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
    live feedback reversed that, see v1.9's changelog entry). Normal mode (09:00-24:00 HKT, three
    stacked cards -- the evening/Closing third mode was retired in v1.31) was a logged §4.4
    one-screen exception from v1.28 through v1.34 (measured 844-1020px with the fourth,
-   Word-of-Day card in the stack); RESOLVED in v1.35 when that card was retired -- the true
-   worst case (longest anchor + longest journal + longest kenya, all three at once) now
-   measures exactly 844px, fitting with zero pixels to spare, no exception needed anymore.
-   Focus mode (the one-card lead) has always fit exactly regardless.
-   See audits/decisions.md, v1.28 (first measured), v1.33 (re-measured), v1.35 (resolved). */
+   Word-of-Day card in the stack); RESOLVED in v1.35 when that card was retired, re-confirmed
+   in v1.38 when Kenya was retired too -- the true worst case (longest anchor + longest
+   journal, forced simultaneously) measures 580px of real content against the 844px viewport,
+   264px of genuine headroom, zero overflow. Focus mode (the one-card lead) has always fit
+   exactly regardless. See audits/decisions.md, v1.28 (first measured), v1.33 (re-measured),
+   v1.35 (resolved), v1.38 (re-measured again, two cards, real numbers). */
 #cards {
   display: flex;
   flex-direction: column;
@@ -303,30 +302,11 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 #cards-more { display: flex; flex-direction: column; gap: 14px; }
 #cards-more[hidden] { display: none; }
 
-.card-top {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
 .card-chip {
   font-family: "IBM Plex Mono", monospace;
   font-size: 9px;
   letter-spacing: 0.26em;
   color: var(--muted);
-}
-/* Kenya trip countdown (v1.17): a soft accent-tinted pill, top-right of the card's chip row. */
-.kenya-countdown {
-  flex-shrink: 0;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.05em;
-  color: var(--ink);
-  background: var(--edge);
-  border-radius: 999px;
-  padding: 3px 10px;
-  white-space: nowrap;
 }
 .card-body {
   font-family: "Fraunces", Georgia, serif;

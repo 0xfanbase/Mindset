@@ -427,20 +427,6 @@ function stage1() {
     assert.equal(failures.length, 0, failures.join(" | "));
   });
 
-  check("stage1", "composited --edge pills: --ink >= 4.5:1 on edge-over-surface and edge-over-bg (Kenya countdown), both themes", () => {
-    // These pills render text on a translucent --edge tint — real rendered pairs that the
-    // token-vs-token check above can never see (hand-verified in v1.17, gated since v1.29).
-    const themes = themeTokens(css());
-    const failures = [];
-    for (const [themeName, tokens] of Object.entries(themes)) {
-      for (const base of ["surface", "bg"]) {
-        const ratio = contrastRatio(tokens.ink, compositeOver(tokens.edge, tokens[base]));
-        if (ratio < 4.5) failures.push(`${themeName} (--ink on edge-over-${base}) = ${ratio.toFixed(2)} < 4.5`);
-      }
-    }
-    assert.equal(failures.length, 0, failures.join(" | "));
-  });
-
   check("stage1", "staleness chips: text >= 4.5:1 on its tint composited over --bg, both themes", () => {
     const themes = themeTokens(css());
     const rules = {
@@ -502,8 +488,8 @@ function stage1() {
     assert.match(src, /expectedDateHKT\(now\)\s*!==\s*paintedDateHKT/,
       "the visibilitychange day-flip comparison must use expectedDateHKT(now), matching staleness()'s boundary");
     // v1.34: hktDateString is legitimately back, but only for a SEPARATE raw-calendar tracker
-    // (paintedCalendarDateHKT, a different bug entirely -- the header/Kenya-countdown staleness
-    // gap) -- assert it, but ALSO assert the original v1.30 bug's exact anti-pattern still never
+    // (paintedCalendarDateHKT, a different bug entirely -- the header's own midnight-vs-05:00
+    // staleness gap) -- assert it, but ALSO assert the original v1.30 bug's exact anti-pattern still never
     // reappears: paintedDateHKT (the CONTENT tracker) must never be assigned from or compared
     // against hktDateString directly.
     assert.match(src, /paintedCalendarDateHKT\s*=\s*hktDateString\(now\)/,
@@ -581,18 +567,6 @@ function stage1() {
       "snippet must set the same two theme ids app.js/styles.css use");
     assert.match(src, /timeZone:\s*"Asia\/Hong_Kong",\s*hour:\s*"2-digit",\s*hour12:\s*false/,
       "snippet's hour read must be HKT-pinned, 2-digit, hour12:false (mirrors lib.mjs hktHour)");
-  });
-
-  check("stage1", "lib.mjs: daysUntilKenyaTrip correct at 4 known instants (HKT-anchored, 2026-08-15 trip)", async () => {
-    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    // 2026-07-14T16:00:00Z = 2026-07-15T00:00 HKT -> 31 days before 2026-08-15
-    assert.equal(lib.daysUntilKenyaTrip(new Date("2026-07-14T16:00:00Z")), 31);
-    // one HKT day later -> exactly one fewer day out
-    assert.equal(lib.daysUntilKenyaTrip(new Date("2026-07-15T16:00:00Z")), 30);
-    // 2026-08-14T16:01:00Z = 2026-08-15T00:01 HKT, the trip's own HKT calendar day -> 0
-    assert.equal(lib.daysUntilKenyaTrip(new Date("2026-08-14T16:01:00Z")), 0);
-    // the day after departure -> negative, so the UI knows to hide the countdown
-    assert.equal(lib.daysUntilKenyaTrip(new Date("2026-08-15T16:01:00Z")), -1);
   });
 
   check("stage1", "lib.mjs: weeksLived/percentLifeSpent correct at month-start, +6d, +7d, and clamped far-future (J and B)", async () => {
@@ -682,8 +656,8 @@ function stage1() {
     // from the real formula): for every item, any two appearances within `window` days of a
     // seam are more than minSeamGap(poolSize) days apart. Swept across 8 consecutive seams per
     // pool (not just 1) and every salt ever used, current or retired ("closing" since v1.31,
-    // "word" since v1.35 -- kept here anyway as a generic-correctness check, proving the
-    // guarantee isn't accidentally salt-specific -- plus one synthetic salt), so a fix that
+    // "word" since v1.35, "kenya" since v1.38 -- kept here anyway as a generic-correctness
+    // check, proving the guarantee isn't accidentally salt-specific -- plus one synthetic salt), so a fix that
     // happens to work for one lucky seed can't pass silently. (This also subsumes the old
     // no-immediate-repeat property: gap > minSeamGap >= 1 rules out gap === 1 too.)
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
@@ -762,14 +736,14 @@ function stage2() {
 // ---------- Stage 3 ----------
 
 const CATEGORY_COUNTS = { stoic: 55, buddhist: 55, taoist: 25, impermanence: 35, attention: 35, relationships: 30, growth: 30, money: 25, voices: 40, grounding: 35 };
-const KENYA_CATEGORY_COUNTS = { Geography: 12, Wildlife: 14, History: 10, Government: 8, Culture: 8, Economy: 4, Sports: 4 };
 
 function stage3() {
   check("stage3", "data/cards.json valid JSON with required shape", () => {
     const d = readJSON("data/cards.json");
-    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.journal) && Array.isArray(d.kenya));
+    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.journal));
     assert.equal(d.closing, undefined, "closing pool retired in v1.31 (evening feature removed) -- must not be reintroduced");
     assert.equal(d.wordOfDay, undefined, "wordOfDay pool retired in v1.35 (word-of-day feature removed) -- must not be reintroduced");
+    assert.equal(d.kenya, undefined, "kenya pool retired in v1.38 (Kenya card removed) -- must not be reintroduced");
   });
   check("stage3", "anchor category counts exact (365 total)", () => {
     const d = readJSON("data/cards.json");
@@ -782,25 +756,9 @@ function stage3() {
     assert.equal(d.anchors.length, 365, `total anchors = ${d.anchors.length}`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
-  check("stage3", "journal = 1825, kenya = 60", () => {
+  check("stage3", "journal = 1825", () => {
     const d = readJSON("data/cards.json");
     assert.equal(d.journal.length, 1825, `journal = ${d.journal.length}`);
-    assert.equal(d.kenya.length, 60, `kenya = ${d.kenya.length}`);
-  });
-  check("stage3", "kenya entries have category/fact as non-empty strings; category counts exact (60 total)", () => {
-    const d = readJSON("data/cards.json");
-    const problems = [];
-    const counts = {};
-    for (const k of d.kenya) {
-      for (const field of ["category", "fact"]) {
-        if (typeof k[field] !== "string" || !k[field].trim()) problems.push(`${k.id}.${field} missing/empty`);
-      }
-      counts[k.category] = (counts[k.category] || 0) + 1;
-    }
-    for (const [cat, want] of Object.entries(KENYA_CATEGORY_COUNTS)) {
-      if (counts[cat] !== want) problems.push(`${cat}: got ${counts[cat] || 0}, want ${want}`);
-    }
-    assert.equal(problems.length, 0, problems.join(" | "));
   });
   check("stage3", "all ids unique within each pool", () => {
     const d = readJSON("data/cards.json");
@@ -809,12 +767,11 @@ function stage3() {
       assert.equal(new Set(ids).size, ids.length, `${name} has duplicate ids`);
     }
   });
-  check("stage3", "word caps respected (anchors <=40w, journal prompts <=25w, kenya facts<=40w)", () => {
+  check("stage3", "word caps respected (anchors <=40w, journal prompts <=25w)", () => {
     const d = readJSON("data/cards.json");
     const problems = [];
     for (const a of d.anchors) if (wordCount(a.text) > 40) problems.push(`${a.id}: ${wordCount(a.text)}w`);
     for (const j of d.journal) if (wordCount(j.prompt) > 25) problems.push(`${j.id}: ${wordCount(j.prompt)}w`);
-    for (const k of d.kenya) if (wordCount(k.fact) > 40) problems.push(`${k.id}: ${wordCount(k.fact)}w`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
   check("stage3", "zero quotation-mark glyphs in card string fields", () => {
@@ -823,7 +780,6 @@ function stage3() {
     const scan = (label, s) => { if (s && hasQuoteGlyph(s)) problems.push(`${label}: ${s}`); };
     for (const a of d.anchors) { scan(`${a.id}.text`, a.text); scan(`${a.id}.attribution`, a.attribution); }
     for (const j of d.journal) scan(`${j.id}.prompt`, j.prompt);
-    for (const k of d.kenya) { scan(`${k.id}.category`, k.category); scan(`${k.id}.fact`, k.fact); }
     assert.equal(problems.length, 0, problems.join(" | "));
   });
   check("stage3", "no banned platitudes", () => {
@@ -832,7 +788,6 @@ function stage3() {
     const scan = (label, s) => { const p = s && findPlatitude(s); if (p) problems.push(`${label}: "${p}"`); };
     for (const a of d.anchors) scan(a.id, a.text);
     for (const j of d.journal) scan(j.id, j.prompt);
-    for (const k of d.kenya) scan(k.id, k.fact);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
 
@@ -856,9 +811,9 @@ function stage3() {
     // Same treatment as the Mara guard directly above (and v1.31/v1.35's closing/wordOfDay
     // guards before it): the values.json shape/word-cap/quote-glyph checks had nothing left
     // to iterate once the file is gone, so their values-specific clauses were removed from
-    // the shared word-cap/quote-glyph checks (which still cover anchors/journal/kenya) rather
-    // than left dead. This guard fails loudly if the file is ever reintroduced without the
-    // tab being rebuilt around it.
+    // the shared word-cap/quote-glyph checks (which still cover anchors/journal, and covered
+    // kenya too until it was retired in v1.38) rather than left dead. This guard fails loudly
+    // if the file is ever reintroduced without the tab being rebuilt around it.
     assert.ok(!exists("data/values.json"), "data/values.json exists but the Values tab was retired in v1.37");
   });
 
@@ -924,8 +879,7 @@ function stage3() {
     const dayNumber = lib.hktDayNumber(new Date());
     const anchor = d.anchors[lib.pickIndex(d.anchors.length, dayNumber, "anchor")];
     const journal = d.journal[lib.pickIndex(d.journal.length, dayNumber, "journal")];
-    const kenya = d.kenya[lib.pickIndex(d.kenya.length, dayNumber, "kenya")];
-    assert.ok(anchor && anchor.id && journal && journal.id && kenya && kenya.id);
+    assert.ok(anchor && anchor.id && journal && journal.id);
   });
   check("stage3", "audits/CONTENT-REVIEW.md exists", () => assert.ok(exists("audits/CONTENT-REVIEW.md"), "missing"));
 }
@@ -954,9 +908,10 @@ function stage4() {
     const d = readJSON("data/daily.json");
     assert.match(d.dateHKT, /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(typeof d.generatedAtISO === "string" && !Number.isNaN(Date.parse(d.generatedAtISO)));
-    assert.ok(typeof d.anchorId === "string" && typeof d.journalId === "string" && typeof d.kenyaId === "string");
+    assert.ok(typeof d.anchorId === "string" && typeof d.journalId === "string");
     assert.equal(d.closingId, undefined, "closingId retired in v1.31 (evening feature removed) -- must not be reintroduced");
     assert.equal(d.wordId, undefined, "wordId retired in v1.35 (word-of-day feature removed) -- must not be reintroduced");
+    assert.equal(d.kenyaId, undefined, "kenyaId retired in v1.38 (Kenya card removed) -- must not be reintroduced");
   });
 }
 

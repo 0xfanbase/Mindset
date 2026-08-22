@@ -44,7 +44,7 @@ function shuffledOrder(poolSize, salt, cycle) {
 }
 
 // Minimum guaranteed gap (days) between repeats across a cycle seam (v1.34): pool/6, floored
-// (journal 304, anchors 60, kenya 10). Must stay <= poolSize/2 (see below); reasoning and
+// (journal 304, anchors 60). Must stay <= poolSize/2 (see below); reasoning and
 // verification in decisions.md v1.34. Exported so verify.mjs checks the real formula.
 export function minSeamGap(poolSize) {
   return Math.max(1, Math.floor(poolSize / 6));
@@ -130,28 +130,16 @@ export function staleness(dailyDateHKT, now = new Date()) {
   return "offline";
 }
 
-// Kenya trip countdown (v1.17) — departs 2026-08-15, HKT-anchored (invariant 8). Day-number
-// diffing reuses the epoch-day mechanism of hktDayNumber/pickIndex, so it can't drift from a
-// DST edge or odd local-clock offset the way raw ms subtraction could.
-const KENYA_TRIP_DATE_HKT = "2026-08-15";
-
-export function daysUntilKenyaTrip(now = new Date()) {
-  const [y, m, day] = KENYA_TRIP_DATE_HKT.split("-").map(Number);
-  const tripDayNumber = Math.floor(Date.UTC(y, m - 1, day) / 86400000);
-  return tripDayNumber - hktDayNumber(now);
-}
-
 export function pickToday(cards, now = new Date()) {
   const dayNumber = hktDayNumber(now);
   const anchor = cards.anchors[pickIndex(cards.anchors.length, dayNumber, "anchor")];
   const journal = cards.journal[pickIndex(cards.journal.length, dayNumber, "journal")];
-  const kenya = cards.kenya[pickIndex(cards.kenya.length, dayNumber, "kenya")];
-  return { anchor, journal, kenya, dayNumber };
+  return { anchor, journal, dayNumber };
 }
 
 // Weeks-of-life chart (v1.22) -- "life in weeks" for J and B (initials only, never real
 // names, invariant 1). Anchored to birth MONTH-START only (no exact day given or needed at
-// week granularity), same epoch-day idiom as daysUntilKenyaTrip. 90 years, not the literal
+// week granularity), same epoch-day idiom as hktDayNumber itself. 90 years, not the literal
 // 4,000-week/77 -- real headroom against HK life expectancy, so the grid can't visibly
 // "complete" while its subject is alive -- see audits/decisions.md.
 export const LIFE_WEEKS_YEARS = 90;
