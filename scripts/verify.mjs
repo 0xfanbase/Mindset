@@ -677,8 +677,9 @@ function stage1() {
     // from the real formula): for every item, any two appearances within `window` days of a
     // seam are more than minSeamGap(poolSize) days apart. Swept across 8 consecutive seams per
     // pool (not just 1) and every salt ever used, current or retired ("closing" since v1.31,
-    // "word" since v1.35, "kenya" since v1.38 -- kept here anyway as a generic-correctness
-    // check, proving the guarantee isn't accidentally salt-specific -- plus one synthetic salt), so a fix that
+    // "word" since v1.35, "kenya" since v1.38, "anchor" since v1.39 -- all kept here anyway as
+    // a generic-correctness check, proving the guarantee isn't accidentally salt-specific --
+    // plus one synthetic salt), so a fix that
     // happens to work for one lucky seed can't pass silently. (This also subsumes the old
     // no-immediate-repeat property: gap > minSeamGap >= 1 rules out gap === 1 too.)
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);

@@ -51,8 +51,11 @@ Kept in full below as the historical record of this pool's authoring/QA work thr
 editorial decisions — duplicate cognitive moves caught and reworded, attribution-confidence
 downgrades, political-neutrality fixes for the `voices` category). The entire `anchors` array was
 replaced (not incrementally edited) in v1.14 per live feedback asking to rewrite tactical entries
-toward observation/being and expand the pool to 365 — see the new "Anchors v1.14" section after
-this one for the current, shipping content.
+toward observation/being and expand the pool to 365 — see the "Anchors v1.14" section after this
+one for that pool's own final content. Note (v1.39): that section is no longer shipping either —
+the whole `anchors` pool was retired, see the v1.39 addendum above. This paragraph said "the
+current, shipping content" until the v1.39 audit caught it contradicting that addendum six lines
+higher.
 
 ## Anchors, grouped by attribution
 

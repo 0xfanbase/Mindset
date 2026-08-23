@@ -2120,9 +2120,12 @@ sequence, and invariant 11's one-screen guarantee is re-scoped rather than simpl
   both `role="tabpanel"` wrappers, replaced by a flat `#cards` / `.section-divider` /
   `#weeks-root` sequence directly inside `<main>`. `styles.css`'s `.tabs`/`.tab` rules, `.panel`
   rules (their `overflow-y`/padding absorbed into `main` itself, which drops `display:flex` for
-  plain block flow — a flex column would let `overflow-y:auto` shrink-to-fit its children
-  instead of actually overflowing/scrolling, per `flex-shrink`'s default), `.reveal-rest`/
-  `#cards-more` rules, the desktop `#cards` flex-row/`.focus` override (replaced with `#cards`
+  plain block flow — the simpler shape for a container that now just stacks three siblings.
+  **This entry's original rationale — that a flex column would let `overflow-y:auto`
+  shrink-to-fit its children instead of overflowing, per `flex-shrink`'s default — was wrong;
+  the v1.39 audit measured the counterfactual instead of re-reasoning it and found the two
+  layouts identical. See the audit note at the end of this entry.**),
+  `.reveal-rest`/`#cards-more` rules, the desktop `#cards` flex-row/`.focus` override (replaced with `#cards`
   joining the existing 640px-centered rule alongside `.weeks-stats`/`.weeks-zoom-row`/
   `.weeks-card`, since a single card stretching to `main`'s full width no longer makes sense),
   and the now-fully-dead `.card-attr` rule (Anchor's attribution line was its only consumer;
@@ -2130,16 +2133,20 @@ sequence, and invariant 11's one-screen guarantee is re-scoped rather than simpl
   from `app.js`'s `boot()` (wrapped in its own try/catch so a Weeks failure can't take down
   Journal's render) instead of on first tab activation; its zero-width bail-out guard in
   `redrawAll()` is kept verbatim as a general defensive check, no longer the tab-activation
-  guard it used to be. Ten comments across `app.js`/`lib.mjs`/`weeks.js`/`styles.css` that cited
-  tabs/focus-mode/Anchor as a design precedent or worked example for unrelated code were
-  reworded rather than left dangling.
-- **`verify.mjs` — invariant-12 ratchet, 77 -> 76 (2 removed, 1 added, 6 retargeted):** the
+  guard it used to be. Eighteen comments across `app.js`/`lib.mjs`/`weeks.js`/`styles.css` that
+  cited tabs/focus-mode/Anchor as a design precedent or worked example for unrelated code were
+  reworded rather than left dangling (3 in `app.js`, 1 in `lib.mjs`, 6 in `weeks.js`, 8 in
+  `styles.css`; this entry first said "ten," recounted from the diff by the v1.39 audit — the
+  same undercount-of-reworded-comments slip the v1.38 audit caught a round earlier).
+- **`verify.mjs` — invariant-12 ratchet, 77 -> 76 (2 removed, 1 added, 9 retargeted):** the
   anchor category-counts check (`CATEGORY_COUNTS` constant removed too, now fully dead) and the
   anchors-only near-duplicate-proxy check had nothing left to check once their subject was gone
   and were deleted outright. One new check was added: a structural assertion that `#cards`,
   `.section-divider`, and `#weeks-root` appear in that DOM order inside `<main>` (the mechanical
   proof that the single-page merge actually happened, not just that the tab markup is gone).
-  Six checks were retargeted rather than removed or added: the tablist/tab/aria-selected check
+  Nine checks were retargeted rather than removed or added (this entry first said "six," which
+  counted the six clauses below rather than the nine individual `check()` bodies they name —
+  recounted against the diff by the v1.39 audit): the tablist/tab/aria-selected check
   flipped from asserting PRESENCE to asserting ABSENCE (same treatment as the Mara/Values
   retired-file guards); `isFocusWindowHKT`'s boundary-pinning check became a retirement guard
   (mirroring `isEveningWindowHKT`'s own v1.31 retirement-guard shape) that also asserts
@@ -2238,6 +2245,70 @@ sequence, and invariant 11's one-screen guarantee is re-scoped rather than simpl
   own controls, no orphaned tab-panel remnants; reduced motion -- both the card entrance and
   the Weeks clip-reveal are suppressed, canvas fully visible (not stuck clipped). Zero
   console/page errors in every scenario.
+- **The independent v1.39 audit (Opus, fresh context, worktree-isolated) found no functional
+  defect** — the architectural risk this round was specifically asked to guard against checked
+  out clean across 53 additional live-browser assertions in 13 clock-mocked scenarios (plus a
+  no-assertion flex-vs-block control), covering ground beyond this entry's own eight: a
+  stale-`daily.json` amber path, an unresolvable `journalId`, a legacy `daily.json` still
+  carrying `anchorId`, a legacy `cards.json` still carrying a stray `anchors` pool, 08:30 HKT,
+  and a 1100px desktop pass. Three further out-of-suite probes ran alongside it: a
+  service-worker isolation check (see the console-error caveat in `decisions.md`), a
+  five-viewport flex-vs-block comparison, and a fault-injection pass replacing `initWeeks()`
+  with a throwing stub — which confirmed `boot()`'s new try/catch genuinely keeps the Journal
+  card rendering, the one behavior that guard exists for and the one this round never tested.
+  Every byte-count, the check-count reconciliation, and the Appendix C.2 `ASSETS` resync were
+  independently recomputed and all matched exactly; `sw.js` is byte-for-byte identical to the
+  Appendix C.2 block including the array. It did find one wrong technical claim and a cluster
+  of documentation slips, all fixed above and below rather than left standing:
+  - **The `main` flex-to-block rationale was wrong, and was asserted as independently
+    re-derived and browser-verified.** Measured directly by rendering the shipped page against
+    a variant that re-adds `display:flex; flex-direction:column` to `main`: geometry is
+    byte-identical at 390x844, 390x500, 320x400, 390x2000 and 1100x900. Two independent
+    reasons it cannot differ: `body`'s `min-height:100svh` + auto height means it grows past
+    the viewport, so `main` (`flex:1`) is never height-constrained —
+    `main.scrollHeight === main.clientHeight` on every load, `main`'s `overflow-y` never
+    engages, and the DOCUMENT is the scroll container (the same app-wide property the v1.25
+    audit already recorded about `.panel`); and even under a constrained height, a column flex
+    item's automatic minimum size (`min-height:auto`) holds auto-height children like these at
+    content height — verified in an isolated DOM probe where auto-height children gave
+    identical results in both modes and only explicit-height children shrank. The change is
+    harmless and arguably cleaner, so it stands; only its stated justification was corrected,
+    in this entry, `styles.css`, and `decisions.md`.
+  - **A self-contradiction of exactly the v1.38 shape, in this round's own
+    self-contradiction check:** `decisions.md` claimed a post-edit grep confirmed §4.5 item 3
+    "genuinely does NOT point at item 4b anymore." Item 3 points at item 4b twice, in text
+    written this round. Item 4b's stub itself never made a false claim (it claimed nothing),
+    but it understated its slot as kept "for consistency" when the slot is in fact
+    load-bearing — corrected to match items 4a/4c's language, and the `decisions.md` claim
+    corrected too. §5.3 rule 8 got the same correction for the same reason (three live
+    pointers, all written by this round's own sweep: item 3's "see item 8 in §5.3," and rules
+    1 and 2's "see rule 8"). Rules 7 and 9 were checked and left as consistency-only slots —
+    their pointers exist but sit in frozen historical text (Stage 3's task list, the v1.3
+    changelog), not live spec prose. §4.5 item 5's "no live `§4.5.5` cross-reference" claim
+    was re-checked after all edits and still holds.
+  - **Three stale/mis-stated numbers, all corrected in place:** §4.5 item 4 still said the
+    offline path "computes both cards" — the exact line the v1.38 audit had corrected from
+    "all three cards" one round earlier; §6.1's retirement note had `wordId`'s ordinal changed
+    from "fourth" to "second," which left two different ids both called the second; and the
+    reworded-comment count ("ten") and retargeted-check count ("six") were both undercounts of
+    the diff (18 and 9).
+  - **Two dangling references the round's own sweep missed:** `styles.css`'s epigraph comment
+    still cited `.card-attr`, a rule deleted in this same commit, with no retired marker; and
+    `verify.mjs`'s seam-gap comment enumerated every retired salt except `"anchor"`, the one
+    retired this round.
+  - **`audits/CONTENT-REVIEW.md` self-contradicted across six lines:** the new v1.39 addendum
+    says the anchors pool is "no longer current or shipping," while the "Anchors v1.0–v1.13"
+    section immediately below still pointed at the v1.14 section as "the current, shipping
+    content." Corrected. (The v1.39 retitle itself was verified to have landed on the correct
+    section — the live v1.14 pool at the file's third "Anchors"-named heading, not the
+    already-historical pre-v1.14 one.)
+  - **Flagged, deliberately not changed — an owner copy call, not a defect:** the app's own
+    user-facing plural copy now reads oddly with exactly one card — the error card's
+    "Couldn't load today's cards," the amber `yesterday's cards` chip, and `README.md`'s
+    matching prose. All three are shipped UI strings, unchanged since v1.0 and left alone by
+    v1.35/v1.36/v1.38's own removals; renaming them is a design decision, not a docs sweep.
+    Separately noted, pre-existing and out of this round's scope: `audits/build-log.md`'s last
+    heartbeat is v1.27, stale across every round since.
 
 ---
 
@@ -2477,10 +2548,10 @@ since it's no longer adjacent to the notch/status bar).
 3. **Cards (v1.9 — restored as actual cards):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding. Exactly one card renders now — **Journal** (v1.39 retired Anchor, its last remaining companion — see item 8 in §5.3 for the authoring-side retirement, and item 4b below for the focus-mode toggle that also went with it); the v1.9 gap rule (`#cards { display:flex; flex-direction:column; gap:14px }`) is vestigial for a single child but left in place, harmless if a future card type joins Journal here. v1.8 had briefly flattened Today's cards to match the now-retired Values tab's flat/hairline row style (§4.5 item 5); live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, not just glanced at as a reference. Header row = mono category chip (JOURNAL, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. (v1.35: Word of the Day, which used to render fourth with its own headline/pronunciation-button treatment, was retired — see item 4a. v1.38: Kenya, third, with a trip-countdown pill, was retired too — see item 4c. v1.39: Anchor, second, with an attribution footer, was retired too — its content-authoring rules are stubbed at §5.3 item 8, its focus-mode UI at item 4b below.)
 4. **Staleness chip (mono, small):**
    - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 05:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 05:00 HKT, every single day.)
-   - `daily.json` unreachable, > 48h stale, or fetch fails → page computes both cards locally via `lib.mjs` rotation → slate chip `offline rotation`. Every pool is deterministic (v1.10 retired the old fetched-content Fresh card for exactly this property), so this path always picks the exact same content the server would have for that date — there is no divergent "fallback" content.
+   - `daily.json` unreachable, > 48h stale, or fetch fails → page computes the day's card locally via `lib.mjs` rotation → slate chip `offline rotation`. Every pool is deterministic (v1.10 retired the old fetched-content Fresh card for exactly this property), so this path always picks the exact same content the server would have for that date — there is no divergent "fallback" content.
    - **`.chip[hidden] { display: none; }` (v1.11, real bug fix):** `#staleness-chip` keeps `class="chip"` at all times, including while hidden; `.chip`'s own `display: table` (author-origin CSS) unconditionally overrode the browser's default `[hidden] { display: none }` (user-agent-origin CSS) — author styles always win over user-agent styles at equal specificity, regardless of selector order. The hidden chip was never actually disappearing; it sat empty but still consumed its padding/margin box in the default "fresh" case, every load. Fixed with an explicit override, matching the pattern `.panel[hidden] { display: none; }` already used correctly elsewhere in the same stylesheet.
 4a. **Word pronunciation — retired in v1.35, slot kept (not renumbered) so `item 4a`/`§4.5.4a` cross-references elsewhere in this file stay valid.** Through v1.34 this held Word of the Day's card: the word itself as a Fraunces headline (`.word-title`) plus a 44×44px pronunciation button (`.word-speak`, v1.11) calling `window.speechSynthesis.speak(...)`. Owner request: "remove the word of the day block... that is not helpful." Removed entirely — `app.js`'s `renderWordCard`/`speak`, `styles.css`'s `.word-*` rules, `data/cards.json`'s 30-entry `wordOfDay` pool, `wordId` from the daily pipeline/schema, and the `"word"` rotation salt (kept only in `verify.mjs`'s seam-gap sweep as a generic-correctness check, same treatment as the retired `"closing"` salt). Historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`. Full detail in `audits/decisions.md`'s v1.35 entry.
-4b. **Pre-09:00 HKT focus mode — retired in v1.39, slot kept (not renumbered) for consistency with items 4a/4c/5's established treatment.** Through v1.38: `lib.mjs`'s `isFocusWindowHKT(now)` (HKT hour < 9) gated `renderToday`'s output — inside the window, only the Journal card rendered, followed by a `.reveal-rest` disclosure button (`aria-expanded`/`aria-controls`, 44px tap target, mono pill styling matching the staleness chip/theme toggle) and a `#cards-more` wrapper (`hidden` by default) holding Anchor (held Anchor/Kenya through v1.37, before Kenya's v1.38 retirement); outside the window, both cards rendered flat with no button. Owner request (same round as Anchor's own retirement): "remove the morning hiding function." Removed entirely — `app.js`'s `paintFocusedToday`/`windowMode`/`paintedWindowMode` and the `winMode`/focus branching inside `renderToday`; `lib.mjs`'s `isFocusWindowHKT`; `styles.css`'s `.reveal-rest`/`#cards-more` rules and the desktop `#cards.focus` override. Journal now always renders flat, exactly as item 3 describes, with no button and no wrapper at any hour. Full detail in `audits/decisions.md`'s v1.39 entry.
+4b. **Pre-09:00 HKT focus mode — retired in v1.39, slot kept (not renumbered) so `item 4b`/`§4.5.4b` cross-references elsewhere in this file stay valid** (item 3, above, points here twice by name — "item 4b below for the focus-mode toggle that also went with it" and "its focus-mode UI at item 4b below" — the same live-reference situation as items 4a and 4c, which item 3 also points to; the v1.39 audit corrected an earlier claim in `decisions.md` that no such pointer existed). Through v1.38: `lib.mjs`'s `isFocusWindowHKT(now)` (HKT hour < 9) gated `renderToday`'s output — inside the window, only the Journal card rendered, followed by a `.reveal-rest` disclosure button (`aria-expanded`/`aria-controls`, 44px tap target, mono pill styling matching the staleness chip/theme toggle) and a `#cards-more` wrapper (`hidden` by default) holding Anchor (held Anchor/Kenya through v1.37, before Kenya's v1.38 retirement); outside the window, both cards rendered flat with no button. Owner request (same round as Anchor's own retirement): "remove the morning hiding function." Removed entirely — `app.js`'s `paintFocusedToday`/`windowMode`/`paintedWindowMode` and the `winMode`/focus branching inside `renderToday`; `lib.mjs`'s `isFocusWindowHKT`; `styles.css`'s `.reveal-rest`/`#cards-more` rules and the desktop `#cards.focus` override. Journal now always renders flat, exactly as item 3 describes, with no button and no wrapper at any hour. Full detail in `audits/decisions.md`'s v1.39 entry.
 4c. **Kenya card and trip countdown — retired in v1.38, slot kept (not renumbered) so `item 4c`/`§4.5.4c` cross-references elsewhere in this file stay valid** (item 3, two items above, points here by name — "Kenya ... was retired too — see item 4c" — same live-reference situation as item 4a, which item 3 also points to). Through v1.37: a third Today card, **Kenya** (added v1.15, one fact about Kenya per day spanning geography/wildlife/history/government/culture/economy/sports), with a trip-countdown pill (`.kenya-countdown`, added v1.17, `.card-top` flex wrapper around `.card-chip`) counting down to the owner's since-completed 2026-08-15 Masai Mara trip via `lib.mjs`'s `daysUntilKenyaTrip(now)`. Owner request: "remove the Kenya block as well on the first tab." Removed entirely — `app.js`'s `renderKenyaCard`/`kenyaCountdownText` and the `kenya` destructure/guard/pick across `renderToday`'s fresh, offline-fallback, and staleness-check paths; `lib.mjs`'s `daysUntilKenyaTrip`/`KENYA_TRIP_DATE_HKT` and the `kenya` pick in `pickToday`; `styles.css`'s `.card-top`/`.kenya-countdown` rules and the now-unused `--edge` token (both themes); `data/cards.json`'s 60-entry `kenya` array; `scripts/generate-daily.mjs`'s `kenyaId` stamp; the `"kenya"` rotation salt (kept only in `verify.mjs`'s seam-gap sweep as a generic-correctness check, same treatment as the retired `"word"`/`"closing"` salts). Historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`. Full detail in `audits/decisions.md`'s v1.38 entry.
 5. **Values tab — retired in v1.37, slot kept (not renumbered), matching item 4a's treatment of Word of the Day** (unlike item 4a, no live `§4.5.5` cross-reference was actually found requiring this — checked directly, nothing in this file cites it by number — the slot is kept for consistency with the established pattern regardless). Through v1.36: the 5 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px), no numbering (values are not a sequence; cut from 10 to 5 in v1.2 — ten read as a checklist, keep only what actually matters). Owner request: "we rarely refer to it." Removed entirely — `app.js`'s `renderValues`/`renderValuesError`, `styles.css`'s `.value-row`/`.value-name`/`.value-essence`/`.value-behaviour`/`.values-empty` rules, `data/values.json` (deleted), and `index.html`'s `#tab-values`/`#panel-values`. Full detail in `audits/decisions.md`'s v1.37 entry.
 6. **Motion:** the figure is the primary animated element. The Journal card's entrance (v1.9, more noticeable per live feedback: "a small animation when I open up the page ... opening up of the cards") = a 500ms fade/rise/scale-in; the per-card 90ms stagger this used to produce across multiple Today cards is dormant now that only Journal renders (v1.39), left in place rather than removed since a future Today card would want it back for free. Nothing on scroll — the Weeks reveal below (item 7) plays once at boot, not on scroll-into-view; respects `prefers-reduced-motion` (animation suppressed, content appears instantly). Hover lift 2px desktop only.
@@ -2583,7 +2654,7 @@ rather than a short list of what actually matters (§5.3.6).
 5. **Journal prompts (replaced Shift cards in v1.12; expanded to 1825 entries in v1.32):** `{ "id", "prompt" }`, `prompt` ≤ 25 words, one open-ended question per entry, second person, no yes/no questions — it should invite a few sentences of actual reflection, not a one-word answer. Concrete and specific beats abstract and general (`What's one thing you're avoiding right now, and what is it costing you to keep avoiding it?`, not `How are you feeling today?`). The 1825-entry pool (5 x 365, matching the anchors precedent of a flat 365/year with no leap-day adjustment) is organized across ~40 sub-themes drawn from two sources, named here even though attribution never appears in the shipped prompt text itself (unlike anchors): Stoic philosophy (dichotomy of control, memento mori, impermanence, virtue over reputation, voluntary discomfort, and more) and Bill Perkins's Die With Zero (experiences over deferred joy, memory dividends, giving while alive, time-buckets by life stage, and more). `journal-NNNN` ids are 4-digit zero-padded (was 2-digit at 40 entries).
 6. **Values — retired in v1.37 (owner: "we rarely refer to it"), rule slot kept so §5.3.6 cross-references stay valid.** Through v1.36: `{ "name", "essence" (≤ 14 words), "behaviour" (≤ 16 words, observable — something a camera could see) }`, 5 entries in `data/values.json`, generic-safe (no personal references to the owner), cut from 10 to 5 in v1.2 per live human feedback. Removed entirely — `data/values.json` (deleted), `index.html`/`app.js`/`styles.css`'s Values-tab UI, and `sw.js`'s offline shell. Full detail in `audits/decisions.md`'s v1.37 entry.
 7. **Attribution-confidence rule — retired in v1.39 along with Anchor, the only card type it ever governed; rule slot kept for consistency with rules 6/8/9/10/11's established treatment.** Through v1.38: use a person-named attribution (`— after X`) only when you are confident the specific idea is centrally/traditionally X's (e.g. Epictetus/Seneca/Marcus Aurelius for Stoic control-of-response ideas, Bill Perkins for Die With Zero's core thesis, Dweck for growth-mindset framing, Carnegie for the specific relationship tactics from *How to Win Friends*, Housel for invisible-wealth/avoid-ruin framing, Newport for deep-work framing) — otherwise demote to tradition-level attribution (`— Stoic tradition`, `— growth-mindset research`, `— core principle`) rather than guess at a specific person. Journal, per rule 5, has never carried attribution, so there is nothing left for this rule to govern. Full detail in `audits/decisions.md`'s v1.39 entry.
-8. **Anchor authoring process — retired in v1.39 (the anchors pool itself retired), rule slot kept for consistency with rules 6/7/9/10/11's established treatment.** Through v1.38: anchors were written in six batches (one per category, extending each category's 3 seed cards to its full count); after each batch, the normal mechanical self-review (word caps, quote marks, banned phrases) ran, **and then** a second, independent review pass per §10 Stage 3's content-QA step, before moving to the next batch. Historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`; full detail in `audits/decisions.md`'s v1.39 entry.
+8. **Anchor authoring process — retired in v1.39 (the anchors pool itself retired), rule slot kept (not renumbered) so `rule 8`/`§5.3.8` cross-references stay valid** — three live pointers land here, all written or edited in v1.39's own sweep: §4.5 item 3's "see item 8 in §5.3 for the authoring-side retirement," and rules 1 and 2 above, which each defer their retired Anchor-specific clause with "see rule 8." (Rules 7 and 9's slots are kept for consistency instead: their only pointers — Stage 3's task list for `§5.3.7`, the v1.3 changelog for `§5.3.9` — live in this file's deliberately-frozen historical text, not in live spec prose.) Through v1.38: anchors were written in six batches (one per category, extending each category's 3 seed cards to its full count); after each batch, the normal mechanical self-review (word caps, quote marks, banned phrases) ran, **and then** a second, independent review pass per §10 Stage 3's content-QA step, before moving to the next batch. Historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`; full detail in `audits/decisions.md`'s v1.39 entry.
 9. **`voices` category — retired in v1.39 along with the rest of anchors, rule slot kept for consistency with rules 6/7/8/10/11's established treatment.** Through v1.38: a 7th anchor category (added v1.3), 9 cards (3 each) [later expanded to 40 in the v1.14 taxonomy rewrite — see §5.2], for named living/recent public figures the owner's household specifically found inspiring, so their thinking surfaced periodically via the same rotation — not a separate subsystem, just entries in the same `anchors` pool. Extra bar beyond the (also now-retired) rules 1–8: (a) any figure who had held significant political office was scoped strictly to personal-character themes (grief, resilience, self-belief, service), never their office, party, policies, or elections; (b) rule 2's "no verbatim quotes" was enforced against the *spirit*, not just quote-mark glyphs; (c) the independent second-pass review (rule 8) ran with an explicit prompt to check attribution-confidence, political neutrality, and closeness-to-source. Historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`; full detail in `audits/decisions.md`'s v1.39 entry.
 10. **`wordOfDay` — retired in v1.35 (owner: "not helpful"), rule slot kept so §5.3.10 cross-references stay valid.** Through v1.34: `{ "id", "word", "origin", "lang", "meaning" }`, 30 self-authored entries, rotated deterministically like anchors/journal. Removed entirely from `data/cards.json`, `app.js`, `styles.css`, and the daily pipeline/schema; historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`; full detail in `audits/decisions.md`'s v1.35 entry.
 11. **`kenya` — retired in v1.38 (owner: "remove the Kenya block as well on the first tab"), rule slot kept for consistency with items 4a/5/10's established treatment** (no live `§5.3.11` cross-reference was found requiring this — `README.md`'s former pointer to it was removed in this same round's docs sweep — the slot is kept anyway rather than renumbering). Through v1.37: `{ "id", "category" (one of `Geography`/`Wildlife`/`History`/`Government`/`Culture`/`Economy`/`Sports`, capitalized), "fact" (≤ 40 words) }`, 60 entries, added v1.15. Correctness, not attribution confidence, was this pool's load-bearing rule — every specific numeric/date/superlative claim was independently verified before writing, and content was chosen for durability (no named current officeholders, no fast-moving statistics, no unverified travel folklore). Rotated deterministically exactly like anchors/journal (§6.2, salt `"kenya"`, kept only in `verify.mjs`'s seam-gap sweep as a generic-correctness check after retirement). Removed entirely from `data/cards.json`, `app.js`, `styles.css`, and the daily pipeline/schema; historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`; full detail in `audits/decisions.md`'s v1.38 entry.
@@ -2606,8 +2677,10 @@ rather than a short list of what actually matters (§5.3.6).
 The id is always present — unlike the retired `fresh` field (v1.0–v1.9), there is
 nothing here that can come back `null` or need URL/source validation, since it is a
 deterministic pick from the app's own pool (§6.2), not a value pulled from any external
-source. (`wordId` was a second id here through v1.34, retired in v1.35; `kenyaId` was a third
-id through v1.37, retired in v1.38; `anchorId` was the original second id, retired in v1.39.)
+source. (`wordId` was a fourth id here through v1.34, retired in v1.35; `kenyaId` was a third
+id through v1.37, retired in v1.38; `anchorId` was the second id through v1.38, retired in
+v1.39. Each ordinal counts the ids that existed alongside it at the time, the same convention
+this note has used since v1.35.)
 
 ### 6.2 Deterministic rotation (in `lib.mjs`, shared browser + node)
 

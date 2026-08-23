@@ -138,10 +138,21 @@ header {
 }
 .theme-toggle:active { transform: scale(0.99); border-color: var(--ink); }
 
-/* Block-flow, not flex (v1.39) -- main now absorbs .panel's former overflow/scroll role
-   directly (the tab system's per-panel scroll containers are gone), and a flex column here
-   would let its children shrink-to-fit under overflow-y:auto instead of actually overflowing
-   and scrolling (flex's default flex-shrink:1, unlike plain block flow). */
+/* Block-flow, not flex (v1.39) -- main absorbs .panel's former padding and overflow-y here,
+   now that the tab system's per-panel scroll containers are gone. Plain block flow is the
+   simpler shape for a container whose only job is to stack three siblings, so the flex
+   column went with the panels.
+   Measured, not assumed (v1.39 audit): the swap is layout-identical to keeping
+   display:flex/flex-direction:column -- 390x844, 390x500, 320x400, 390x2000 and 1100x900 all
+   render byte-identical geometry either way. Two reasons it can't differ here: (1) body is
+   `min-height:100svh` with an auto height, so it grows past the viewport and main (flex:1)
+   is never height-constrained -- main.scrollHeight === main.clientHeight on every load, which
+   means main's own overflow-y never actually engages and the DOCUMENT is the scroll container
+   (long-standing, app-wide, first noted in the v1.25 audit of .panel); and (2) even under a
+   constrained height, a column flex item's automatic minimum size (min-height:auto) keeps
+   auto-height children like these at their content height rather than shrinking them --
+   flex-shrink only compresses children with an explicit height. The overflow-y below is kept
+   as an inherited safety net, not as a live scroll mechanism. */
 main {
   flex: 1;
   min-height: 0;
@@ -281,7 +292,8 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 
 /* Weeks section (v1.23; merged into the single page in v1.39) — one combined life-in-weeks
    grid for J and B, canvas-rendered by weeks.js. Content deliberately exceeds one screen and
-   scrolls within main's own overflow-y — see audits/decisions.md for why this section is a
+   scrolls with the document (see main's own comment above for why main's overflow-y is not
+   the mechanism it looks like) — see audits/decisions.md for why this section is a
    deliberate exception to §4.4's single-screen framing (re-scoped in v1.39 to cover only the
    Journal card above it; Weeks was always the exception, invariant 11 now says so directly),
    and for the full combined-cell-state / hover-focus / entrance-animation rationale (v1.22
@@ -433,11 +445,12 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   85% { opacity: 0.5; }
   100% { top: 100%; opacity: 0; }
 }
-/* Epigraph (v1.24) -- moved to the top of the section (was a quiet card-attr-style caption at
-   the bottom) per live feedback that it needed real display weight, "stands out from a UI
-   angle." Both lines (Burkeman, Seneca) share one treatment deliberately: one thought, ~2,000
-   years apart, not a hierarchy between them. Promoted from card-attr's 12.5px muted voice to
-   15px Fraunces italic in --ink -- display voice, not metadata voice -- with each line's
+/* Epigraph (v1.24) -- moved to the top of the section (was a quiet caption at the bottom, in
+   the style of the then-live .card-attr rule, retired with Anchor in v1.39) per live feedback
+   that it needed real display weight, "stands out from a UI angle." Both lines (Burkeman,
+   Seneca) share one treatment deliberately: one thought, ~2,000 years apart, not a hierarchy
+   between them. Promoted from that 12.5px muted voice to 15px Fraunces italic in --ink --
+   display voice, not metadata voice -- with each line's
    attribution picked out in --accent, the one accent use this section was otherwise missing.
    Person colors (--person-j/b) are deliberately NOT used here: those are data-identity colors,
    and putting them on prose would leak the grid's own color encoding into copy that isn't
