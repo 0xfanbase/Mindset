@@ -113,6 +113,32 @@ count: **80 → 77** (3 removed, 0 added). Full accounting, including a test-sui
 fixed before shipping (an unmocked clock silently drifted one verification pass into testing the
 wrong day-window), in `audits/decisions.md`'s v1.38 entry. `verify.mjs all`: **77/77**, green.
 
+**v1.39 update:** Anchor was retired, the pre-09:00 HKT focus mode was retired, and Weeks
+merged from its own tab into the same single page as the day's card (owner: "cut out the
+anchor / remove the morning hiding function / merge the weeks content in the new single page
+view / then remove the weeks tab," Opus explicitly directing the plan up front and auditing
+the result afterward). The widest-scoped round to date: a content-pool removal, a UI-state
+removal, and a structural page merge in one pass. Two checks had nothing left to check and
+were removed outright: the anchor category-counts check (`CATEGORY_COUNTS` constant retired
+with it) and the anchors-only near-duplicate-proxy check. One new check was added, a first for
+this project: a structural DOM-order assertion (`#cards` -> `.section-divider` -> `#weeks-root`
+inside `<main>`) proving the single-page merge actually happened, not just that the tab markup
+is gone. Nine checks were retargeted in place (tablist/tab/aria-selected flipped from PRESENCE
+to ABSENCE; `isFocusWindowHKT`'s boundary check became a retirement guard mirroring
+`isEveningWindowHKT`'s v1.31 shape; the `cards.json`/`daily.json` shape checks gained inline
+`anchors`/`anchorId: undefined` guards, the Closing/Word-of-Day/Kenya precedent, not the
+Mara/Values one; the word-cap/quote-glyph/platitude checks dropped their anchors loops without
+narrowing journal's; the rotation and offline-fallback checks retargeted to journal). Check
+count: **77 → 76** (2 removed, 1 added, 9 retargeted) -- the source-level `check(` call-site
+count moves 74 → 73 instead, since one call site (stage2's figure.js property sweep) sits
+inside a `for` loop and expands to 4 runtime checks; the +3 gap between the two countings is
+constant across this edit and reconciles exactly (74+3=77, 73+3=76) -- noted explicitly here
+since it wasn't obvious mid-round and is worth a future reader not re-discovering the hard way.
+(Both counts independently reproduced by the v1.39 audit; the retargeted figure originally read
+"six," which counted the six prose clauses above rather than the nine `check()` bodies they
+name.) Full accounting in `audits/decisions.md`'s v1.39 entry. `verify.mjs all`: **76/76**,
+green.
+
 ## Acceptance checklist (BUILD-PLAN.md §12)
 
 **Machine-verifiable — all green (`verify.mjs all`, 59/59):**

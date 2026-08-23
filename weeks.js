@@ -1,9 +1,9 @@
-// weeks.js -- the Weeks tab: one combined "life in weeks" grid for J and B, canvas-rendered,
-// zoomable, with a hover/tap highlight per person. BUILD-PLAN.md v1.23 (v1.22 shipped two
-// separate grids; this redesign combines them -- see audits/decisions.md for the cell-state
-// model). Lazily built on first tab activation, not at boot: a canvas inside a `hidden` panel
-// has zero layout size at connect-time, so (unlike figure.js's always-visible element) there
-// is no real size to retry-toward until the panel is actually shown.
+// weeks.js -- the Weeks section: one combined "life in weeks" grid for J and B, canvas-
+// rendered, zoomable, with a hover/tap highlight per person. BUILD-PLAN.md v1.23 (v1.22
+// shipped two separate grids; this redesign combines them -- see audits/decisions.md for the
+// cell-state model). Built at boot (v1.39) -- its container is part of the single-page layout,
+// visible from load, so (like figure.js's always-visible element) there's a real size to
+// measure the first time build() runs.
 import {
   hktDateString, weeksLived, percentLifeSpent,
   LIFE_WEEKS_TOTAL, LIFE_WEEKS_PER_ROW, LIFE_WEEKS_YEARS, LIFE_PEOPLE,
@@ -14,11 +14,11 @@ const ZOOM_MULT = [1, 2, 3]; // multipliers of the dynamically-fit base pitch
 const DOT_FRACTION = 0.7; // dot size as a fraction of the cell pitch; remainder is gap
 const MIN_PITCH = 4;
 const PALE_ALPHA = 0.25; // focus-mode de-emphasis for the non-focused person
-// v1.24: the epigraph (fact, then reminder) -- top of the panel, real display weight, per
+// v1.24: the epigraph (fact, then reminder) -- top of the section, real display weight, per
 // live feedback. One treatment for both lines: one thought ~2,000 years apart, no hierarchy.
 // Seneca's line is an ORIGINAL paraphrase, not a lifted translation -- the published
 // rendering (Penguin/Costa's own subtitle) says "if you know how to USE it"; "spend" was
-// chosen deliberately as this tab's own vocabulary (percent spent, squares = spent weeks).
+// chosen deliberately as this section's own vocabulary (percent spent, squares = spent weeks).
 const EPIGRAPH = [
   { text: "An average human life is about four thousand weeks.", attr: "— after Oliver Burkeman" },
   { text: "Life is long, if you know how to spend it.", attr: "— after Seneca" },
@@ -185,7 +185,7 @@ function drawGrid(pitch) {
 }
 
 // aria-label on a <button> replaces its visible children as the accessible name -- a static
-// label was erasing the tab's own headline stat for screen readers (confirmed via a real
+// label was erasing the section's own headline stat for screen readers (confirmed via a real
 // accessibility-tree snapshot). Folding the live figures in, regenerated on every redraw,
 // keeps label and visible text in sync.
 // The DISPLAYED week is 1-indexed, so at weeksLived()'s clamp weeks+1 would read "week 4,681
@@ -218,9 +218,11 @@ function syncFocusUI() {
   }
 }
 
-// A hidden-tab canvas reports zero client width -- bail out rather than draw at MIN_PITCH
-// and stamp a wrong lastDrawnDateHKT, which would make refreshIfStale() skip the real
-// redraw once the tab is actually shown (found in pre-merge audit).
+// Defensive: a canvas reporting zero client width (container not yet laid out, or a
+// ResizeObserver firing mid-reflow) would draw at MIN_PITCH and stamp a wrong
+// lastDrawnDateHKT, which would make refreshIfStale() skip the real redraw once real width
+// is available. No longer the tab-activation guard it was before v1.39 -- kept as a general
+// safety net (found in pre-merge audit).
 function redrawAll() {
   if (!chart || chart.scroller.clientWidth === 0) return;
   const pitch = fitPitch(chart.scroller) * ZOOM_MULT[zoomIndex];
@@ -383,16 +385,17 @@ function refreshIfStale() {
   if (hktDateString(new Date()) !== lastDrawnDateHKT) redrawAll();
 }
 
-// Called on every activation of the Weeks tab -- builds once, then just checks whether the
-// HKT date has advanced since the last paint (idempotent, cheap).
-export function initWeeksTab() {
+// Called once from app.js's boot() -- builds once, then just checks whether the HKT date has
+// advanced since the last paint (idempotent, cheap; a defensive guard against a future second
+// call, now that there's no tab-activation gate to rely on for that).
+export function initWeeks() {
   if (!built) { build(); built = true; }
   refreshIfStale();
 }
 
 // Called from app.js's visibilitychange handler, which already exists to catch installed-
 // iOS-PWA background freezes (v1.16) -- a week boundary can cross while backgrounded same as
-// a day boundary can. No-ops if the tab was never opened.
+// a day boundary can. No-ops if Weeks was never built (e.g. initWeeks() threw during boot).
 export function refreshWeeksIfStale() {
   if (built) refreshIfStale();
 }

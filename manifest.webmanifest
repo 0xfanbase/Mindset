@@ -1,7 +1,7 @@
 {
   "name": "Mindset",
   "short_name": "Mindset",
-  "description": "Three grounding cards, every morning at 05:00 HKT.",
+  "description": "A daily journal prompt and a life-in-weeks chart, every morning at 05:00 HKT.",
   "display": "standalone",
   "start_url": "./",
   "scope": "./",

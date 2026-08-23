@@ -1,6 +1,6 @@
-// app.js — UI logic: tabs, theme, date, cards, staleness (BUILD-PLAN.md §4/§6)
-import { hktDateParts, hktDateString, hktHour, staleness, expectedDateHKT, pickToday, isFocusWindowHKT, isDarkWindowHKT } from "./lib.mjs";
-import { initWeeksTab, refreshWeeksIfStale, redrawWeeksForTheme } from "./weeks.js";
+// app.js — UI logic: theme, date, the day's card, staleness, Weeks boot (BUILD-PLAN.md §4/§6)
+import { hktDateParts, hktDateString, hktHour, staleness, expectedDateHKT, pickToday, isDarkWindowHKT } from "./lib.mjs";
+import { initWeeks, refreshWeeksIfStale, redrawWeeksForTheme } from "./weeks.js";
 
 function el(tag, props = {}, children = []) {
   const node = document.createElement(tag);
@@ -76,52 +76,12 @@ function initDateLine() {
     `${p.weekday} · ${p.day} ${p.month} ${p.year}`.toUpperCase();
 }
 
-// Ordered array, not a hardcoded boolean toggle -- back to two tabs post-Values (v1.37),
-// but kept generic since it was already proven to scale to four (Weeks, Mara) without a
-// rewrite. Arrow keys roll with wraparound, matching the standard ARIA tablist roving-focus
-// pattern.
-function initTabs() {
-  const tabs = ["today", "weeks"].map((name) => ({
-    name,
-    btn: document.getElementById(`tab-${name}`),
-    panel: document.getElementById(`panel-${name}`),
-  }));
-
-  function show(index) {
-    tabs.forEach((t, i) => {
-      const active = i === index;
-      t.btn.setAttribute("aria-selected", String(active));
-      t.panel.hidden = !active;
-    });
-    if (tabs[index].name === "weeks") initWeeksTab();
-  }
-
-  tabs.forEach((t, i) => {
-    t.btn.addEventListener("click", () => show(i));
-    t.btn.addEventListener("keydown", (e) => {
-      if (e.key !== "ArrowLeft" && e.key !== "ArrowRight") return;
-      const dir = e.key === "ArrowRight" ? 1 : -1;
-      const next = (i + dir + tabs.length) % tabs.length;
-      show(next);
-      tabs[next].btn.focus();
-    });
-  });
-}
-
 function showChip(mode) {
   const chip = document.getElementById("staleness-chip");
   if (mode === "fresh") { chip.hidden = true; return; }
   chip.hidden = false;
   chip.className = "chip " + (mode === "yesterday" ? "amber" : "slate");
   chip.textContent = mode === "yesterday" ? "yesterday's cards" : "offline rotation";
-}
-
-function renderAnchorCard(anchor) {
-  return el("article", { class: "card" }, [
-    el("div", { class: "card-chip", text: "ANCHOR" }),
-    el("p", { class: "card-body", text: anchor.text }),
-    el("div", { class: "card-attr", text: anchor.attribution }),
-  ]);
 }
 
 function renderJournalCard(journal) {
@@ -142,44 +102,11 @@ const ARRIVAL_BEAT_S = 0.3;
 
 function paintCards(nodes) {
   const host = document.getElementById("cards");
-  host.classList.remove("focus");
   host.textContent = "";
   nodes.forEach((n, i) => {
     n.style.animationDelay = `${ARRIVAL_BEAT_S + i * 0.09}s`;
     host.appendChild(n);
   });
-}
-
-// Pre-09:00 HKT: Journal stands alone, the rest behind a reveal toggle so they don't compete
-// for morning attention (v1.16).
-function paintFocusedToday(leadNode, restNodes) {
-  const host = document.getElementById("cards");
-  host.classList.add("focus");
-  host.textContent = "";
-
-  leadNode.style.animationDelay = `${ARRIVAL_BEAT_S}s`;
-  host.appendChild(leadNode);
-
-  const toggle = el("button", {
-    type: "button", class: "reveal-rest",
-    "aria-expanded": "false", "aria-controls": "cards-more",
-    text: "show the rest",
-  });
-  const more = el("div", { id: "cards-more" }, restNodes);
-  more.hidden = true;
-  // No arrival beat (v1.28): these animate on each "show the rest" click, and v1.18's beat
-  // was a page-arrival treatment — a click should answer from zero, not re-pause.
-  restNodes.forEach((n, i) => { n.style.animationDelay = `${i * 0.09}s`; });
-
-  toggle.addEventListener("click", () => {
-    const revealing = more.hidden;
-    more.hidden = !revealing;
-    toggle.setAttribute("aria-expanded", String(revealing));
-    toggle.textContent = revealing ? "hide the rest" : "show the rest";
-  });
-
-  host.appendChild(toggle);
-  host.appendChild(more);
 }
 
 // v1.34: bounded with a timeout -- fetch() has no default one, and an unbounded hang here left
@@ -198,16 +125,6 @@ async function fetchJSON(path, timeoutMs = 15000) {
   }
 }
 
-// Two-state read of "what part of the day is it" -- focus (pre-09:00, Journal leads alone) or
-// normal (flat two-card layout) (v1.16; the evening/Closing third state retired in v1.31 --
-// unused). Deliberately independent of the THEME clock (dark 17:00-06:00) -- two clocks, four
-// combined states per HKT day: dark+focus 00-06, blossom+focus 06-09, blossom+normal 09-17,
-// dark+normal 17-24.
-function windowMode(now) {
-  return isFocusWindowHKT(now) ? "focus" : "normal";
-}
-
-let paintedWindowMode = null;
 let paintedDateHKT = null;
 // Raw HKT calendar date (v1.34), distinct from paintedDateHKT's CONTENT day (05:00 pivot) --
 // initDateLine() pivots at midnight, a gap no trigger below used to cover.
@@ -225,11 +142,10 @@ function renderToday(cardsData, dailyData) {
   const now = new Date();
   let staleMode = staleness(dailyData && dailyData.dateHKT, now);
 
-  let anchor, journal;
+  let journal;
   if (staleMode === "fresh" || staleMode === "yesterday") {
-    anchor = cardsData.anchors.find((a) => a.id === dailyData.anchorId);
     journal = cardsData.journal.find((j) => j.id === dailyData.journalId);
-    if (!anchor || !journal) {
+    if (!journal) {
       // An id that no longer resolves (pool edited, file not regenerated) is a freshness
       // problem: fall back to the offline pick, slate-chipped, not NO DATA over a loaded
       // library (v1.28); the error card is for the library itself failing (boot's catch).
@@ -237,13 +153,10 @@ function renderToday(cardsData, dailyData) {
     }
   }
   if (staleMode === "offline") {
-    ({ anchor, journal } = pickToday(cardsData, offlinePickReference(now)));
+    ({ journal } = pickToday(cardsData, offlinePickReference(now)));
   }
   showChip(staleMode);
 
-  const rest = [renderAnchorCard(anchor)];
-  const winMode = windowMode(now);
-  paintedWindowMode = winMode;
   // Content day, not raw calendar date (05:00 HKT boundary, matches staleness()).
   paintedDateHKT = expectedDateHKT(now);
   // Raw calendar date too (v1.34) -- see paintedCalendarDateHKT's own comment above for why
@@ -255,17 +168,18 @@ function renderToday(cardsData, dailyData) {
   // boot, the toggle handler, the visibilitychange window re-check) already calls applyTheme ->
   // applyThemeSideEffects -> syncThemeColorMeta itself; re-running it here on every card render
   // was always a no-op read of whatever --bg already resolved to.
-  if (winMode === "focus") {
-    paintFocusedToday(renderJournalCard(journal), rest);
-  } else {
-    paintCards([renderJournalCard(journal), ...rest]);
-  }
+  paintCards([renderJournalCard(journal)]);
 }
 
 async function boot() {
   initTheme();
   initDateLine();
-  initTabs();
+  // v1.39: Weeks is part of the single page now, so it builds at boot rather than on a tab
+  // activation -- its container is visible from load, the only condition build() ever needed.
+  // Wrapped deliberately: boot() is called uncaught, so an exception in here (a canvas context
+  // that fails to allocate, say) would otherwise reject the whole boot and leave the day's card
+  // unrendered -- a failure mode that could not exist while Weeks was lazy behind a tab.
+  try { initWeeks(); } catch (e) { /* Weeks is optional; the day's card is not */ }
 
   try {
     const [dailyData, cardsData] = await Promise.all([
@@ -280,9 +194,10 @@ async function boot() {
 }
 
 // Installed iOS PWAs freeze JS while backgrounded and resume the frozen render — re-check every
-// boundary on return: theme, content day, calendar day, focus window (v1.28/v1.29/v1.34). Only
-// a content-day flip REFETCHES daily.json (cron has almost certainly published overnight; on
-// failure the cached object stands) -- mode/calendar-day flips just re-render, same file.
+// boundary on return: theme, content day, calendar day (v1.28/v1.29/v1.34; the focus-window
+// boundary retired with focus mode in v1.39). Only a content-day flip REFETCHES daily.json
+// (cron has almost certainly published overnight; on failure the cached object stands) -- a
+// bare calendar-day flip just re-renders, same file.
 let dailyRefetchInFlight = false;
 document.addEventListener("visibilitychange", () => {
   if (document.visibilityState !== "visible") return;
@@ -304,9 +219,9 @@ document.addEventListener("visibilitychange", () => {
           renderToday(bootedToday.cardsData, bootedToday.dailyData);
         });
     }
-  // v1.34: OR in a bare calendar-day flip, not just window-mode -- see paintedCalendarDateHKT's
-  // comment above. No refetch needed either way; same content day, same daily.json.
-  } else if (bootedToday && (windowMode(now) !== paintedWindowMode || hktDateString(now) !== paintedCalendarDateHKT)) {
+  // v1.34: OR in a bare calendar-day flip -- see paintedCalendarDateHKT's comment above. No
+  // refetch needed; same content day, same daily.json.
+  } else if (bootedToday && hktDateString(now) !== paintedCalendarDateHKT) {
     initDateLine();
     renderToday(bootedToday.cardsData, bootedToday.dailyData);
   }

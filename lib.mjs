@@ -44,7 +44,7 @@ function shuffledOrder(poolSize, salt, cycle) {
 }
 
 // Minimum guaranteed gap (days) between repeats across a cycle seam (v1.34): pool/6, floored
-// (journal 304, anchors 60). Must stay <= poolSize/2 (see below); reasoning and
+// (journal 304). Must stay <= poolSize/2 (see below); reasoning and
 // verification in decisions.md v1.34. Exported so verify.mjs checks the real formula.
 export function minSeamGap(poolSize) {
   return Math.max(1, Math.floor(poolSize / 6));
@@ -102,12 +102,6 @@ export function expectedDateHKT(now = new Date()) {
   return hktDateString(yesterday);
 }
 
-// Pre-09:00 HKT "focus window" — Journal-first morning UI hides the other card
-// behind a reveal toggle so it doesn't compete with the journal prompt (v1.16).
-export function isFocusWindowHKT(now = new Date()) {
-  return hktHour(now) < 9;
-}
-
 // Dark theme 17:00 HKT through 06:00 HKT (wraps midnight); blossom the rest. The two
 // windows exactly partition the day — every HKT hour resolves to exactly one, by
 // construction of this single boolean (not two separate predicates that could drift
@@ -132,9 +126,8 @@ export function staleness(dailyDateHKT, now = new Date()) {
 
 export function pickToday(cards, now = new Date()) {
   const dayNumber = hktDayNumber(now);
-  const anchor = cards.anchors[pickIndex(cards.anchors.length, dayNumber, "anchor")];
   const journal = cards.journal[pickIndex(cards.journal.length, dayNumber, "journal")];
-  return { anchor, journal, dayNumber };
+  return { journal, dayNumber };
 }
 
 // Weeks-of-life chart (v1.22) -- "life in weeks" for J and B (initials only, never real
