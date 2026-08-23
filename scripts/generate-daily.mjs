@@ -20,6 +20,8 @@
 // content kept, retired-labeled, in audits/CONTENT-REVIEW.md.
 // v1.38: Kenya retired -- back to two picks. Historical content kept, retired-labeled, in
 // audits/CONTENT-REVIEW.md.
+// v1.39: Anchor retired -- back to one pick (Journal only). Historical content kept,
+// retired-labeled, in audits/CONTENT-REVIEW.md.
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -33,14 +35,12 @@ function main() {
   const dayNumber = hktDayNumber(now);
 
   const cards = JSON.parse(fs.readFileSync(path.join(ROOT, "data/cards.json"), "utf8"));
-  const anchor = cards.anchors[pickIndex(cards.anchors.length, dayNumber, "anchor")];
   const journal = cards.journal[pickIndex(cards.journal.length, dayNumber, "journal")];
 
   const daily = {
     version: 1,
     dateHKT,
     generatedAtISO: now.toISOString(),
-    anchorId: anchor.id,
     journalId: journal.id,
   };
   fs.writeFileSync(path.join(ROOT, "data/daily.json"), JSON.stringify(daily, null, 2) + "\n");

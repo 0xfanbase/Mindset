@@ -295,10 +295,16 @@ function stage1() {
   check("stage1", "robots noindex present", () => {
     assert.match(html(), /<meta\s+name=["']robots["']\s+content=["']noindex["']/);
   });
-  check("stage1", "tablist + aria roles present; toggle labels pinned in app.js, no aria-pressed on it", () => {
-    assert.match(html(), /role=["']tablist["']/);
-    assert.match(html(), /role=["']tab["']/);
-    assert.match(html(), /aria-selected/);
+  check("stage1", "tab system retired (v1.39): no tablist/tab/tabpanel/aria-selected; toggle labels pinned in app.js, no aria-pressed on it", () => {
+    // v1.39: the Today/Weeks tab system was retired in favor of one scrolling page. This
+    // check used to assert these roles were PRESENT; flipped in place to assert their ABSENCE
+    // (same treatment as the Mara/Values retired-file guards and the isEveningWindowHKT/
+    // isFocusWindowHKT retirement guards below) so a reintroduction is caught, not just
+    // silently unchecked.
+    assert.doesNotMatch(html(), /role=["']tablist["']/, "role=tablist must not be reintroduced (tab system retired v1.39)");
+    assert.doesNotMatch(html(), /role=["']tab["']/, "role=tab must not be reintroduced (tab system retired v1.39)");
+    assert.doesNotMatch(html(), /role=["']tabpanel["']/, "role=tabpanel must not be reintroduced (tab system retired v1.39)");
+    assert.doesNotMatch(html(), /aria-selected/, "aria-selected must not be reintroduced (tab system retired v1.39)");
     // v1.29: the theme toggle is an action-named control (its accessible name changes per
     // state) and must NOT also carry aria-pressed — the old `aria-pressed`-in-index.html
     // assertion is retargeted to the exact two label strings app.js swaps between.
@@ -307,6 +313,22 @@ function stage1() {
     const toggleTag = /<button id="theme-toggle"[^>]*>/.exec(html());
     assert.ok(toggleTag, "no theme-toggle button in index.html");
     assert.doesNotMatch(toggleTag[0], /aria-pressed/, "theme-toggle must not carry aria-pressed");
+  });
+  check("stage1", "single page (v1.39): #cards, .section-divider, #weeks-root appear in that DOM order inside main", () => {
+    const src = html();
+    const mainOpen = src.indexOf("<main>");
+    assert.ok(mainOpen !== -1, "no <main> tag found");
+    const mainClose = src.indexOf("</main>", mainOpen);
+    assert.ok(mainClose !== -1, "no closing </main> tag found");
+    const mainHTML = src.slice(mainOpen, mainClose);
+    const iCards = mainHTML.indexOf('id="cards"');
+    const iDivider = mainHTML.indexOf('class="section-divider"');
+    const iWeeks = mainHTML.indexOf('id="weeks-root"');
+    assert.ok(iCards !== -1, "#cards not found inside main");
+    assert.ok(iDivider !== -1, ".section-divider not found inside main");
+    assert.ok(iWeeks !== -1, "#weeks-root not found inside main");
+    assert.ok(iCards < iDivider && iDivider < iWeeks,
+      "expected DOM order #cards -> .section-divider -> #weeks-root inside main (Journal above Weeks, v1.39 merge)");
   });
   check("stage1", "localStorage: mindset.theme only in a removeItem; zero other localStorage use app-wide", () => {
     // v1.29 retired theme persistence entirely — the ONLY localStorage touch permitted
@@ -500,12 +522,11 @@ function stage1() {
     assert.doesNotMatch(src, /hktDateString\(now\)\s*!==\s*paintedDateHKT/, "the v1.30 bug's exact pattern: paintedDateHKT must never be compared against hktDateString");
   });
 
-  check("stage1", "lib.mjs: isFocusWindowHKT correct at the 09:00 HKT boundary", async () => {
+  check("stage1", "lib.mjs: isFocusWindowHKT retired, not reintroduced (v1.39 -- focus/morning-hiding mode removed, unused)", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    // 2026-07-15T00:59:00Z = 2026-07-15T08:59 HKT — inside the pre-09:00 focus window
-    assert.equal(lib.isFocusWindowHKT(new Date("2026-07-15T00:59:00Z")), true);
-    // 2026-07-15T01:00:00Z = 2026-07-15T09:00 HKT — window has closed
-    assert.equal(lib.isFocusWindowHKT(new Date("2026-07-15T01:00:00Z")), false);
+    assert.equal(lib.isFocusWindowHKT, undefined, "isFocusWindowHKT should no longer be exported from lib.mjs");
+    assert.doesNotMatch(read("app.js"), /isFocusWindowHKT|paintFocusedToday|windowMode|renderAnchorCard/,
+      "focus mode / Anchor rendering must not be reintroduced into app.js");
   });
 
   check("stage1", "lib.mjs: isEveningWindowHKT retired, not reintroduced (v1.31 -- evening/Closing removed, unused)", async () => {
@@ -735,26 +756,14 @@ function stage2() {
 
 // ---------- Stage 3 ----------
 
-const CATEGORY_COUNTS = { stoic: 55, buddhist: 55, taoist: 25, impermanence: 35, attention: 35, relationships: 30, growth: 30, money: 25, voices: 40, grounding: 35 };
-
 function stage3() {
   check("stage3", "data/cards.json valid JSON with required shape", () => {
     const d = readJSON("data/cards.json");
-    assert.ok(Array.isArray(d.anchors) && Array.isArray(d.journal));
+    assert.ok(Array.isArray(d.journal));
+    assert.equal(d.anchors, undefined, "anchors pool retired in v1.39 (Anchor card removed) -- must not be reintroduced");
     assert.equal(d.closing, undefined, "closing pool retired in v1.31 (evening feature removed) -- must not be reintroduced");
     assert.equal(d.wordOfDay, undefined, "wordOfDay pool retired in v1.35 (word-of-day feature removed) -- must not be reintroduced");
     assert.equal(d.kenya, undefined, "kenya pool retired in v1.38 (Kenya card removed) -- must not be reintroduced");
-  });
-  check("stage3", "anchor category counts exact (365 total)", () => {
-    const d = readJSON("data/cards.json");
-    const counts = {};
-    for (const a of d.anchors) counts[a.category] = (counts[a.category] || 0) + 1;
-    const problems = [];
-    for (const [cat, want] of Object.entries(CATEGORY_COUNTS)) {
-      if (counts[cat] !== want) problems.push(`${cat}: got ${counts[cat] || 0}, want ${want}`);
-    }
-    assert.equal(d.anchors.length, 365, `total anchors = ${d.anchors.length}`);
-    assert.equal(problems.length, 0, problems.join(" | "));
   });
   check("stage3", "journal = 1825", () => {
     const d = readJSON("data/cards.json");
@@ -767,10 +776,9 @@ function stage3() {
       assert.equal(new Set(ids).size, ids.length, `${name} has duplicate ids`);
     }
   });
-  check("stage3", "word caps respected (anchors <=40w, journal prompts <=25w)", () => {
+  check("stage3", "word caps respected (journal prompts <=25w)", () => {
     const d = readJSON("data/cards.json");
     const problems = [];
-    for (const a of d.anchors) if (wordCount(a.text) > 40) problems.push(`${a.id}: ${wordCount(a.text)}w`);
     for (const j of d.journal) if (wordCount(j.prompt) > 25) problems.push(`${j.id}: ${wordCount(j.prompt)}w`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
@@ -778,7 +786,6 @@ function stage3() {
     const d = readJSON("data/cards.json");
     const problems = [];
     const scan = (label, s) => { if (s && hasQuoteGlyph(s)) problems.push(`${label}: ${s}`); };
-    for (const a of d.anchors) { scan(`${a.id}.text`, a.text); scan(`${a.id}.attribution`, a.attribution); }
     for (const j of d.journal) scan(`${j.id}.prompt`, j.prompt);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
@@ -786,7 +793,6 @@ function stage3() {
     const d = readJSON("data/cards.json");
     const problems = [];
     const scan = (label, s) => { const p = s && findPlatitude(s); if (p) problems.push(`${label}: "${p}"`); };
-    for (const a of d.anchors) scan(a.id, a.text);
     for (const j of d.journal) scan(j.id, j.prompt);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
@@ -811,26 +817,12 @@ function stage3() {
     // Same treatment as the Mara guard directly above (and v1.31/v1.35's closing/wordOfDay
     // guards before it): the values.json shape/word-cap/quote-glyph checks had nothing left
     // to iterate once the file is gone, so their values-specific clauses were removed from
-    // the shared word-cap/quote-glyph checks (which still cover anchors/journal, and covered
-    // kenya too until it was retired in v1.38) rather than left dead. This guard fails loudly
+    // the shared word-cap/quote-glyph checks (which still cover journal, and covered kenya
+    // until it was retired in v1.38 and anchors until v1.39) rather than left dead. This guard fails loudly
     // if the file is ever reintroduced without the tab being rebuilt around it.
     assert.ok(!exists("data/values.json"), "data/values.json exists but the Values tab was retired in v1.37");
   });
 
-  check("stage3", "near-duplicate proxy (token-overlap) — informational, non-blocking", () => {
-    const d = readJSON("data/cards.json");
-    const tok = (s) => new Set(s.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter((w) => w.length > 3));
-    const flagged = [];
-    for (let i = 0; i < d.anchors.length; i++) {
-      for (let j = i + 1; j < d.anchors.length; j++) {
-        const a = tok(d.anchors[i].text), b = tok(d.anchors[j].text);
-        const overlap = [...a].filter((w) => b.has(w)).length;
-        const denom = Math.min(a.size, b.size) || 1;
-        if (overlap / denom > 0.6) flagged.push(`${d.anchors[i].id} ~ ${d.anchors[j].id}`);
-      }
-    }
-    return flagged.length ? `flagged for human review: ${flagged.join(", ")}` : "no near-duplicates flagged";
-  });
   check("stage3", "journal: exact-duplicate guard + near-duplicate proxy (v1.32, 1825 entries) — informational, non-blocking", () => {
     // Exact duplicates ARE a hard failure (unlike the fuzzy proxy below) -- a byte-identical
     // repeat in a pool explicitly sized for "no repeat" would defeat the entire point of the
@@ -868,8 +860,8 @@ function stage3() {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
     const d = readJSON("data/cards.json");
     const dates = [new Date("2026-07-13T00:00:00Z"), new Date("2026-07-14T00:00:00Z"), new Date("2026-07-20T00:00:00Z")];
-    const picks = dates.map((dt) => lib.pickIndex(d.anchors.length, lib.hktDayNumber(dt), "anchor"));
-    for (const p of picks) assert.ok(p >= 0 && p < d.anchors.length);
+    const picks = dates.map((dt) => lib.pickIndex(d.journal.length, lib.hktDayNumber(dt), "journal"));
+    for (const p of picks) assert.ok(p >= 0 && p < d.journal.length);
     assert.ok(new Set(picks).size >= 2, "expected at least 2 distinct picks across 3 well-separated dates");
   });
   check("stage3", "offline/stale fallback selects valid ids (simulated)", async () => {
@@ -877,9 +869,8 @@ function stage3() {
     const d = readJSON("data/cards.json");
     // simulate: daily.json missing/stale -> compute locally via rotation, same contract as app.js/lib.mjs
     const dayNumber = lib.hktDayNumber(new Date());
-    const anchor = d.anchors[lib.pickIndex(d.anchors.length, dayNumber, "anchor")];
     const journal = d.journal[lib.pickIndex(d.journal.length, dayNumber, "journal")];
-    assert.ok(anchor && anchor.id && journal && journal.id);
+    assert.ok(journal && journal.id);
   });
   check("stage3", "audits/CONTENT-REVIEW.md exists", () => assert.ok(exists("audits/CONTENT-REVIEW.md"), "missing"));
 }
@@ -908,7 +899,8 @@ function stage4() {
     const d = readJSON("data/daily.json");
     assert.match(d.dateHKT, /^\d{4}-\d{2}-\d{2}$/);
     assert.ok(typeof d.generatedAtISO === "string" && !Number.isNaN(Date.parse(d.generatedAtISO)));
-    assert.ok(typeof d.anchorId === "string" && typeof d.journalId === "string");
+    assert.ok(typeof d.journalId === "string");
+    assert.equal(d.anchorId, undefined, "anchorId retired in v1.39 (Anchor card removed) -- must not be reintroduced");
     assert.equal(d.closingId, undefined, "closingId retired in v1.31 (evening feature removed) -- must not be reintroduced");
     assert.equal(d.wordId, undefined, "wordId retired in v1.35 (word-of-day feature removed) -- must not be reintroduced");
     assert.equal(d.kenyaId, undefined, "kenyaId retired in v1.38 (Kenya card removed) -- must not be reintroduced");

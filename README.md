@@ -1,24 +1,23 @@
 # Mindset
 
 A personal mindset dashboard. One page, no backend, no dependencies — a small bottle of light
-breathing slowly, the day's date in Hong Kong time, and two short cards
-that refresh themselves every morning at 05:00 HKT: an **Anchor** (a timeless principle) and
-a **Journal** prompt (a mindful reflection question).
+breathing slowly, the day's date in Hong Kong time, and one short **Journal** prompt (a mindful
+reflection question) that refreshes itself every morning at 05:00 HKT.
 Two themes that follow the Hong Kong clock — `blossom` (soft pink) through the day, `dark`
 (warm charcoal) from 17:00 to 06:00 HKT. The header toggle overrides the schedule for the
 current visit only: nothing is stored, and every fresh load returns to the time-of-day cycle.
 
-A second tab, **Weeks**, is a combined life-in-weeks chart for J and B — one 90-year grid of
-small squares, one square per week, filled pink-and-blue as each week passes (split cells
-where both have lived a week, solid blue where only B has so far — he's older), zoomable and
-scrollable, with a big percent-of-life-spent figure for each person at the top and a tap/hover
-toggle to highlight just one person's weeks. It advances on its own: since it's computed from
-today's date on every load, no daily-pipeline step is involved.
+Below the day's card, **Weeks** is a combined life-in-weeks chart for J and B — one 90-year
+grid of small squares, one square per week, filled pink-and-blue as each week passes (split
+cells where both have lived a week, solid blue where only B has so far — he's older), zoomable
+and scrollable, with a big percent-of-life-spent figure for each person at the top and a
+tap/hover toggle to highlight just one person's weeks. It advances on its own: since it's
+computed from today's date on every load, no daily-pipeline step is involved.
 
 Zero build step, zero runtime dependencies. The only personal data anywhere in this repo is
-two initials and two birth months (for the Weeks tab above) — never full names, never an exact
-day, never anyone else's data; everything else traces to public thinkers already credited by
-name. See `BUILD-PLAN.md` for the full specification this site was built from.
+two initials and two birth months (for the Weeks section above) — never full names, never an
+exact day, never anyone else's data; everything else traces to public thinkers already
+credited by name. See `BUILD-PLAN.md` for the full specification this site was built from.
 
 ## Add to Home Screen
 
@@ -42,10 +41,10 @@ day is a shrug.
 
 ## Ops runbook
 
-**Add or edit cards** — edit `data/cards.json` (anchors/journal)
+**Add or edit cards** — edit `data/cards.json` (journal)
 directly, commit, push to `main`. No build step. Keep the writing rules
-in `BUILD-PLAN.md` §5.3 in mind: ≤ 40 words, no quotation marks, no banned platitudes,
-person-named attribution only when you're confident the idea is really theirs.
+in `BUILD-PLAN.md` §5.3 in mind: ≤ 25 words, one open-ended question per entry, second person,
+no yes/no questions, no quotation marks, no banned platitudes.
 
 **Replace cards, not resize the pool** — the daily rotation (`lib.mjs`'s `pickIndex`) is a
 per-cycle shuffle keyed to the pool size. Swapping one card's content for another (same

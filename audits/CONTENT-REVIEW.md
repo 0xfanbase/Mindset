@@ -39,6 +39,12 @@ attribution confidence, verbatim-quote-in-spirit risk, voice compliance, and (fo
 political neutrality — 68 of 365 entries had at least one issue caught and fixed, each flagged
 inline in that section. Full narrative in `audits/decisions.md`'s "v1.14" entry.
 
+**v1.39 addendum:** the entire `anchors` pool (365 entries) was retired — owner: "cut out the
+anchor." The section below, "Anchors v1.14," is kept in full as the historical record of that
+pool's final, shipped content and QA work; it is no longer current or shipping — Journal is
+now the app's only card type. See `audits/decisions.md`'s "v1.39" entry for the full removal
+accounting.
+
 ## Anchors v1.0–v1.13 (retired in v1.14, replaced by the 365-entry pool below)
 
 Kept in full below as the historical record of this pool's authoring/QA work through v1.13 (real
@@ -296,7 +302,7 @@ territory) in addition to the standard attribution-confidence and closeness-to-s
 - **voices-009** (voices): Answer the message from someone one step behind you, the way an older student once helped you find your footing. That kind of mentoring rarely gets credited, but it compounds for years. — after Michelle Obama, from Becoming
   - ⚑ Reworded from an earlier draft that brushed against Reach Higher (an actual White House initiative). This version grounds the idea in personal mentorship from her own memoir rather than any policy program.
 
-## Anchors v1.14 (365 entries, full replacement)
+## Anchors v1.14 (365 entries, full replacement — added v1.0, expanded/reworked v1.14, retired in v1.39 — owner: "cut out the anchor")
 
 The entire `anchors` pool (previously 129 entries across `stoic`/`diewithzero`/`growth`/
 `relationships`/`wealth`/`focus`/`voices`) was replaced, not incrementally edited, per live

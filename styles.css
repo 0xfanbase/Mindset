@@ -17,7 +17,7 @@
   --hairline: rgba(36, 26, 32, 0.10);
   --shadow: rgba(36, 26, 32, 0.07);
   --week-future: rgba(36, 26, 32, 0.12);
-  /* Weeks-tab identity colors (v1.22, amended v1.29) -- J rose / B blue: identity, not mood,
+  /* Weeks identity colors (v1.22, amended v1.29) -- J rose / B blue: identity, not mood,
      so each keeps its HUE in every theme, but v1.22's premise that one fixed hex could sit
      on every background died when a dark background arrived -- the dark block below lightens
      both (see audits/decisions.md). --person-b keeps #2B5FD9 (the retired calm theme's
@@ -92,8 +92,7 @@ body {
 }
 
 button, a { -webkit-tap-highlight-color: transparent; }
-.theme-toggle:focus-visible,
-.tab:focus-visible {
+.theme-toggle:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }
@@ -139,14 +138,22 @@ header {
 }
 .theme-toggle:active { transform: scale(0.99); border-color: var(--ink); }
 
+/* Block-flow, not flex (v1.39) -- main now absorbs .panel's former overflow/scroll role
+   directly (the tab system's per-panel scroll containers are gone), and a flex column here
+   would let its children shrink-to-fit under overflow-y:auto instead of actually overflowing
+   and scrolling (flex's default flex-shrink:1, unlike plain block flow). */
 main {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  overflow-y: auto;
   width: 100%;
   max-width: 1080px;
   margin: 0 auto;
+  padding: 14px 20px 8px;
+  /* Landscape on a notched phone (viewport-fit=cover): content must clear the cutout the
+     same way header/footer already do (v1.28). */
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
 }
 
 .figure-wrap {
@@ -175,7 +182,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 
 .chip {
   display: table;
-  margin: 10px auto 0;
+  margin: 0 auto 12px;
   font-family: "IBM Plex Mono", monospace;
   font-size: 10px;
   letter-spacing: 0.12em;
@@ -192,71 +199,27 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 [data-theme="dark"] .chip.slate { background: rgba(90, 100, 112, 0.14); color: #B7C2D2; border-color: rgba(183, 194, 210, 0.35); }
 .chip[hidden] { display: none; }
 
-.tabs {
-  display: flex;
-  gap: 32px;
-  justify-content: center;
-  margin-top: 0;
-}
-.tab {
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-family: "Fraunces", Georgia, serif;
-  font-style: italic;
-  font-size: 16.5px;
-  height: 44px;
-  min-width: 44px; /* v1.34: text-width sizing could leave a short tab label under the 44px floor -- invariant 7 */
-  padding: 0 2px;
-  touch-action: manipulation;
-  color: var(--muted);
-  text-decoration: none;
-  text-underline-offset: 7px;
-  text-decoration-thickness: 1.5px;
-}
-.tab[aria-selected="true"] {
-  color: var(--ink);
-  text-decoration: underline;
-  text-decoration-color: var(--accent);
-}
-
-.panel {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  padding: 14px 20px 8px;
-  /* Landscape on a notched phone (viewport-fit=cover): panel content must clear the
-     cutout the same way header/footer already do (v1.28). */
-  padding-left: max(20px, env(safe-area-inset-left));
-  padding-right: max(20px, env(safe-area-inset-right));
-}
-.panel[hidden] { display: none; }
-
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(14px) scale(0.97); }
   to { opacity: 1; transform: none; }
 }
 /* Every cardIn shorthand below uses fill-mode `backwards`, NOT `both` (v1.28): `both`
    keeps the finished animation owning `transform` forever at the CSS-animations cascade
-   origin, which outranks ordinary author rules — so .card:hover's lift and the :active
-   scale feedback on .reveal-rest silently never applied once the entrance
-   finished. `backwards` keeps the pre-delay invisibility the stagger needs, then releases
-   the properties when the animation completes. (cardIn's `to` state equals the natural
-   resting state, so nothing visibly changes at the handoff.) The Weeks reveal keeps
-   `both` deliberately — its scanline's end state is NOT its natural state. */
+   origin, which outranks ordinary author rules — so .card:hover's lift silently never
+   applied once the entrance finished. `backwards` keeps the pre-delay invisibility the
+   stagger needs, then releases the properties when the animation completes. (cardIn's `to`
+   state equals the natural resting state, so nothing visibly changes at the handoff.) The
+   Weeks reveal keeps `both` deliberately — its scanline's end state is NOT its natural
+   state. */
 
-/* Today's items read as actual cards (v1.9) -- a surface, a shadow, room to breathe --
-   since Today is meant to be read and learned from, not just glanced at as a reference
-   (v1.8 briefly flattened them to match the now-retired Values tab's quieter row style;
-   live feedback reversed that, see v1.9's changelog entry). Normal mode (09:00-24:00 HKT, two
-   stacked cards -- the evening/Closing third mode was retired in v1.31) was a logged §4.4
-   one-screen exception from v1.28 through v1.34 (measured 844-1020px with the fourth,
-   Word-of-Day card in the stack); RESOLVED in v1.35 when that card was retired, re-confirmed
-   in v1.38 when Kenya was retired too -- the true worst case (longest anchor + longest
-   journal, forced simultaneously) measures 580px of real content against the 844px viewport,
-   264px of genuine headroom, zero overflow. Focus mode (the one-card lead) has always fit
-   exactly regardless. See audits/decisions.md, v1.28 (first measured), v1.33 (re-measured),
-   v1.35 (resolved), v1.38 (re-measured again, two cards, real numbers). */
+/* The Journal card reads as an actual card (v1.9) -- a surface, a shadow, room to breathe --
+   since it's meant to be read and sat with, not just glanced at as a reference (v1.8 briefly
+   flattened cards to match the now-retired Values tab's quieter row style; live feedback
+   reversed that, see v1.9's changelog entry). Exactly one card now (v1.39 retired Anchor,
+   the last thing #cards ever shared the screen with) -- the old two-card §4.4 one-screen
+   measurement this comment used to carry is moot: a single Journal card clears 390x844 with
+   enormous headroom regardless of prompt length. Full history of that now-retired constraint
+   in audits/decisions.md, v1.28 through v1.39. */
 #cards {
   display: flex;
   flex-direction: column;
@@ -274,34 +237,6 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 }
 .card { transition: transform 0.15s ease; }
 
-/* Pre-09:00 HKT focus mode (v1.16): Journal card stands alone, the other card
-   collapses behind this disclosure so it doesn't compete for morning attention. */
-.reveal-rest {
-  align-self: center;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 44px;
-  padding: 0 18px;
-  border-radius: 999px;
-  border: 1px solid var(--hairline);
-  background: transparent;
-  color: var(--muted);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  cursor: pointer;
-  touch-action: manipulation;
-  animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-}
-.reveal-rest:active { transform: scale(0.99); border-color: var(--ink); }
-.reveal-rest:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-@media (hover: hover) {
-  .reveal-rest:hover { color: var(--ink); border-color: var(--ink); }
-}
-#cards-more { display: flex; flex-direction: column; gap: 14px; }
-#cards-more[hidden] { display: none; }
-
 .card-chip {
   font-family: "IBM Plex Mono", monospace;
   font-size: 9px;
@@ -314,12 +249,6 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   line-height: 1.55;
   color: var(--ink);
   margin: 10px 0 8px;
-}
-.card-attr {
-  font-family: "Fraunces", Georgia, serif;
-  font-style: italic;
-  font-size: 12.5px;
-  color: var(--muted);
 }
 .error-card { text-align: center; }
 .error-label {
@@ -338,13 +267,25 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   max-width: 250px;
 }
 
-/* Weeks tab (v1.23) — one combined life-in-weeks grid for J and B, canvas-rendered by
-   weeks.js. Panel content deliberately exceeds one screen and scrolls within .panel's
-   existing overflow-y (the same mechanism the rest of this app's tabs already rely on
-   whenever their content runs long) — see audits/decisions.md for why this tab is a
-   deliberate exception to §4.4's single-screen framing, and for the full combined-cell-
-   state / hover-focus / entrance-animation rationale (v1.22 shipped two separate grids;
-   this redesign combines them). */
+/* Marks the handoff from the day's card into the Weeks section below it (v1.39 -- the two
+   were previously separate tabs). Centered via margin auto, not align-self, since main is
+   block-flow, not flex (unlike .weeks-divider below, its analogue inside .weeks-root's own
+   flex column). */
+.section-divider {
+  width: 24px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--accent);
+  margin: 22px auto;
+}
+
+/* Weeks section (v1.23; merged into the single page in v1.39) — one combined life-in-weeks
+   grid for J and B, canvas-rendered by weeks.js. Content deliberately exceeds one screen and
+   scrolls within main's own overflow-y — see audits/decisions.md for why this section is a
+   deliberate exception to §4.4's single-screen framing (re-scoped in v1.39 to cover only the
+   Journal card above it; Weeks was always the exception, invariant 11 now says so directly),
+   and for the full combined-cell-state / hover-focus / entrance-animation rationale (v1.22
+   shipped two separate grids; this redesign combines them). */
 .weeks-root {
   display: flex;
   flex-direction: column;
@@ -457,8 +398,9 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 .weeks-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 /* Entrance reveal (v1.23): the grid is drawn once (instant, correct) and revealed via a
    top-down clip-path sweep with a synced scanline riding the edge -- GPU-composited, no
-   per-cell JS animation. Replays on every tab visit for free via the same display:none
-   animation-restart the app already relies on for .card (v1.16's audit).
+   per-cell JS animation. Previously replayed on every Weeks-tab visit via the same
+   display:none animation-restart .card relies on (v1.16's audit); since v1.39 build() runs
+   once at boot behind no such toggle, so this now plays exactly once per page load.
    1400ms cubic-bezier(0.65,0,0.35,1), not the house cardIn easing -- Fable's UX audit found
    the original 1100ms/cardIn-curve reveal ~70% done by 180ms, rushing past the lived rows
    (the entire point) and leaving the last second crawling through empty future cells; this
@@ -491,12 +433,12 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   85% { opacity: 0.5; }
   100% { top: 100%; opacity: 0; }
 }
-/* Epigraph (v1.24) -- moved to the top of the panel (was a quiet card-attr-style caption at
+/* Epigraph (v1.24) -- moved to the top of the section (was a quiet card-attr-style caption at
    the bottom) per live feedback that it needed real display weight, "stands out from a UI
    angle." Both lines (Burkeman, Seneca) share one treatment deliberately: one thought, ~2,000
    years apart, not a hierarchy between them. Promoted from card-attr's 12.5px muted voice to
    15px Fraunces italic in --ink -- display voice, not metadata voice -- with each line's
-   attribution picked out in --accent, the one accent use this tab was otherwise missing.
+   attribution picked out in --accent, the one accent use this section was otherwise missing.
    Person colors (--person-j/b) are deliberately NOT used here: those are data-identity colors,
    and putting them on prose would leak the grid's own color encoding into copy that isn't
    about either person specifically. */
@@ -545,29 +487,13 @@ footer {
 
 /* Desktop adaptation — min-width only, base CSS above is the mobile layout (invariant 11). */
 @media (min-width: 900px) {
-  #cards {
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-  #cards .card {
-    flex: 1 1 0;
-    min-width: 200px;
-  }
-  /* Focus mode (v1.16) stays a single stacked column even on wide viewports —
-     the 4-across row is a "everything's available" layout, not this transient state. */
-  #cards.focus {
-    flex-direction: column;
-    gap: 14px;
-  }
-  #cards.focus .card {
-    flex: none;
-    min-width: 0;
-  }
   /* Same 640px measure as .weeks-card, not just the card itself -- Fable's UX audit caught
      the stats/zoom rows stretching to the full content width on desktop, stranding J's
      percent in the far-left corner and running B's active-state underline ~500px past its
-     text. */
+     text. #cards joins this set in v1.39: Anchor's removal leaves exactly one card, so the
+     old flex-row/.focus multi-card treatment (a wide screen no longer needs to lay out a
+     card grid) no longer applies -- same reasoning, same measure. */
+  #cards,
   .weeks-stats,
   .weeks-zoom-row,
   .weeks-card {
@@ -577,13 +503,12 @@ footer {
   }
 }
 
-/* Kept last on purpose: .card/.reveal-rest each set their own `animation:
-   cardIn ...` at equal specificity, so this override must win the cascade by source
-   order, not just exist somewhere in the file (a bug found and fixed during v1.18 --
-   this rule previously sat right after @keyframes cardIn, before both of those
-   base rules, so it silently never took effect). */
+/* Kept last on purpose: .card sets its own `animation: cardIn ...` at equal specificity, so
+   this override must win the cascade by source order, not just exist somewhere in the file (a
+   bug found and fixed during v1.18 -- this rule previously sat right after @keyframes cardIn,
+   before that base rule, so it silently never took effect). */
 @media (prefers-reduced-motion: reduce) {
-  .card, .reveal-rest { animation: none; }
+  .card { animation: none; }
   /* Cancelling the animation alone is not enough here (unlike the rule above): the reveal's
      `from` state is fully clipped/invisible, so a reduced-motion viewer must also get the
      resting "fully visible" state explicitly, not just an animation-free freeze on frame

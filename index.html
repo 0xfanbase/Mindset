@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="robots" content="noindex">
 <title>Mindset</title>
-<meta name="description" content="Three grounding cards, every morning at 05:00 HKT.">
+<meta name="description" content="A daily journal prompt and a life-in-weeks chart, every morning at 05:00 HKT.">
 <meta property="og:title" content="Mindset">
-<meta property="og:description" content="Three grounding cards, every morning at 05:00 HKT.">
+<meta property="og:description" content="A daily journal prompt and a life-in-weeks chart, every morning at 05:00 HKT.">
 <meta property="og:type" content="website">
 <link rel="icon" href="./assets/favicon.svg" type="image/svg+xml">
 <link rel="manifest" href="./manifest.webmanifest">
@@ -46,16 +46,9 @@
 </header>
 <main>
   <div id="staleness-chip" class="chip" hidden></div>
-  <nav class="tabs" role="tablist" aria-label="Sections">
-    <button type="button" role="tab" id="tab-today" aria-selected="true" aria-controls="panel-today" class="tab">Today</button>
-    <button type="button" role="tab" id="tab-weeks" aria-selected="false" aria-controls="panel-weeks" class="tab">Weeks</button>
-  </nav>
-  <div role="tabpanel" id="panel-today" aria-labelledby="tab-today" class="panel">
-    <div id="cards"></div>
-  </div>
-  <div role="tabpanel" id="panel-weeks" aria-labelledby="tab-weeks" class="panel" hidden>
-    <div id="weeks-root"></div>
-  </div>
+  <div id="cards"></div>
+  <div class="section-divider" aria-hidden="true"></div>
+  <div id="weeks-root" role="region" aria-label="Life in weeks"></div>
 </main>
 <footer>
   <div>refreshes daily &middot; 05:00 HKT</div>
