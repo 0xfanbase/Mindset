@@ -9,22 +9,41 @@
 [data-theme="blossom"] {
   color-scheme: light;
   --bg: #FBF4F6;
-  --surface: #FFFFFF;
-  --ink: #241A20;
-  --muted: #7A6870;
+  /* --surface/--surface-2 (v2.0 redesign): the Journal card is now two nested light layers,
+     not one flat white -- an outer warm-cream frame (--surface) holding an inner near-white
+     prompt box (--surface-2), matching the imported design. Both colors are the design's own
+     oklch() values converted to sRGB hex (verify.mjs's contrast math needs hex, and browsers
+     resolving the original oklch() would have rendered fine but couldn't be gated) -- see
+     audits/decisions.md v2.0 for the conversion + tuning. */
+  --surface: #FFF2EF;
+  --surface-2: #FEFBFA;
+  --ink: #211B1A;
+  --muted: #766E6D;
   --accent: #B84870;
   --pulse: #F2A9C6;
   --hairline: rgba(36, 26, 32, 0.10);
   --shadow: rgba(36, 26, 32, 0.07);
-  --week-future: rgba(36, 26, 32, 0.12);
-  /* Weeks identity colors (v1.22, amended v1.29) -- J rose / B blue: identity, not mood,
-     so each keeps its HUE in every theme, but v1.22's premise that one fixed hex could sit
-     on every background died when a dark background arrived -- the dark block below lightens
-     both (see audits/decisions.md). --person-b keeps #2B5FD9 (the retired calm theme's
-     accent) as a plain fixed value, no longer tied to any theme system. All person-color x
-     bg/surface pairs are >=4.5:1 per theme, gated mechanically in verify.mjs since v1.29. */
-  --person-j: #B84870;
-  --person-b: #2B5FD9;
+  /* Weeks fixed palette (v2.0 redesign): the Weeks section is now a permanently dark "night
+     sky" card -- design intent, not a --bg/[data-theme] pairing -- so every token below is
+     defined ONCE here and never overridden in the [data-theme="dark"] block; themeTokens() in
+     verify.mjs (extracts blossom, then spreads dark's overrides on top) picks these up
+     identically in both themes for free, no extraction-logic changes needed. This also
+     replaces the old theme-scoped --person-j/--person-b/--week-future (their only real use is
+     now always against these fixed weeks-* backgrounds, so a single value per person is both
+     simpler and more correct than swapping with the page theme) -- full rationale in
+     audits/decisions.md v2.0. All weeks-* text/graphic pairs are >=4.5:1 against every
+     weeks-* surface they actually render on, gated in verify.mjs. */
+  --weeks-bg: #2E3240;
+  --weeks-card: #3D4250;
+  --weeks-track: #12161F;
+  --weeks-pill-bg: #10131D;
+  --weeks-ink: #E2E4EB;
+  --weeks-muted: #A9AEBB;
+  --weeks-hairline: rgba(226, 228, 235, 0.14);
+  --weeks-accent: #DE8A68;
+  --week-future: rgba(226, 228, 235, 0.10);
+  --person-j: #FF8BA7;
+  --person-b: #76B0FF;
 }
 /* Dark (v1.29): the 17:00-06:00 HKT default. Warm charcoal, not pure black or blue-grey;
    elevation via --surface's lightness step, not shadow; --ink off-white, never #FFFFFF
@@ -36,15 +55,18 @@
   color-scheme: dark;
   --bg: #242119;
   --surface: #2F2C27;
+  /* --surface-2 (v2.0): the dark-theme inner prompt box, one elevation step lighter than
+     --surface -- same "elevation via lightness, not shadow" philosophy as --surface itself
+     (see this file's theme-model comment at the top), applied one layer deeper. */
+  --surface-2: #3A362D;
   --ink: #EDE9E1;
   --muted: #A8A093;
   --accent: #DE8A68;
   --pulse: #F0AD82;
   --hairline: rgba(237, 233, 225, 0.11);
   --shadow: rgba(0, 0, 0, 0.40);
-  --week-future: rgba(237, 233, 225, 0.13);
-  --person-j: #F0AEC4;
-  --person-b: #86AAF0;
+  /* No --weeks-*/--person-*/--week-future overrides here (v2.0) -- those are fixed, defined
+     once in the blossom block above; see the comment there. */
 }
 
 @font-face {
@@ -123,20 +145,36 @@ header {
   color: var(--ink);
 }
 
+/* v2.0: the toggle's visible mark is now a drawn half-fill circle (matching the imported
+   design) instead of a swapped text glyph (retired ◐/❀) -- purely decorative (the button's
+   own aria-label/title still carry the real "switch to X theme" state, unchanged), so one
+   static mark works for both themes and app.js no longer needs to touch textContent. The
+   44px element stays the full tap target (invariant 7); the mark itself is smaller, centered
+   via the ::before pseudo-element. */
 .theme-toggle {
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  border: 1px solid var(--hairline);
+  border: none;
   background: transparent;
   color: var(--ink);
-  font-size: 15px;
-  line-height: 1;
   cursor: pointer;
   touch-action: manipulation;
   justify-self: end;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.theme-toggle:active { transform: scale(0.99); border-color: var(--ink); }
+.theme-toggle::before {
+  content: "";
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+  box-sizing: border-box;
+}
+.theme-toggle:active { transform: scale(0.96); }
 
 /* Block-flow, not flex (v1.39) -- main absorbs .panel's former padding and overflow-y here,
    now that the tab system's per-panel scroll containers are gone. Plain block flow is the
@@ -223,23 +261,34 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
    Weeks reveal keeps `both` deliberately — its scanline's end state is NOT its natural
    state. */
 
-/* The Journal card reads as an actual card (v1.9) -- a surface, a shadow, room to breathe --
-   since it's meant to be read and sat with, not just glanced at as a reference (v1.8 briefly
-   flattened cards to match the now-retired Values tab's quieter row style; live feedback
-   reversed that, see v1.9's changelog entry). Exactly one card now (v1.39 retired Anchor,
-   the last thing #cards ever shared the screen with) -- the old two-card §4.4 one-screen
-   measurement this comment used to carry is moot: a single Journal card clears 390x844 with
-   enormous headroom regardless of prompt length. Full history of that now-retired constraint
-   in audits/decisions.md, v1.28 through v1.39. */
+/* v2.0: Journal and Weeks are now one unified "panel" -- a single rounded, shadowed container
+   (this rule) whose top zone (#cards, warm-cream) and bottom zone (#weeks-root, fixed dark)
+   read as one continuous card, joined by the .seam gradient+pill between them. overflow:hidden
+   + one border-radius here means the children below need no radius/shadow of their own at
+   their outer edges -- the parent clips them to match. */
+.mindset-panel {
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 10px 28px var(--shadow);
+}
+
+/* #cards is the outer cream frame (design's outer card layer); .card is the nested inner
+   prompt box (design's inner near-white layer) -- two light layers, not one flat surface
+   (v2.0). Exactly one card now (v1.39 retired Anchor, the last thing #cards ever shared the
+   screen with) -- a single Journal card clears 390x844 with enormous headroom regardless of
+   prompt length. Full history in audits/decisions.md, v1.28 through v1.39; the nested-box
+   split is v2.0. */
 #cards {
   display: flex;
   flex-direction: column;
   gap: 14px;
+  background: var(--surface);
+  padding: 24px 20px 28px;
 }
 .card {
-  background: var(--surface);
-  border-radius: 20px;
-  box-shadow: 0 10px 28px var(--shadow);
+  background: var(--surface-2);
+  border-radius: 16px;
+  box-shadow: 0 1px 2px var(--shadow);
   padding: 18px 20px;
   animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
@@ -278,47 +327,82 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   max-width: 250px;
 }
 
-/* Marks the handoff from the day's card into the Weeks section below it (v1.39 -- the two
-   were previously separate tabs). Centered via margin auto, not align-self, since main is
-   block-flow, not flex (unlike .weeks-divider below, its analogue inside .weeks-root's own
-   flex column). */
-.section-divider {
-  width: 24px;
+/* The seam (v2.0, replaces the old plain .section-divider accent line) -- marks the handoff
+   from the day's card into the Weeks section below it, matching the imported design: a thin
+   person-J-to-person-B gradient bar with a floating pill on top stating the grid's own real
+   total (LIFE_WEEKS_TOTAL from lib.mjs, populated by app.js -- never a literal "4,000"; the
+   grid's actual total is 4,680, see lib.mjs's own comment on why 90 years, not 77). The
+   gradient's two stops are deliberately more saturated than --person-j/--person-b (those are
+   tuned pale enough to read as text/graphics on the fixed dark weeks background) -- a bold
+   one-off transition, not reused as a token. Purely decorative (aria-hidden). */
+.seam {
+  position: relative;
   height: 2px;
-  border-radius: 1px;
-  background: var(--accent);
-  margin: 22px auto;
+  background: linear-gradient(90deg, #BA1F5A, #195CC7);
+}
+.seam-pill {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--weeks-pill-bg);
+  color: var(--weeks-ink);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 9.5px;
+  letter-spacing: 0.06em;
+  padding: 4px 12px;
+  border-radius: 999px;
+  white-space: nowrap;
 }
 
-/* Weeks section (v1.23; merged into the single page in v1.39) — one combined life-in-weeks
-   grid for J and B, canvas-rendered by weeks.js. Content deliberately exceeds one screen and
-   scrolls with the document (see main's own comment above for why main's overflow-y is not
-   the mechanism it looks like) — see audits/decisions.md for why this section is a
-   deliberate exception to §4.4's single-screen framing (re-scoped in v1.39 to cover only the
-   Journal card above it; Weeks was always the exception, invariant 11 now says so directly),
-   and for the full combined-cell-state / hover-focus / entrance-animation rationale (v1.22
-   shipped two separate grids; this redesign combines them). */
+/* Weeks section (v1.23; merged into the single page in v1.39; a permanently dark "night sky"
+   card since v2.0 -- see the --weeks-* token comment at the top of this file for why it no
+   longer follows the page's blossom/dark theme). One combined life-in-weeks grid for J and B,
+   canvas-rendered by weeks.js. Content deliberately exceeds one screen and scrolls with the
+   document (see main's own comment above for why main's overflow-y is not the mechanism it
+   looks like) — see audits/decisions.md for why this section is a deliberate exception to
+   §4.4's single-screen framing (re-scoped in v1.39 to cover only the Journal card above it;
+   Weeks was always the exception, invariant 11 now says so directly), and for the full
+   combined-cell-state / hover-focus / entrance-animation rationale (v1.22 shipped two
+   separate grids; this redesign combines them). */
 .weeks-root {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 18px;
+  background: var(--weeks-bg);
+  color: var(--weeks-ink);
+  padding: 22px 20px 26px;
 }
+.weeks-heading {
+  text-align: center;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  color: var(--weeks-muted);
+}
+/* v2.0: J and B stack full-width, one above the other -- matches the imported design (each
+   person's row/bar/pctrow spans the whole card there, not a side-by-side 2-column split like
+   the pre-v2.0 layout used). A 2-column grid was tried first and cut B's row clean off at
+   320-390px: the richer per-row content added here (the "N weeks left" companion to the meta
+   label, both nowrap in the mockup's much wider 560px reference) doesn't fit in a ~145px half
+   column, and .mindset-panel's own overflow:hidden clipped the overflow silently instead of
+   visibly breaking -- caught in a real-browser screenshot pass, not by verify.mjs (a
+   contrast/budget/structure gate, not a layout one). Full-width stacking fixes it at the
+   source instead of shrinking type to fit. */
 .weeks-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
 }
 /* Each stat is also the hover/tap focus control (v1.23) -- a real <button>, not a bare
    :hover rule, so it works identically by tap on iOS. */
 .weeks-stat {
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 3px;
+  gap: 8px;
   min-height: 44px;
-  padding: 6px 4px 10px;
+  padding: 6px 2px 8px;
   border: none;
-  border-bottom: 2px solid transparent;
   background: transparent;
   cursor: pointer;
   touch-action: manipulation;
@@ -326,30 +410,80 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 }
 .weeks-stat[data-person="J"] { color: var(--person-j); }
 .weeks-stat[data-person="B"] { color: var(--person-b); }
-.weeks-stat.is-active { border-bottom-color: currentColor; }
-.weeks-stat:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.weeks-stat:focus-visible { outline: 2px solid var(--weeks-accent); outline-offset: 2px; }
 @media (hover: hover) {
   .weeks-stat:hover { opacity: 0.85; }
 }
-.weeks-stat-meta {
+.weeks-stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+.weeks-stat-meta,
+.weeks-stat-left {
   font-family: "IBM Plex Mono", monospace;
   font-size: 10px;
   font-weight: 500;
-  letter-spacing: 0.03em;
-  color: var(--muted);
+  letter-spacing: 0.02em;
+  color: var(--weeks-muted);
 }
-/* The percent figure: Fraunces italic, the app's own "artistic" voice (already used for the
+/* No white-space:nowrap here (unlike the mockup's own inline style, written for its fixed
+   560px reference card) -- at the mobile widths this app actually ships at (down to 320px),
+   forcing both halves of this space-between row onto one line each can still overflow; letting
+   either wrap onto a second line if it must is the safer default for a real, narrow viewport. */
+.weeks-stat-left {
+  text-align: right;
+}
+/* Bar track/fill (v2.0, new): replaces the old bare 34px percent figure with the design's
+   thin progress bar. Fill width is set inline per-render by updateStats() from the exact same
+   percentLifeSpent() used everywhere else -- no new computation. `background: currentColor`
+   on the fill inherits .weeks-stat[data-person]'s own color, so J/B never need their own
+   duplicate selector here. is-active (sticky/hover focus, still driven by syncFocusUI()) lifts
+   the bar and adds the same underline treatment the old border-bottom gave the whole button. */
+.weeks-bar-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--weeks-track);
+  overflow: hidden;
+  position: relative;
+}
+.weeks-bar-fill {
+  height: 100%;
+  background: currentColor;
+  position: relative;
+  overflow: hidden;
+  border-radius: inherit;
+}
+.weeks-stat.is-active .weeks-bar-track { box-shadow: 0 0 0 1px currentColor; }
+/* The shine sweep: a soft diagonal highlight looping across the filled portion -- decorative,
+   killed under reduced motion in the block at the end of this file (same pattern as .card's
+   entrance and the Weeks reveal scanline). B's sweep is staggered 1.1s behind J's so the two
+   bars don't pulse in lockstep, matching the imported design. */
+.weeks-bar-shine {
+  position: absolute;
+  top: 0; left: 0;
+  width: 45%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
+  animation: shineSweep 2.6s ease-in-out infinite;
+}
+.weeks-stat[data-person="B"] .weeks-bar-shine { animation-delay: 1.1s; }
+@keyframes shineSweep {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(320%); }
+}
+/* The lived/left row: Fraunces italic, the app's own "artistic" voice (already used for the
    wordmark and card attribution lines), not a bigger mono digit -- a dashboard would use
-   the latter. Large enough to clear WCAG's large-text 3:1 bar; both person colors clear the
-   stricter 4.5:1 normal-text bar anyway on their own theme's backgrounds (per-theme values
-   since v1.29), gated mechanically in verify.mjs. */
-.weeks-stat-pct {
+   the latter. --weeks-ink clears 4.5:1 on every weeks-* surface it renders on (gated in
+   verify.mjs), so both people share one color here rather than inheriting currentColor --
+   the bar above already carries the per-person color identity. */
+.weeks-stat-pctrow {
+  display: flex;
+  justify-content: space-between;
   font-family: "Fraunces", Georgia, serif;
   font-style: italic;
-  font-weight: 600;
-  font-size: 34px;
-  line-height: 1.1;
-  color: inherit;
+  font-size: 15px;
+  color: var(--weeks-ink);
 }
 .weeks-zoom-row {
   display: flex;
@@ -364,21 +498,25 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   width: 44px;
   height: 44px;
   border-radius: 999px;
-  border: 1px solid var(--hairline);
+  border: 1px solid var(--weeks-hairline);
   background: transparent;
-  color: var(--ink);
+  color: var(--weeks-ink);
   font-size: 18px;
   line-height: 1;
   cursor: pointer;
   touch-action: manipulation;
 }
-.weeks-zoom-btn:active { transform: scale(0.99); border-color: var(--ink); }
-.weeks-zoom-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.weeks-zoom-btn:active { transform: scale(0.99); border-color: var(--weeks-ink); }
+.weeks-zoom-btn:focus-visible { outline: 2px solid var(--weeks-accent); outline-offset: 2px; }
 .weeks-zoom-btn:disabled { opacity: 0.35; cursor: default; }
 @media (hover: hover) {
-  .weeks-zoom-btn:not(:disabled):hover { border-color: var(--ink); }
+  .weeks-zoom-btn:not(:disabled):hover { border-color: var(--weeks-ink); }
 }
-.weeks-card { padding: 14px 16px; }
+.weeks-card {
+  padding: 14px 16px;
+  background: var(--weeks-card);
+  border-radius: 16px;
+}
 .weeks-frame {
   display: flex;
   align-items: flex-start;
@@ -395,7 +533,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   font-family: "IBM Plex Mono", monospace;
   font-size: 8px;
   line-height: 1;
-  color: var(--muted);
+  color: var(--weeks-muted);
   text-align: right;
   padding-right: 5px;
   white-space: nowrap;
@@ -407,7 +545,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   overflow-y: hidden;
   -webkit-overflow-scrolling: touch;
 }
-.weeks-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.weeks-scroll:focus-visible { outline: 2px solid var(--weeks-accent); outline-offset: 2px; }
 /* Entrance reveal (v1.23): the grid is drawn once (instant, correct) and revealed via a
    top-down clip-path sweep with a synced scanline riding the edge -- GPU-composited, no
    per-cell JS animation. Previously replayed on every Weeks-tab visit via the same
@@ -431,7 +569,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   right: 0;
   top: 0;
   height: 2px;
-  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  background: linear-gradient(90deg, transparent, var(--weeks-accent), transparent);
   opacity: 0.5;
   pointer-events: none;
   animation: weeksScanline 1400ms cubic-bezier(0.65, 0, 0.35, 1) both;
@@ -445,16 +583,18 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   85% { opacity: 0.5; }
   100% { top: 100%; opacity: 0; }
 }
-/* Epigraph (v1.24) -- moved to the top of the section (was a quiet caption at the bottom, in
-   the style of the then-live .card-attr rule, retired with Anchor in v1.39) per live feedback
-   that it needed real display weight, "stands out from a UI angle." Both lines (Burkeman,
+/* Epigraph -- moved to the top of the section in v1.24 (per live feedback it needed real
+   display weight, "stands out from a UI angle"), moved back to the BOTTOM in v2.0 to match
+   the imported design's closing-thought placement (stats/bars -> grid -> reflective quote).
+   The display-weight decision itself still holds -- kept at full --weeks-ink contrast, not the
+   design mockup's own low-contrast dim treatment (its oklch(50% 0.02 270) measures only
+   2.13:1 on the fixed weeks background, well under this house's 4.5:1 bar) -- only the
+   POSITION reverts; see audits/decisions.md v2.0 for the full trail. Both lines (Burkeman,
    Seneca) share one treatment deliberately: one thought, ~2,000 years apart, not a hierarchy
-   between them. Promoted from that 12.5px muted voice to 15px Fraunces italic in --ink --
-   display voice, not metadata voice -- with each line's
-   attribution picked out in --accent, the one accent use this section was otherwise missing.
-   Person colors (--person-j/b) are deliberately NOT used here: those are data-identity colors,
-   and putting them on prose would leak the grid's own color encoding into copy that isn't
-   about either person specifically. */
+   between them, with each line's attribution picked out in --weeks-accent. Person colors
+   (--person-j/b) are deliberately NOT used here: those are data-identity colors, and putting
+   them on prose would leak the grid's own color encoding into copy that isn't about either
+   person specifically. */
 .weeks-epigraph {
   text-align: center;
   max-width: 340px;
@@ -465,7 +605,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   font-style: italic;
   font-size: 15px;
   line-height: 1.5;
-  color: var(--ink);
+  color: var(--weeks-ink);
   margin: 0;
 }
 .weeks-epigraph p + p {
@@ -475,14 +615,14 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   display: block;
   margin-top: 2px;
   font-size: 12.5px;
-  color: var(--accent);
+  color: var(--weeks-accent);
 }
 .weeks-divider {
   align-self: center;
   width: 24px;
   height: 2px;
   border-radius: 1px;
-  background: var(--accent);
+  background: var(--weeks-accent);
 }
 
 footer {
@@ -500,16 +640,12 @@ footer {
 
 /* Desktop adaptation — min-width only, base CSS above is the mobile layout (invariant 11). */
 @media (min-width: 900px) {
-  /* Same 640px measure as .weeks-card, not just the card itself -- Fable's UX audit caught
-     the stats/zoom rows stretching to the full content width on desktop, stranding J's
-     percent in the far-left corner and running B's active-state underline ~500px past its
-     text. #cards joins this set in v1.39: Anchor's removal leaves exactly one card, so the
-     old flex-row/.focus multi-card treatment (a wide screen no longer needs to lay out a
-     card grid) no longer applies -- same reasoning, same measure. */
-  #cards,
-  .weeks-stats,
-  .weeks-zoom-row,
-  .weeks-card {
+  /* v2.0: capped on .mindset-panel itself (the unified card) rather than each inner piece --
+     Fable's UX audit originally caught the stats/zoom rows stretching to the full content
+     width on desktop, stranding J's percent in the far-left corner; capping the whole panel
+     achieves the same fix for every child at once, including #weeks-root/.weeks-card, which
+     didn't exist as separate targets before v2.0 merged them into one panel. */
+  .mindset-panel {
     max-width: 640px;
     width: 100%;
     margin: 0 auto;
@@ -528,4 +664,7 @@ footer {
      one, which would hide the grid entirely. */
   .weeks-canvas-clip { animation: none; clip-path: none; }
   .weeks-scanline { display: none; }
+  /* v2.0: the progress-bar shine sweep is a purely decorative loop, same treatment as the
+     other two motion effects in this block. */
+  .weeks-bar-shine { animation: none; display: none; }
 }

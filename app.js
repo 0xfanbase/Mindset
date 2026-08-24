@@ -1,5 +1,8 @@
 // app.js — UI logic: theme, date, the day's card, staleness, Weeks boot (BUILD-PLAN.md §4/§6)
-import { hktDateParts, hktDateString, hktHour, staleness, expectedDateHKT, pickToday, isDarkWindowHKT } from "./lib.mjs";
+import {
+  hktDateParts, hktDateString, hktHour, staleness, expectedDateHKT, pickToday, isDarkWindowHKT,
+  commas, LIFE_WEEKS_TOTAL,
+} from "./lib.mjs";
 import { initWeeks, refreshWeeksIfStale, redrawWeeksForTheme } from "./weeks.js";
 
 function el(tag, props = {}, children = []) {
@@ -53,9 +56,10 @@ function applyTheme(theme) {
   // loads); inline outranks the theme blocks' declarations, so it must move with the theme.
   root.style.colorScheme = dark ? "dark" : "light";
   const btn = document.getElementById("theme-toggle");
-  // Calm-era glyphs kept, meanings repurposed (v1.29): ◐ = pink active, tap for dark;
-  // ❀ = dark active, tap for pink. Action-named label, deliberately no aria-pressed.
-  btn.textContent = dark ? "❀" : "◐";
+  // v2.0: the visible mark is now a static CSS-drawn half-circle (styles.css's
+  // .theme-toggle::before), not a swapped glyph (retired ◐/❀ Calm-era icons) -- only the
+  // label/title (the real state carrier) still changes here. Deliberately no aria-pressed
+  // (action-named label, not a toggle-state one).
   const label = dark ? "Switch to pink theme" : "Switch to dark theme";
   btn.setAttribute("aria-label", label);
   btn.setAttribute("title", label);
@@ -74,6 +78,17 @@ function initDateLine() {
   const p = hktDateParts(new Date());
   document.getElementById("date-line").textContent =
     `${p.weekday} · ${p.day} ${p.month} ${p.year}`.toUpperCase();
+}
+
+// The seam pill between the Journal and Weeks zones (v2.0) -- states the grid's own real
+// total (LIFE_WEEKS_TOTAL, 4,680; see lib.mjs's comment on why 90 years, not the literal
+// 4,000/77). A plain constant, so it's set once here at boot rather than re-touched on every
+// refresh -- unlike initDateLine()/renderToday(), nothing about it can ever go stale. Lives in
+// static index.html markup (not built by weeks.js) so it renders even if initWeeks() throws
+// (boot() already wraps that call defensively; the day's card and this pill are not optional).
+function initWeeksTotalPill() {
+  const pill = document.getElementById("weeks-total-pill");
+  if (pill) pill.textContent = `${commas(LIFE_WEEKS_TOTAL)} WEEKS TOTAL`;
 }
 
 function showChip(mode) {
@@ -174,6 +189,7 @@ function renderToday(cardsData, dailyData) {
 async function boot() {
   initTheme();
   initDateLine();
+  initWeeksTotalPill();
   // v1.39: Weeks is part of the single page now, so it builds at boot rather than on a tab
   // activation -- its container is visible from load, the only condition build() ever needed.
   // Wrapped deliberately: boot() is called uncaught, so an exception in here (a canvas context

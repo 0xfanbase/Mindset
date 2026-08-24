@@ -42,13 +42,15 @@
   <div class="figure-wrap">
     <mindset-figure id="figure" aria-hidden="true"></mindset-figure>
   </div>
-  <button id="theme-toggle" class="theme-toggle" aria-label="Switch to dark theme" title="Switch to dark theme">&#9680;</button>
+  <button id="theme-toggle" class="theme-toggle" aria-label="Switch to dark theme" title="Switch to dark theme"></button>
 </header>
 <main>
   <div id="staleness-chip" class="chip" hidden></div>
-  <div id="cards"></div>
-  <div class="section-divider" aria-hidden="true"></div>
-  <div id="weeks-root" role="region" aria-label="Life in weeks"></div>
+  <div class="mindset-panel">
+    <div id="cards"></div>
+    <div class="seam" aria-hidden="true"><div class="seam-pill" id="weeks-total-pill"></div></div>
+    <div id="weeks-root" role="region" aria-label="Life in weeks"></div>
+  </div>
 </main>
 <footer>
   <div>refreshes daily &middot; 05:00 HKT</div>
