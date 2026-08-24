@@ -5,7 +5,7 @@
 // visible from load, so (like figure.js's always-visible element) there's a real size to
 // measure the first time build() runs.
 import {
-  hktDateString, weeksLived, percentLifeSpent,
+  hktDateString, weeksLived, percentLifeSpent, commas,
   LIFE_WEEKS_TOTAL, LIFE_WEEKS_PER_ROW, LIFE_WEEKS_YEARS, LIFE_PEOPLE,
 } from "./lib.mjs";
 
@@ -23,10 +23,6 @@ const EPIGRAPH = [
   { text: "An average human life is about four thousand weeks.", attr: "— after Oliver Burkeman" },
   { text: "Life is long, if you know how to spend it.", attr: "— after Seneca" },
 ];
-
-function commas(n) {
-  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
 
 function themeColor(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -84,9 +80,13 @@ function sizeCanvas(canvas, ctx, pitch) {
 }
 
 // A soft radial-gradient sprite, generated once per person and reused -- the same offscreen-
-// sprite technique figure.js uses for its glow (never per-frame shadowBlur). Cached only
-// until the theme changes: person colors are theme-scoped since v1.29, so
-// redrawWeeksForTheme() nulls both sprites to force regeneration in the new theme's colors.
+// sprite technique figure.js uses for its glow (never per-frame shadowBlur). Person colors
+// were theme-scoped v1.29-v1.39 (redrawWeeksForTheme() nulled both sprites on a theme change
+// to force regeneration in the new theme's colors); v2.0 fixed them to single constants (the
+// Weeks section no longer follows the page theme at all -- see styles.css's --weeks-* token
+// comment), so a theme toggle no longer actually changes anything here. The null-and-redraw
+// still runs (cheap, and keeps this wired the same way figure.js's own theme refresh is) --
+// see redrawWeeksForTheme()'s own comment below.
 function makeGlowSprite(hex) {
   const [r, g, b] = hexToRgbArr(hex);
   const size = 64;
@@ -194,20 +194,34 @@ function displayWeek(weeks) {
   return Math.min(weeks + 1, LIFE_WEEKS_TOTAL);
 }
 
+// v2.0: weeks-left/pct-left folded into the accessible name too, now that the visible card
+// shows both (the progress bar + "N weeks left" + "NN.N% left") -- keeps the aria-label in
+// sync with what's actually on screen, same principle as this function's own pre-existing
+// comment above (folding the live figures in on every redraw).
 function statLabel(id, weeks, pct) {
-  return `${id}, week ${commas(displayWeek(weeks))} of ${commas(LIFE_WEEKS_TOTAL)}, ${pct.toFixed(1)}% of life. Highlight ${id}'s weeks.`;
+  const left = LIFE_WEEKS_TOTAL - displayWeek(weeks);
+  return `${id}, week ${commas(displayWeek(weeks))} of ${commas(LIFE_WEEKS_TOTAL)}, ${commas(left)} weeks left, ${pct.toFixed(1)}% of life lived. Highlight ${id}'s weeks.`;
+}
+
+// Values only -- no new computation. weeksLived()/percentLifeSpent() are the same lib.mjs
+// functions the canvas grid itself uses, so the bar fill, the header stat, and the actual
+// squares can never visibly disagree.
+function paintStat(stat, id, weeks, pct) {
+  const left = LIFE_WEEKS_TOTAL - displayWeek(weeks);
+  const pctStr = pct.toFixed(1);
+  const leftPctStr = Math.max(0, 100 - pct).toFixed(1);
+  stat.meta.textContent = `${id} · week ${commas(displayWeek(weeks))} of ${commas(LIFE_WEEKS_TOTAL)}`;
+  stat.left.textContent = `${commas(left)} weeks left`;
+  stat.fill.style.width = `${pctStr}%`;
+  stat.lived.textContent = `${pctStr}% lived`;
+  stat.leftPct.textContent = `${leftPctStr}% left`;
+  stat.btn.setAttribute("aria-label", statLabel(id, weeks, pct));
 }
 
 function updateStats() {
   const now = new Date();
-  const jW = weeksLived(jBirth, now), bW = weeksLived(bBirth, now);
-  const jP = percentLifeSpent(jBirth, now), bP = percentLifeSpent(bBirth, now);
-  jStat.meta.textContent = `J · week ${commas(displayWeek(jW))} of ${commas(LIFE_WEEKS_TOTAL)}`;
-  jStat.pct.textContent = `${jP.toFixed(1)}%`;
-  jStat.btn.setAttribute("aria-label", statLabel("J", jW, jP));
-  bStat.meta.textContent = `B · week ${commas(displayWeek(bW))} of ${commas(LIFE_WEEKS_TOTAL)}`;
-  bStat.pct.textContent = `${bP.toFixed(1)}%`;
-  bStat.btn.setAttribute("aria-label", statLabel("B", bW, bP));
+  paintStat(jStat, "J", weeksLived(jBirth, now), percentLifeSpent(jBirth, now));
+  paintStat(bStat, "B", weeksLived(bBirth, now), percentLifeSpent(bBirth, now));
 }
 
 function syncFocusUI() {
@@ -249,6 +263,10 @@ function setZoom(newIndex) {
   chart.scroller.scrollLeft = pending;
 }
 
+// v2.0: replaces the old bare meta+pct pair with the design's row / progress-bar / lived-left
+// row. Still exactly one interactive element (the button itself) -- every child here is purely
+// visual, painted by paintStat() on every redraw; the button's own aria-label (statLabel())
+// remains the sole accessible name, same pattern as before (see the button's own comment).
 function buildStatButton(person) {
   const btn = document.createElement("button");
   btn.type = "button";
@@ -257,11 +275,30 @@ function buildStatButton(person) {
   btn.setAttribute("aria-pressed", "false");
   // No static aria-label here -- updateStats() sets the real one (folding in the live
   // week/percent figures) immediately after build(), before first paint.
-  const meta = document.createElement("div");
+  const row = document.createElement("div");
+  row.className = "weeks-stat-row";
+  const meta = document.createElement("span");
   meta.className = "weeks-stat-meta";
-  const pct = document.createElement("div");
-  pct.className = "weeks-stat-pct";
-  btn.append(meta, pct);
+  const left = document.createElement("span");
+  left.className = "weeks-stat-left";
+  row.append(meta, left);
+
+  const track = document.createElement("div");
+  track.className = "weeks-bar-track";
+  const fill = document.createElement("div");
+  fill.className = "weeks-bar-fill";
+  const shine = document.createElement("div");
+  shine.className = "weeks-bar-shine";
+  fill.appendChild(shine);
+  track.appendChild(fill);
+
+  const pctRow = document.createElement("div");
+  pctRow.className = "weeks-stat-pctrow";
+  const lived = document.createElement("span");
+  const leftPct = document.createElement("span");
+  pctRow.append(lived, leftPct);
+
+  btn.append(row, track, pctRow);
 
   btn.addEventListener("click", () => {
     stickyFocus = stickyFocus === person.id ? null : person.id;
@@ -280,33 +317,19 @@ function buildStatButton(person) {
     btn.addEventListener("mouseenter", () => { hoverFocus = person.id; syncFocusUI(); redrawAll(); });
     btn.addEventListener("mouseleave", () => { hoverFocus = null; syncFocusUI(); redrawAll(); });
   }
-  return { btn, meta, pct, id: person.id };
+  return { btn, meta, left, fill, lived, leftPct, id: person.id };
 }
 
 function build() {
   const root = document.getElementById("weeks-root");
   root.className = "weeks-root";
 
-  // Epigraph first -- the frame you read before the instrument (v1.24: moved here from the
-  // bottom, per live feedback that it needed to be seen up front, not discovered after
-  // scrolling past the whole grid).
-  const epigraph = document.createElement("div");
-  epigraph.className = "weeks-epigraph";
-  for (const line of EPIGRAPH) {
-    const p = document.createElement("p");
-    p.textContent = `${line.text} `;
-    const attr = document.createElement("span");
-    attr.className = "weeks-epigraph-attr";
-    attr.textContent = line.attr;
-    p.appendChild(attr);
-    epigraph.appendChild(p);
-  }
-  root.appendChild(epigraph);
-
-  const divider = document.createElement("div");
-  divider.className = "weeks-divider";
-  divider.setAttribute("aria-hidden", "true");
-  root.appendChild(divider);
+  // v2.0: heading first (design's "WHERE WE ARE, WHAT'S LEFT"), new -- the section previously
+  // had no title of its own here, just the epigraph.
+  const heading = document.createElement("div");
+  heading.className = "weeks-heading";
+  heading.textContent = "WHERE WE ARE, WHAT'S LEFT";
+  root.appendChild(heading);
 
   const statsRow = document.createElement("div");
   statsRow.className = "weeks-stats";
@@ -371,6 +394,28 @@ function build() {
   card.appendChild(frame);
   root.appendChild(card);
 
+  // Epigraph last (v2.0 -- reversed from v1.24's top placement to match the imported design's
+  // closing-thought order: stats/bars -> grid -> reflective quote; see the CSS comment on
+  // .weeks-epigraph for the full trail). The divider moves with it, now separating the grid
+  // from the quote rather than the quote from the stats.
+  const divider = document.createElement("div");
+  divider.className = "weeks-divider";
+  divider.setAttribute("aria-hidden", "true");
+  root.appendChild(divider);
+
+  const epigraph = document.createElement("div");
+  epigraph.className = "weeks-epigraph";
+  for (const line of EPIGRAPH) {
+    const p = document.createElement("p");
+    p.textContent = `${line.text} `;
+    const attr = document.createElement("span");
+    attr.className = "weeks-epigraph-attr";
+    attr.textContent = line.attr;
+    p.appendChild(attr);
+    epigraph.appendChild(p);
+  }
+  root.appendChild(epigraph);
+
   chart = { canvas, ctx: canvas.getContext("2d"), scroller, gutter };
 
   redrawAll();
@@ -400,10 +445,12 @@ export function refreshWeeksIfStale() {
   if (built) refreshIfStale();
 }
 
-// Called from app.js on every theme change -- ALL grid colors are theme-scoped since v1.29,
-// person colors included, so the memoized glow sprites must be dropped here or the current-
-// week markers would keep glowing in the PREVIOUS theme's colors after a toggle (same
-// null-on-change pattern as figure.js's attributeChangedCallback). No-ops if never built.
+// Called from app.js on every theme change. Pre-v2.0, grid colors were theme-scoped, so the
+// memoized glow sprites had to be dropped here or the current-week markers would keep glowing
+// in the PREVIOUS theme's colors after a toggle. v2.0 fixed person colors to single constants
+// (Weeks no longer follows the page theme), so this is now a harmless no-visible-op kept for
+// wiring symmetry rather than a functional necessity -- see makeGlowSprite()'s own comment
+// above. No-ops if never built.
 export function redrawWeeksForTheme() {
   jGlowSprite = null;
   bGlowSprite = null;

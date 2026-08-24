@@ -1,5 +1,13 @@
 // lib.mjs — shared pure functions (BUILD-PLAN.md Appendix B, verbatim + hktDateParts)
 // Imported by both the browser (app.js, weeks.js) and Node (scripts/, verify.mjs).
+
+// Thousands-comma formatter (v2.0 redesign) -- lifted from weeks.js so app.js's seam pill
+// ("N,NNN WEEKS TOTAL") and weeks.js's own stat labels share one implementation instead of
+// two copies drifting apart.
+export function commas(n) {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+}
+
 export function hktDateString(d = new Date()) {
   return new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Hong_Kong", year: "numeric", month: "2-digit", day: "2-digit",

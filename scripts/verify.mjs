@@ -314,21 +314,27 @@ function stage1() {
     assert.ok(toggleTag, "no theme-toggle button in index.html");
     assert.doesNotMatch(toggleTag[0], /aria-pressed/, "theme-toggle must not carry aria-pressed");
   });
-  check("stage1", "single page (v1.39): #cards, .section-divider, #weeks-root appear in that DOM order inside main", () => {
+  check("stage1", "single page (v1.39, DOM merge v2.0): .mindset-panel > #cards, .seam, #weeks-root appear in that order inside main", () => {
+    // v2.0: .section-divider (a bare accent line) was replaced by .seam (a gradient bar +
+    // floating pill), and #cards/#weeks-root moved one level deeper, inside a new
+    // .mindset-panel wrapper (the unified duotone card) -- selectors retargeted, same intent:
+    // still exactly one page, still Journal unconditionally above Weeks, still no tab system.
     const src = html();
     const mainOpen = src.indexOf("<main>");
     assert.ok(mainOpen !== -1, "no <main> tag found");
     const mainClose = src.indexOf("</main>", mainOpen);
     assert.ok(mainClose !== -1, "no closing </main> tag found");
     const mainHTML = src.slice(mainOpen, mainClose);
+    const iPanel = mainHTML.indexOf('class="mindset-panel"');
     const iCards = mainHTML.indexOf('id="cards"');
-    const iDivider = mainHTML.indexOf('class="section-divider"');
+    const iSeam = mainHTML.indexOf('class="seam"');
     const iWeeks = mainHTML.indexOf('id="weeks-root"');
+    assert.ok(iPanel !== -1, ".mindset-panel not found inside main");
     assert.ok(iCards !== -1, "#cards not found inside main");
-    assert.ok(iDivider !== -1, ".section-divider not found inside main");
+    assert.ok(iSeam !== -1, ".seam not found inside main");
     assert.ok(iWeeks !== -1, "#weeks-root not found inside main");
-    assert.ok(iCards < iDivider && iDivider < iWeeks,
-      "expected DOM order #cards -> .section-divider -> #weeks-root inside main (Journal above Weeks, v1.39 merge)");
+    assert.ok(iPanel < iCards && iCards < iSeam && iSeam < iWeeks,
+      "expected DOM order .mindset-panel -> #cards -> .seam -> #weeks-root inside main (Journal above Weeks, v1.39 merge, v2.0 panel wrap)");
   });
   check("stage1", "localStorage: mindset.theme only in a removeItem; zero other localStorage use app-wide", () => {
     // v1.29 retired theme persistence entirely — the ONLY localStorage touch permitted
@@ -417,11 +423,13 @@ function stage1() {
   check("stage1", "WCAG contrast pairs pass at corrected thresholds (blossom + dark)", () => {
     // v1.29: calm and the evening --bg shift are retired; the theme set is blossom + dark
     // (themeTokens() carries the old evening check's loud-failure extraction guard forward).
+    // v2.0: --surface-2 (the Journal card's nested inner prompt box) added to every existing
+    // pair list a real --surface pairing already covered -- tightening, not a new category.
     const themes = themeTokens(css());
     const pairs = [
-      ["ink", "bg", 4.5], ["ink", "surface", 4.5],
-      ["muted", "surface", 4.5], ["muted", "bg", 4.5],
-      ["accent", "surface", 4.5], ["accent", "bg", 4.5],
+      ["ink", "bg", 4.5], ["ink", "surface", 4.5], ["ink", "surface-2", 4.5],
+      ["muted", "surface", 4.5], ["muted", "bg", 4.5], ["muted", "surface-2", 4.5],
+      ["accent", "surface", 4.5], ["accent", "bg", 4.5], ["accent", "surface-2", 4.5],
     ];
     const failures = [];
     for (const [themeName, tokens] of Object.entries(themes)) {
@@ -434,17 +442,32 @@ function stage1() {
     assert.equal(failures.length, 0, failures.join(" | "));
   });
 
-  check("stage1", "person colors >= 4.5:1 on --bg and --surface in both themes (v1.22 hand-check, now gated)", () => {
+  // v2.0: the Weeks section became a permanently dark card, independent of the page's
+  // blossom/dark theme (see styles.css's --weeks-* token comment and audits/decisions.md
+  // v2.0) -- --person-j/--person-b/--weeks-muted/--weeks-ink are now fixed constants, not
+  // theme-scoped, so this replaces the old "person colors vs --bg/--surface in both themes"
+  // check (that pairing no longer reflects where these colors actually render) with checks
+  // against the surfaces they now actually sit on: --weeks-bg (the section) and --weeks-card
+  // (the nested grid card, the harder constraint since it's the lighter of the two). Still
+  // looped over both theme extractions for parity with the rest of this file, even though
+  // blossom/dark resolve to the identical fixed values by construction.
+  check("stage1", "weeks-section colors >= 4.5:1 on --weeks-bg and --weeks-card, both theme extractions (v2.0)", () => {
     const themes = themeTokens(css());
     const failures = [];
     for (const [themeName, tokens] of Object.entries(themes)) {
-      for (const p of ["person-j", "person-b"]) {
-        for (const base of ["bg", "surface"]) {
+      for (const p of ["person-j", "person-b", "weeks-muted", "weeks-ink"]) {
+        for (const base of ["weeks-bg", "weeks-card"]) {
           assert.ok(tokens[p] && tokens[base], `${themeName}: missing token --${p} or --${base}`);
           const ratio = contrastRatio(tokens[p], tokens[base]);
           if (ratio < 4.5) failures.push(`${themeName} (--${p} on --${base}) = ${ratio.toFixed(2)} < 4.5`);
         }
       }
+      // --weeks-ink additionally renders directly on --weeks-pill-bg (the seam pill).
+      const pillRatio = contrastRatio(tokens["weeks-ink"], tokens["weeks-pill-bg"]);
+      if (pillRatio < 4.5) failures.push(`${themeName} (--weeks-ink on --weeks-pill-bg) = ${pillRatio.toFixed(2)} < 4.5`);
+      // --weeks-accent renders as real text only in the epigraph attribution, on --weeks-bg.
+      const accentRatio = contrastRatio(tokens["weeks-accent"], tokens["weeks-bg"]);
+      if (accentRatio < 4.5) failures.push(`${themeName} (--weeks-accent on --weeks-bg) = ${accentRatio.toFixed(2)} < 4.5`);
     }
     assert.equal(failures.length, 0, failures.join(" | "));
   });
