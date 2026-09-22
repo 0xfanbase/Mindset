@@ -1,9 +1,10 @@
 // lib.mjs — shared pure functions: HKT date/time + life-in-weeks math. The v1.0-v2.0
-// rotation engine (BUILD-PLAN.md Appendix B) was retired in v3.0 with the Journal card.
+// rotation engine (BUILD-PLAN.md Appendix B) was retired in v3.0 with the Journal card;
+// hktHour/isDarkWindowHKT went in v4.0 with the blossom theme they switched.
 // Imported by both the browser (app.js, weeks.js) and Node (verify.mjs).
 
-// Thousands-comma formatter (v2.0 redesign) -- so weeks.js's total pill ("N,NNN WEEKS
-// TOTAL") and its stat labels share one implementation instead of two copies drifting apart.
+// Thousands-comma formatter (v2.0 redesign) -- the hero number, the bars, the milestone
+// labels and the canvas aria-label all share one implementation instead of copies drifting.
 export function commas(n) {
   return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
@@ -26,25 +27,6 @@ export function hktDateParts(d = new Date()) {
   const o = {};
   for (const p of f.formatToParts(d)) o[p.type] = p.value;
   return o;
-}
-
-// The HKT hour, 0-23. isDarkWindowHKT (below) is its only shipped caller since the 05:00
-// content pivot retired in v3.0; it stays exported because verify.mjs's 1440-minute sweep
-// asserts on it directly.
-export function hktHour(d = new Date()) {
-  return Number(
-    new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", hour12: false }).format(d)
-  );
-}
-
-// Dark theme 17:00 HKT through 06:00 HKT (wraps midnight); blossom the rest. The two
-// windows exactly partition the day — every HKT hour resolves to exactly one, by
-// construction of this single boolean (not two separate predicates that could drift
-// into disagreeing at a boundary). index.html's pre-paint snippet duplicates this exact
-// expression (it can't import a module); verify.mjs pins the two against each other.
-export function isDarkWindowHKT(now = new Date()) {
-  const h = hktHour(now);
-  return h < 6 || h >= 17;
 }
 
 // Weeks-of-life chart (v1.22) -- "life in weeks" for J and B (initials only, never real
@@ -73,8 +55,64 @@ export function weeksLived(birthMonthHKT, now = new Date()) {
   return Math.max(0, Math.min(LIFE_WEEKS_TOTAL, w));
 }
 
+// The DISPLAYED week is 1-indexed, so at weeksLived()'s clamp weeks+1 would read "week 4,681
+// of 4,680" -- cap the display at the same total (real, though unreachable before ~2079).
+// Lives here, not in a renderer, so the hero number, the bars and the canvas label can never
+// disagree about which week it is.
+export function displayWeek(weeks) {
+  return Math.min(weeks + 1, LIFE_WEEKS_TOTAL);
+}
+
 // Percent of the grid's own total filled -- deliberately not percent-of-4000, so this can
 // never nonsensically exceed 100% and always matches the grid's own visual fill ratio.
 export function percentLifeSpent(birthMonthHKT, now = new Date()) {
   return (weeksLived(birthMonthHKT, now) / LIFE_WEEKS_TOTAL) * 100;
+}
+
+// v4.0 -- the "now" square fills day by day rather than flipping once a week, so the grid
+// reads as moving. daysIntoWeek is 0..6 within the CURRENT age-week; fraction is (d+1)/7, i.e.
+// the square is already 1/7 full on the first day of the week (a lived day is a lived day).
+// Past the clamp there is no partial square left to fill, so it reports complete and the
+// caller draws no now-marker at all.
+export function weekProgress(birthMonthHKT, now = new Date()) {
+  if (weeksLived(birthMonthHKT, now) >= LIFE_WEEKS_TOTAL) {
+    return { daysIntoWeek: 6, fraction: 1, complete: true };
+  }
+  const days = hktDayNumber(now) - monthStartDayNumber(birthMonthHKT);
+  const d = Math.max(0, days) % 7;
+  return { daysIntoWeek: d, fraction: (d + 1) / 7, complete: false };
+}
+
+// v4.0 milestones -- the few week indices worth naming, built once here so the hero list and
+// any future caller read the same table. Four sources: round week counts, the grid's own
+// halfway mark, decade birthdays (age years * 52, the grid's own row arithmetic), and the last
+// square. 4,000 carries the Burkeman attribution the epigraph already credits -- attribution,
+// never an excerpt (invariant 2).
+export const MILESTONE_WEEKS = (() => {
+  const out = new Map();
+  const add = (week, label) => { if (week <= LIFE_WEEKS_TOTAL && !out.has(week)) out.set(week, { week, label }); };
+  add(LIFE_WEEKS_TOTAL, `${LIFE_WEEKS_YEARS} years · the last square`);
+  add(4000, `week ${commas(4000)} · Burkeman's average life`);
+  add(LIFE_WEEKS_TOTAL / 2, `halfway · week ${commas(LIFE_WEEKS_TOTAL / 2)}`);
+  for (const years of [30, 40, 50, 60, 70, 80]) {
+    add(years * LIFE_WEEKS_PER_ROW, `${years} years · week ${commas(years * LIFE_WEEKS_PER_ROW)}`);
+  }
+  for (const w of [1000, 1500, 2000, 2500, 3000, 3500, 4000]) add(w, `week ${commas(w)}`);
+  return [...out.values()].sort((a, b) => a.week - b.week);
+})();
+
+// The next n milestones, nearest first. weeksUntil 0 means the current week IS the milestone
+// (the caller renders "this week"), so the filter is >= 0, not > 0. Once weeksLived clamps at
+// the grid end there is nothing ahead any more -- returns [] rather than re-offering the last
+// square forever, which is what lets the hero switch to its own "the grid is full" line.
+export function upcomingMilestones(birthMonthHKT, now = new Date(), n = 3) {
+  const lived = weeksLived(birthMonthHKT, now);
+  if (lived >= LIFE_WEEKS_TOTAL) return [];
+  const out = [];
+  for (const m of MILESTONE_WEEKS) {
+    if (m.week < lived) continue;
+    out.push({ label: m.label, week: m.week, weeksUntil: m.week - lived });
+    if (out.length === n) break;
+  }
+  return out;
 }

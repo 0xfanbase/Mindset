@@ -2,14 +2,20 @@
 
 A life in weeks for J and B. One page, no backend, no dependencies — a small bottle of light
 breathing slowly, the day's date in Hong Kong time, and one 90-year grid of small squares, one
-square per week, filled pink-and-blue as each week passes (split cells where both have lived a
-week, solid blue where only B has so far — he's older). It's zoomable and scrollable, with a
-progress bar and percent-of-life-spent figure for each person at the top, a tap/hover toggle to highlight
-just one person's weeks, and a total-weeks pill under the heading.
+square per week.
 
-Two themes that follow the Hong Kong clock — `blossom` (soft pink) through the day, `dark`
-(warm charcoal) from 17:00 to 06:00 HKT. The header toggle overrides the schedule for the
-current visit only: nothing is stored, and every fresh load returns to the time-of-day cycle.
+The page opens on the number: how many weeks are left, which week this is out of 4,680, and
+what percent is lived. A person switch (J or B) drives everything below it — both progress
+bars, the next three milestones, and the grid itself. The grid shows one person at a time: the
+selected person's lived weeks are solid, the other appears only as a faint lead band and a
+hairline outline on their own current week, so the square that draws the eye is *now* — which
+fills a seventh at a time as the week goes by, with a slow halo breathing on the same 7-second
+cycle as the bottle in the header. Three views: **Life** (the whole 90 years), **Decade** (the
+current ten years, twice the size), **Year** (52 weeks as four rows of 13).
+
+One dark theme (v4.0 — the pink `blossom` theme and the Hong Kong theme clock that switched it
+were retired at the owner's request). The page background is the night sky; only the grid sits
+on a card.
 
 Weeks is the entire page (v3.0 — the Journal card and its daily pipeline were retired). It
 advances on its own: since it's computed from today's HKT date on every load and on every
@@ -24,11 +30,8 @@ built from.
 ## Add to Home Screen
 
 **iOS (Safari):** open the site → Share sheet → **Add to Home Screen**. It launches
-full-screen like an app, with its own icon, and the standalone chrome follows the
-time-of-day theme — pink through the Hong Kong day, dark from 17:00 HKT (a toggle override
-lasts only until the app is next relaunched). The cold-launch splash is always dark-toned
-by design: a light splash flashing at night was the harm worth removing, a dark splash by
-day is a shrug.
+full-screen like an app, with its own icon. The splash, the status bar and the page are all
+the same `#1C1F2A` since v4.0, so there is no launch-time colour flash either way.
 
 **Android (Chrome):** open the site → menu (⋮) → **Add to Home screen** / **Install app**.
 
@@ -43,7 +46,7 @@ month, never a day). `verify.mjs` pins the current values, so update its expecta
 same commit or the build will correctly fail.
 
 **Bump the service-worker cache** — any time `sw.js`'s `ASSETS` list, or the bytes of any file
-already on it, meaningfully change, bump `CACHE` (e.g. `mindset-v24` → `mindset-v25`) so old
+already on it, meaningfully change, bump `CACHE` (currently `mindset-v25`, bumped from `mindset-v24` in v4.0) so old
 installed clients purge stale cached files instead of serving them alongside the new ones.
 Keep `BUILD-PLAN.md` Appendix C.2's code block in sync with the real file.
 

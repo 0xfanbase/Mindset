@@ -1,41 +1,40 @@
-// weeks.js -- the Weeks section: one combined "life in weeks" grid for J and B, canvas-
-// rendered, zoomable, with a hover/tap highlight per person. BUILD-PLAN.md v1.23 (v1.22
-// shipped two separate grids; this redesign combines them -- see audits/decisions.md for the
-// cell-state model). As of v3.0 this section is the WHOLE page: app.js's boot() builds it
-// directly, and a throw here surfaces as a visible error state rather than being swallowed.
-// Its container is visible from load, so (like figure.js's always-visible element) there's a
-// real size to measure the first time build() runs.
+// weeks.js -- the grid: one life in weeks, one person at a time. v4.0 replaced the v1.23
+// combined two-person grid (every cell split pink/blue) and its +/- zoom with a person switch
+// (owned by app.js's hero) and three named views -- Life, Decade, Year. The quiet-past rule is
+// the whole point: the selected person's lived weeks are solid, the other person is present
+// only as a faint lead band and a hairline outline on their own current week, so "now" is the
+// one thing on screen that draws the eye. Canvas for the cells, one DOM overlay for the
+// breathing now-marker (a CSS animation is cheaper and smoother than repainting a halo).
 import {
-  hktDateString, weeksLived, percentLifeSpent, commas,
-  LIFE_WEEKS_TOTAL, LIFE_WEEKS_PER_ROW, LIFE_WEEKS_YEARS, LIFE_PEOPLE,
+  hktDateString, weeksLived, weekProgress, displayWeek, commas,
+  LIFE_WEEKS_TOTAL, LIFE_WEEKS_PER_ROW, LIFE_PEOPLE,
 } from "./lib.mjs";
 
 const DPR_CAP = 2;
-const ZOOM_MULT = [1, 2, 3]; // multipliers of the dynamically-fit base pitch
 const DOT_FRACTION = 0.7; // dot size as a fraction of the cell pitch; remainder is gap
 const MIN_PITCH = 4;
-const PALE_ALPHA = 0.25; // focus-mode de-emphasis for the non-focused person
-// v1.24: the epigraph (fact, then reminder) -- top of the section, real display weight, per
-// live feedback. One treatment for both lines: one thought ~2,000 years apart, no hierarchy.
-// Seneca's line is an ORIGINAL paraphrase, not a lifted translation -- the published
-// rendering (Penguin/Costa's own subtitle) says "if you know how to USE it"; "spend" was
-// chosen deliberately as this section's own vocabulary (percent spent, squares = spent weeks).
-const EPIGRAPH = [
-  { text: "An average human life is about four thousand weeks.", attr: "— after Oliver Burkeman" },
-  { text: "Life is long, if you know how to spend it.", attr: "— after Seneca" },
-];
+const BAND_ALPHA = 0.35; // the other person's already-lived lead, readable but quiet
+const OTHER_MARK_ALPHA = 0.6; // the other person's own current-week outline
+const ROW_RULE_ALPHA = 0.35;
+const DECADE_TINT = "rgba(255,255,255,0.03)";
+
+// The three views (item 5). cols/rows are the grid's shape; zoom multiplies the width-fitted
+// pitch, which is what makes Decade scroll horizontally instead of shrinking to fit.
+const VIEWS = {
+  life: { id: "life", label: "Life", cols: 52, count: LIFE_WEEKS_TOTAL, zoom: 1 },
+  decade: { id: "decade", label: "Decade", cols: 52, count: 520, zoom: 2 },
+  year: { id: "year", label: "Year", cols: 13, count: 52, zoom: 1 },
+};
+const VIEW_ORDER = ["life", "decade", "year"];
+const YEAR_GUTTER = ["wk 1", "wk 14", "wk 27", "wk 40"];
 
 function themeColor(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
 }
 
-function hexToRgbArr(hex) {
-  const h = hex.replace("#", "");
-  return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
-}
-
 function hexToRgba(hex, alpha) {
-  const [r, g, b] = hexToRgbArr(hex);
+  const h = hex.replace("#", "");
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
@@ -44,34 +43,29 @@ function debounce(fn, ms) {
   return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
 }
 
-const jBirth = LIFE_PEOPLE.find((p) => p.id === "J").birthMonthHKT;
-const bBirth = LIFE_PEOPLE.find((p) => p.id === "B").birthMonthHKT;
+const birthOf = (id) => LIFE_PEOPLE.find((p) => p.id === id).birthMonthHKT;
 
 let built = false;
-let zoomIndex = 0;
+let viewId = "life";
+let personId = "J";
 let lastDrawnDateHKT = null;
-let stickyFocus = null; // "J" | "B" | null -- set by click/tap, persists until toggled off
-let hoverFocus = null; // "J" | "B" | null -- set by real mouse hover only, transient
-let zoomOutBtn = null;
-let zoomInBtn = null;
-let jStat = null;
-let bStat = null;
-let chart = null; // { canvas, ctx, scroller, gutter }
-let jGlowSprite = null;
-let bGlowSprite = null;
+let chart = null; // { canvas, ctx, scroller, gutter, marker, tabs }
 
-function effectiveFocus() {
-  return hoverFocus || stickyFocus;
+// The window of week indices this view shows. Decade/Year follow the selected person's own
+// current week; past the clamp they pin to the last full window rather than running off the
+// end of the grid (real, though unreachable before ~2079).
+function windowFor(view, lived) {
+  if (view.id === "life") return 0;
+  const span = view.count;
+  return Math.min(Math.floor(lived / span) * span, LIFE_WEEKS_TOTAL - span);
 }
 
-function fitPitch(scroller) {
-  const w = scroller.clientWidth || scroller.parentElement.clientWidth;
-  return Math.max(MIN_PITCH, w / LIFE_WEEKS_PER_ROW);
+function fitPitch(view) {
+  const w = chart.scroller.clientWidth || chart.scroller.parentElement.clientWidth;
+  return Math.max(MIN_PITCH, (w / view.cols) * view.zoom);
 }
 
-function sizeCanvas(canvas, ctx, pitch) {
-  const cssW = LIFE_WEEKS_PER_ROW * pitch;
-  const cssH = LIFE_WEEKS_YEARS * pitch;
+function sizeCanvas(canvas, ctx, cssW, cssH) {
   const dpr = Math.min(window.devicePixelRatio || 1, DPR_CAP);
   canvas.width = Math.round(cssW * dpr);
   canvas.height = Math.round(cssH * dpr);
@@ -80,314 +74,242 @@ function sizeCanvas(canvas, ctx, pitch) {
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-// A soft radial-gradient sprite, generated once per person and reused -- the same offscreen-
-// sprite technique figure.js uses for its glow (never per-frame shadowBlur). Person colors
-// were theme-scoped v1.29-v1.39 (redrawWeeksForTheme() nulled both sprites on a theme change
-// to force regeneration in the new theme's colors); v2.0 fixed them to single constants (the
-// Weeks section no longer follows the page theme at all -- see styles.css's --weeks-* token
-// comment), so a theme toggle no longer actually changes anything here. The null-and-redraw
-// still runs (cheap, and keeps this wired the same way figure.js's own theme refresh is) --
-// see redrawWeeksForTheme()'s own comment below.
-function makeGlowSprite(hex) {
-  const [r, g, b] = hexToRgbArr(hex);
-  const size = 64;
-  const c = document.createElement("canvas");
-  c.width = c.height = size;
-  const gctx = c.getContext("2d");
-  const grad = gctx.createRadialGradient(size / 2, size / 2, 0, size / 2, size / 2, size / 2);
-  // Peak alpha 0.28, not 0.55 -- the glow paints OVER an outline whose point is an unfilled
-  // center (v1.34: corrected from "UNDER" -- stampGlow runs after strokeRect); a strong glow
-  // visibly refilled that center and bled into neighboring cells (tested live).
-  grad.addColorStop(0, `rgba(${r},${g},${b},0.28)`);
-  grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
-  gctx.fillStyle = grad;
-  gctx.fillRect(0, 0, size, size);
-  return c;
-}
-function jGlow() { return jGlowSprite || (jGlowSprite = makeGlowSprite(themeColor("--person-j"))); }
-function bGlow() { return bGlowSprite || (bGlowSprite = makeGlowSprite(themeColor("--person-b"))); }
-function stampGlow(ctx, sprite, cx, cy, pitch) {
-  const size = pitch * 1.35; // reads as glowing, not just tinted (Fable's UX audit); the
-  // neighbor-bleed fix that actually mattered was the alpha drop, not size.
-  ctx.drawImage(sprite, cx - size / 2, cy - size / 2, size, size);
+// The removed legend (v1.24) explained the lead band as "only B, so far"; that information
+// still has to survive for a screen-reader user, so it's folded into the one label that was
+// already dynamic -- now with which person the grid is actually showing (v4.0).
+function ariaLabelFor(Jw, Bw) {
+  return `Life in weeks: J ${commas(displayWeek(Jw))} of ${commas(LIFE_WEEKS_TOTAL)}, ` +
+    `B ${commas(displayWeek(Bw))} of ${commas(LIFE_WEEKS_TOTAL)}. Showing ${personId}. ` +
+    `B has about a 13-month head start on J.`;
 }
 
-// The removed legend (v1.24 -- see audits/decisions.md) explained the solid-blue "lead band"
-// as "only B, so far"; that information still needs to survive for a screen-reader user even
-// though the visible key is gone, so it's folded into the one label that was already dynamic.
-function ariaLabelFor(Jw, Bw, total, focus) {
-  const base = `Life in weeks: J ${commas(Jw)} of ${commas(total)}, B ${commas(Bw)} of ${commas(total)}. B has about a 13-month head start on J.`;
-  if (focus === "J") return `${base} Highlighting J.`;
-  if (focus === "B") return `${base} Highlighting B.`;
-  return base;
-}
-
-// Combined-grid cell model (see audits/decisions.md for the full rationale): row/col = weeks
-// since each person's OWN birth (age, not calendar time). B is always older, so for any age-
-// week index w: w < Jw means both have lived it (split cell, half pink / half blue); Jw <= w <
-// Bw means only B has (solid blue -- there is structurally no "J-only" case, ever); w >= Bw
-// means neither has (faint). Jw and Bw themselves get an outline marker instead of a fill.
-// Cells are drawn in batched fillStyle passes (future / blue / split-J / split-B), not
-// per-cell style switches -- style changes, not fillRect calls, are what's expensive on canvas.
-function drawGrid(pitch) {
+// Cells are drawn in batched fillStyle passes (future / lived / lead band, then the two
+// markers), not per-cell style switches -- style changes, not fillRect calls, are what costs
+// on canvas. The passes are disjoint on purpose: the band is a translucent colour, so painting
+// it over a future cell rather than instead of one would composite into a third shade.
+function drawGrid(view, pitch) {
   const { canvas, ctx } = chart;
-  sizeCanvas(canvas, ctx, pitch);
+  const now = new Date();
+  const other = personId === "J" ? "B" : "J";
+  const Pw = weeksLived(birthOf(personId), now);
+  const Qw = weeksLived(birthOf(other), now);
+  const prog = weekProgress(birthOf(personId), now);
+  const start = windowFor(view, Pw);
+  const cols = view.cols;
+  const rows = view.count / cols;
+
+  sizeCanvas(canvas, ctx, cols * pitch, rows * pitch);
   const dot = Math.max(1, pitch * DOT_FRACTION);
   const offset = (pitch - dot) / 2;
-  const total = LIFE_WEEKS_TOTAL;
-  const now = new Date();
-  const Jw = weeksLived(jBirth, now);
-  const Bw = weeksLived(bBirth, now);
-
-  const focus = effectiveFocus();
-  const jColor = focus === "B" ? hexToRgba(themeColor("--person-j"), PALE_ALPHA) : themeColor("--person-j");
-  const bColor = focus === "J" ? hexToRgba(themeColor("--person-b"), PALE_ALPHA) : themeColor("--person-b");
+  const pColor = themeColor(personId === "J" ? "--person-j" : "--person-b");
+  const qColor = themeColor(other === "J" ? "--person-j" : "--person-b");
   const futureColor = themeColor("--week-future");
+  const inWindow = (w) => w >= start && w < start + view.count;
+  // The band only exists when the other person is AHEAD -- B is always older, so it shows for
+  // J and never for B. Structurally there is no "J-only lived" case, ever.
+  const bandLo = Pw + 1, bandHi = Qw;
+  const hasBand = Qw > Pw;
 
   function xy(w) {
-    const row = Math.floor(w / LIFE_WEEKS_PER_ROW), col = w % LIFE_WEEKS_PER_ROW;
-    return [col * pitch + offset, row * pitch + offset];
+    const i = w - start;
+    return [(i % cols) * pitch + offset, Math.floor(i / cols) * pitch + offset];
   }
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
+  // Structure (item 4): the current decade tinted, then decade rules, then the current row.
+  if (view.id === "life" || view.id === "decade") {
+    const decadeRow = Math.floor(Pw / (LIFE_WEEKS_PER_ROW * 10)) * 10 - start / cols;
+    if (decadeRow >= 0 && decadeRow < rows) {
+      ctx.fillStyle = DECADE_TINT;
+      ctx.fillRect(0, decadeRow * pitch, cols * pitch, Math.min(10, rows - decadeRow) * pitch);
+    }
+    ctx.fillStyle = themeColor("--hairline");
+    for (let r = 10; r < rows; r += 10) ctx.fillRect(0, Math.round(r * pitch) - 0.5, cols * pitch, 1);
+  }
+
   ctx.fillStyle = futureColor;
-  for (let w = Bw + 1; w < total; w++) { const [x, y] = xy(w); ctx.fillRect(x, y, dot, dot); }
-  if (Bw < total) { const [x, y] = xy(Bw); ctx.fillRect(x, y, dot, dot); } // base under B's outline
-
-  ctx.fillStyle = bColor;
-  for (let w = Jw + 1; w < Bw; w++) { const [x, y] = xy(w); ctx.fillRect(x, y, dot, dot); }
-  if (Jw < total) { const [x, y] = xy(Jw); ctx.fillRect(x + dot / 2, y, dot / 2, dot); } // B's right half at J's current week
-  for (let w = 0; w < Jw; w++) { const [x, y] = xy(w); ctx.fillRect(x + dot / 2, y, dot / 2, dot); }
-
-  ctx.fillStyle = jColor;
-  for (let w = 0; w < Jw; w++) { const [x, y] = xy(w); ctx.fillRect(x, y, dot / 2, dot); }
-
-  // J's current-week outline spans the FULL cell (matching B's), not just her half -- the
-  // half-width sliver read as a glitch and implied her week counted for less (Fable's UX
-  // audit, from the rendered grid). B's blue right-half fill stays visible under it.
-  const lw = Math.max(1, pitch * 0.08);
-  if (Jw < total) {
-    const [x, y] = xy(Jw);
-    ctx.strokeStyle = jColor;
-    ctx.lineWidth = lw;
-    ctx.strokeRect(x + lw / 2, y + lw / 2, Math.max(0, dot - lw), Math.max(0, dot - lw));
-    stampGlow(ctx, jGlow(), x + dot / 2, y + dot / 2, pitch);
-  }
-  if (Bw < total) {
-    const [x, y] = xy(Bw);
-    ctx.strokeStyle = bColor;
-    ctx.lineWidth = lw;
-    ctx.strokeRect(x + lw / 2, y + lw / 2, Math.max(0, dot - lw), Math.max(0, dot - lw));
-    stampGlow(ctx, bGlow(), x + dot / 2, y + dot / 2, pitch);
+  for (let w = start; w < start + view.count; w++) {
+    if (w < Pw || w === Pw) continue;
+    if (hasBand && w >= bandLo && w < bandHi) continue;
+    const [x, y] = xy(w);
+    ctx.fillRect(x, y, dot, dot);
   }
 
-  canvas.setAttribute("aria-label", ariaLabelFor(Jw, Bw, total, focus));
+  ctx.fillStyle = pColor;
+  for (let w = start; w < Math.min(Pw, start + view.count); w++) {
+    const [x, y] = xy(w);
+    ctx.fillRect(x, y, dot, dot);
+  }
+
+  if (hasBand) {
+    ctx.fillStyle = hexToRgba(qColor, BAND_ALPHA);
+    for (let w = Math.max(start, bandLo); w < Math.min(bandHi, start + view.count); w++) {
+      const [x, y] = xy(w);
+      ctx.fillRect(x, y, dot, dot);
+    }
+  }
+
+  // The now cell (item 2): a future-coloured square filled bottom-up by the fraction of the
+  // week already lived, then outlined. Bottom-up because the week fills the way a glass does.
+  const showNow = !prog.complete && inWindow(Pw);
+  if (showNow) {
+    const [x, y] = xy(Pw);
+    ctx.fillStyle = futureColor;
+    ctx.fillRect(x, y, dot, dot);
+    const h = Math.max(1, dot * prog.fraction);
+    ctx.fillStyle = pColor;
+    ctx.fillRect(x, y + dot - h, dot, h);
+    ctx.strokeStyle = pColor;
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, Math.max(1, dot - 1), Math.max(1, dot - 1));
+    // The current row, underlined in the person's own colour.
+    const row = Math.floor((Pw - start) / cols);
+    ctx.fillStyle = hexToRgba(pColor, ROW_RULE_ALPHA);
+    ctx.fillRect(0, Math.round((row + 1) * pitch) - 0.5, cols * pitch, 1);
+  }
+  if (Qw !== Pw && Qw < LIFE_WEEKS_TOTAL && inWindow(Qw)) {
+    const [x, y] = xy(Qw);
+    ctx.strokeStyle = hexToRgba(qColor, OTHER_MARK_ALPHA);
+    ctx.lineWidth = 1;
+    ctx.strokeRect(x + 0.5, y + 0.5, Math.max(1, dot - 1), Math.max(1, dot - 1));
+  }
+
+  canvas.setAttribute("aria-label", ariaLabelFor(
+    weeksLived(birthOf("J"), now), weeksLived(birthOf("B"), now)
+  ));
+
+  return { start, cols, rows, pitch, dot, offset, Pw, showNow, color: pColor };
 }
 
-// aria-label on a <button> replaces its visible children as the accessible name -- a static
-// label was erasing the section's own headline stat for screen readers (confirmed via a real
-// accessibility-tree snapshot). Folding the live figures in, regenerated on every redraw,
-// keeps label and visible text in sync.
-// The DISPLAYED week is 1-indexed, so at weeksLived()'s clamp weeks+1 would read "week 4,681
-// of 4,680" -- cap the display at the same total (real, though unreachable before ~2079).
-function displayWeek(weeks) {
-  return Math.min(weeks + 1, LIFE_WEEKS_TOTAL);
+// The halo is a DOM element, not canvas paint: one CSS @keyframes breathing at figure.js's own
+// 7s cycle costs nothing per frame and stops dead under prefers-reduced-motion, which a
+// canvas-drawn glow would need its own rAF loop to do.
+function placeMarker(geo) {
+  const { marker } = chart;
+  if (!geo.showNow) { marker.hidden = true; return; }
+  const i = geo.Pw - geo.start;
+  marker.hidden = false;
+  marker.style.color = geo.color;
+  marker.style.left = `${(i % geo.cols) * geo.pitch + geo.offset}px`;
+  marker.style.top = `${Math.floor(i / geo.cols) * geo.pitch + geo.offset}px`;
+  marker.style.width = `${geo.dot}px`;
+  marker.style.height = `${geo.dot}px`;
 }
 
-// v2.0: weeks-left/pct-left folded into the accessible name too, now that the visible card
-// shows both (the progress bar + "N weeks left" + "NN.N% left") -- keeps the aria-label in
-// sync with what's actually on screen, same principle as this function's own pre-existing
-// comment above (folding the live figures in on every redraw).
-function statLabel(id, weeks, pct) {
-  const left = LIFE_WEEKS_TOTAL - displayWeek(weeks);
-  return `${id}, week ${commas(displayWeek(weeks))} of ${commas(LIFE_WEEKS_TOTAL)}, ${commas(left)} weeks left, ${pct.toFixed(1)}% of life lived. Highlight ${id}'s weeks.`;
-}
-
-// Values only -- no new computation. weeksLived()/percentLifeSpent() are the same lib.mjs
-// functions the canvas grid itself uses, so the bar fill, the header stat, and the actual
-// squares can never visibly disagree.
-function paintStat(stat, id, weeks, pct) {
-  const left = LIFE_WEEKS_TOTAL - displayWeek(weeks);
-  const pctStr = pct.toFixed(1);
-  const leftPctStr = Math.max(0, 100 - pct).toFixed(1);
-  stat.meta.textContent = `${id} · week ${commas(displayWeek(weeks))} of ${commas(LIFE_WEEKS_TOTAL)}`;
-  stat.left.textContent = `${commas(left)} weeks left`;
-  stat.fill.style.width = `${pctStr}%`;
-  stat.lived.textContent = `${pctStr}% lived`;
-  stat.leftPct.textContent = `${leftPctStr}% left`;
-  stat.btn.setAttribute("aria-label", statLabel(id, weeks, pct));
-}
-
-function updateStats() {
-  const now = new Date();
-  paintStat(jStat, "J", weeksLived(jBirth, now), percentLifeSpent(jBirth, now));
-  paintStat(bStat, "B", weeksLived(bBirth, now), percentLifeSpent(bBirth, now));
-}
-
-function syncFocusUI() {
-  const eff = effectiveFocus();
-  for (const s of [jStat, bStat]) {
-    s.btn.setAttribute("aria-pressed", String(s.id === stickyFocus));
-    s.btn.classList.toggle("is-active", s.id === eff);
+// Gutter labels are the view's own scale (item 4): decade ages in Life, every age in Decade,
+// week-of-year markers in Year. The selected person's current row is labelled "now" in their
+// own colour -- the one place the gutter stops being a ruler and starts being a pointer.
+function paintGutter(view, geo) {
+  const { gutter } = chart;
+  gutter.textContent = "";
+  gutter.style.setProperty("--pitch", `${geo.pitch}px`);
+  const nowRow = geo.showNow ? Math.floor((geo.Pw - geo.start) / geo.cols) : -1;
+  for (let r = 0; r < geo.rows; r++) {
+    const slot = document.createElement("div");
+    slot.className = "weeks-yr";
+    if (view.id === "year") {
+      slot.textContent = YEAR_GUTTER[r] || "";
+    } else if (r === nowRow) {
+      slot.textContent = "now";
+      slot.classList.add("is-now");
+      slot.style.color = themeColor(personId === "J" ? "--person-j" : "--person-b");
+    } else if (view.id === "decade" || r % 10 === 0) {
+      slot.textContent = String(geo.start / geo.cols + r);
+    }
+    gutter.appendChild(slot);
   }
 }
 
-// Defensive: a canvas reporting zero client width (container not yet laid out, or a
-// ResizeObserver firing mid-reflow) would draw at MIN_PITCH and stamp a wrong
-// lastDrawnDateHKT, which would make refreshIfStale() skip the real redraw once real width
-// is available. No longer the tab-activation guard it was before v1.39 -- kept as a general
-// safety net (found in pre-merge audit).
-function redrawAll() {
+// Defensive: a scroller reporting zero client width (container not yet laid out, or a
+// ResizeObserver firing mid-reflow) would draw at MIN_PITCH and stamp a wrong lastDrawnDateHKT,
+// which would make refreshIfStale() skip the real redraw once real width is available.
+function redrawAll(centerNow = false) {
   if (!chart || chart.scroller.clientWidth === 0) return;
-  const pitch = fitPitch(chart.scroller) * ZOOM_MULT[zoomIndex];
-  drawGrid(pitch);
-  chart.gutter.style.setProperty("--pitch", `${pitch}px`);
-  updateStats();
+  const view = VIEWS[viewId];
+  const geo = drawGrid(view, fitPitch(view));
+  paintGutter(view, geo);
+  placeMarker(geo);
   lastDrawnDateHKT = hktDateString(new Date());
-  if (zoomOutBtn) {
-    zoomOutBtn.disabled = zoomIndex === 0;
-    zoomInBtn.disabled = zoomIndex === ZOOM_MULT.length - 1;
+  if (centerNow && geo.showNow) {
+    const x = ((geo.Pw - geo.start) % geo.cols) * geo.pitch;
+    chart.scroller.scrollLeft = Math.max(0, x - chart.scroller.clientWidth / 2);
   }
 }
 
-// Discrete steps (not continuous/pinch) keep the scroll-anchor math tractable and each state
-// a clean "big picture" / "individual dots" read -- see audits/decisions.md.
-function setZoom(newIndex) {
-  newIndex = Math.max(0, Math.min(ZOOM_MULT.length - 1, newIndex));
-  if (newIndex === zoomIndex || !chart) return;
-  const ratio = ZOOM_MULT[newIndex] / ZOOM_MULT[zoomIndex];
-  zoomIndex = newIndex;
-  const cw = chart.scroller.clientWidth;
-  const pending = Math.max(0, (chart.scroller.scrollLeft + cw / 2) * ratio - cw / 2);
-  redrawAll();
-  chart.scroller.scrollLeft = pending;
+function syncTabs() {
+  for (const t of chart.tabs) {
+    const on = t.dataset.view === viewId;
+    t.setAttribute("aria-selected", String(on));
+    t.tabIndex = on ? 0 : -1;
+    t.classList.toggle("is-active", on);
+  }
 }
 
-// v2.0: replaces the old bare meta+pct pair with the design's row / progress-bar / lived-left
-// row. Still exactly one interactive element (the button itself) -- every child here is purely
-// visual, painted by paintStat() on every redraw; the button's own aria-label (statLabel())
-// remains the sole accessible name, same pattern as before (see the button's own comment).
-function buildStatButton(person) {
-  const btn = document.createElement("button");
-  btn.type = "button";
-  btn.className = "weeks-stat";
-  btn.dataset.person = person.id;
-  btn.setAttribute("aria-pressed", "false");
-  // No static aria-label here -- updateStats() sets the real one (folding in the live
-  // week/percent figures) immediately after build(), before first paint.
-  const row = document.createElement("div");
-  row.className = "weeks-stat-row";
-  const meta = document.createElement("span");
-  meta.className = "weeks-stat-meta";
-  const left = document.createElement("span");
-  left.className = "weeks-stat-left";
-  row.append(meta, left);
+function setView(next) {
+  if (!VIEWS[next] || next === viewId) return;
+  viewId = next;
+  syncTabs();
+  redrawAll(next === "decade");
+}
 
-  const track = document.createElement("div");
-  track.className = "weeks-bar-track";
-  const fill = document.createElement("div");
-  fill.className = "weeks-bar-fill";
-  const shine = document.createElement("div");
-  shine.className = "weeks-bar-shine";
-  fill.appendChild(shine);
-  track.appendChild(fill);
-
-  const pctRow = document.createElement("div");
-  pctRow.className = "weeks-stat-pctrow";
-  const lived = document.createElement("span");
-  const leftPct = document.createElement("span");
-  pctRow.append(lived, leftPct);
-
-  btn.append(row, track, pctRow);
-
-  btn.addEventListener("click", () => {
-    stickyFocus = stickyFocus === person.id ? null : person.id;
-    // Sync hoverFocus too: un-toggling via a second click with the pointer never leaving
-    // (so no mouseleave fires) left effectiveFocus() returning the stale hoverFocus until
-    // the pointer moved (found in audit). Later mouseenter/mouseleave still work normally.
-    hoverFocus = stickyFocus;
-    syncFocusUI();
-    redrawAll();
+function buildViewSwitch(root) {
+  const bar = document.createElement("div");
+  bar.className = "view-switch";
+  bar.setAttribute("role", "tablist");
+  bar.setAttribute("aria-label", "Grid view");
+  const tabs = VIEW_ORDER.map((id) => {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "view-tab";
+    b.dataset.view = id;
+    b.setAttribute("role", "tab");
+    b.setAttribute("aria-selected", String(id === viewId));
+    b.tabIndex = id === viewId ? 0 : -1;
+    b.textContent = VIEWS[id].label;
+    b.addEventListener("click", () => setView(id));
+    bar.appendChild(b);
+    return b;
   });
-  // Hover is a desktop-only preview, gated behind the same media-feature test the stylesheet
-  // already uses for :hover rules -- an unconditionally-bound mouseenter fires on iOS's first
-  // tap (WebKit's hover-before-click emulation), which would turn tap-to-toggle into a
-  // broken tap-to-preview/tap-to-toggle two-step on the app's primary platform.
-  if (window.matchMedia && window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
-    btn.addEventListener("mouseenter", () => { hoverFocus = person.id; syncFocusUI(); redrawAll(); });
-    btn.addEventListener("mouseleave", () => { hoverFocus = null; syncFocusUI(); redrawAll(); });
-  }
-  return { btn, meta, left, fill, lived, leftPct, id: person.id };
+  // Roving-tabindex arrow keys: the tablist is one stop, arrows move within it.
+  bar.addEventListener("keydown", (e) => {
+    const i = VIEW_ORDER.indexOf(viewId);
+    let next = null;
+    if (e.key === "ArrowRight" || e.key === "ArrowDown") next = (i + 1) % VIEW_ORDER.length;
+    else if (e.key === "ArrowLeft" || e.key === "ArrowUp") next = (i + VIEW_ORDER.length - 1) % VIEW_ORDER.length;
+    else if (e.key === "Home") next = 0;
+    else if (e.key === "End") next = VIEW_ORDER.length - 1;
+    if (next === null) return;
+    e.preventDefault();
+    setView(VIEW_ORDER[next]);
+    tabs[next].focus();
+  });
+  root.appendChild(bar);
+  return tabs;
 }
 
 function build() {
   const root = document.getElementById("weeks-root");
   root.className = "weeks-root";
 
-  // v2.0: heading first (design's "WHERE WE ARE, WHAT'S LEFT"), new -- the section previously
-  // had no title of its own here, just the epigraph.
-  const heading = document.createElement("div");
-  heading.className = "weeks-heading";
-  heading.textContent = "WHERE WE ARE, WHAT'S LEFT";
-  root.appendChild(heading);
-
-  // The grid's own real total (LIFE_WEEKS_TOTAL, 4,680 -- see lib.mjs on why 90 years, not
-  // the literal 4,000/77), never a literal here. v3.0: built inside the section, under the
-  // heading, taking over from the pill that used to sit above it.
-  const totalPill = document.createElement("div");
-  totalPill.className = "weeks-total";
-  totalPill.id = "weeks-total-pill";
-  totalPill.textContent = `${commas(LIFE_WEEKS_TOTAL)} WEEKS TOTAL`;
-  root.appendChild(totalPill);
-
-  const statsRow = document.createElement("div");
-  statsRow.className = "weeks-stats";
-  jStat = buildStatButton(LIFE_PEOPLE.find((p) => p.id === "J"));
-  bStat = buildStatButton(LIFE_PEOPLE.find((p) => p.id === "B"));
-  statsRow.append(jStat.btn, bStat.btn);
-  root.appendChild(statsRow);
-
-  const zoomRow = document.createElement("div");
-  zoomRow.className = "weeks-zoom-row";
-  const zoomWrap = document.createElement("div");
-  zoomWrap.className = "weeks-zoom";
-  zoomOutBtn = document.createElement("button");
-  zoomOutBtn.type = "button";
-  zoomOutBtn.className = "weeks-zoom-btn";
-  zoomOutBtn.setAttribute("aria-label", "Zoom out");
-  zoomOutBtn.textContent = "−";
-  zoomInBtn = document.createElement("button");
-  zoomInBtn.type = "button";
-  zoomInBtn.className = "weeks-zoom-btn";
-  zoomInBtn.setAttribute("aria-label", "Zoom in");
-  zoomInBtn.textContent = "+";
-  zoomOutBtn.addEventListener("click", () => setZoom(zoomIndex - 1));
-  zoomInBtn.addEventListener("click", () => setZoom(zoomIndex + 1));
-  zoomWrap.append(zoomOutBtn, zoomInBtn);
-  zoomRow.appendChild(zoomWrap);
-  root.appendChild(zoomRow);
+  const tabs = buildViewSwitch(root);
 
   const card = document.createElement("div");
   card.className = "weeks-card";
+  card.setAttribute("role", "tabpanel");
+  card.setAttribute("aria-label", "Life in weeks");
   const frame = document.createElement("div");
   frame.className = "weeks-frame";
 
   const gutter = document.createElement("div");
   gutter.className = "weeks-gutter";
   gutter.setAttribute("aria-hidden", "true");
-  for (let row = 0; row < LIFE_WEEKS_YEARS; row++) {
-    const slot = document.createElement("div");
-    slot.className = "weeks-yr";
-    if (row % 5 === 0) slot.textContent = String(row);
-    gutter.appendChild(slot);
-  }
 
   const scroller = document.createElement("div");
   scroller.className = "weeks-scroll";
   scroller.tabIndex = 0;
   scroller.setAttribute("role", "group");
-  scroller.setAttribute("aria-label", "Life in weeks for J and B, scrollable");
+  scroller.setAttribute("aria-label", "Life in weeks, scrollable");
 
   const revealWrap = document.createElement("div");
   revealWrap.className = "weeks-reveal-wrap";
@@ -397,73 +319,47 @@ function build() {
   const scanline = document.createElement("div");
   scanline.className = "weeks-scanline";
   scanline.setAttribute("aria-hidden", "true");
-  revealWrap.append(canvas, scanline);
+  const marker = document.createElement("div");
+  marker.className = "now-marker";
+  marker.setAttribute("aria-hidden", "true");
+  marker.hidden = true;
+  revealWrap.append(canvas, scanline, marker);
   scroller.appendChild(revealWrap);
 
   frame.append(gutter, scroller);
   card.appendChild(frame);
   root.appendChild(card);
 
-  // Epigraph last (v2.0 -- reversed from v1.24's top placement to match the imported design's
-  // closing-thought order: stats/bars -> grid -> reflective quote; see the CSS comment on
-  // .weeks-epigraph for the full trail). The divider moves with it, now separating the grid
-  // from the quote rather than the quote from the stats.
-  const divider = document.createElement("div");
-  divider.className = "weeks-divider";
-  divider.setAttribute("aria-hidden", "true");
-  root.appendChild(divider);
-
-  const epigraph = document.createElement("div");
-  epigraph.className = "weeks-epigraph";
-  for (const line of EPIGRAPH) {
-    const p = document.createElement("p");
-    p.textContent = `${line.text} `;
-    const attr = document.createElement("span");
-    attr.className = "weeks-epigraph-attr";
-    attr.textContent = line.attr;
-    p.appendChild(attr);
-    epigraph.appendChild(p);
-  }
-  root.appendChild(epigraph);
-
-  chart = { canvas, ctx: canvas.getContext("2d"), scroller, gutter };
-
+  chart = { canvas, ctx: canvas.getContext("2d"), scroller, gutter, marker, tabs };
+  syncTabs();
   redrawAll();
 
   if (window.ResizeObserver) {
-    const onResize = debounce(() => redrawAll(), 120);
-    new ResizeObserver(onResize).observe(frame);
+    new ResizeObserver(debounce(() => redrawAll(), 120)).observe(frame);
   }
 }
 
 function refreshIfStale() {
+  // The now square's fill changes every HKT day, not every week -- the daily check is what
+  // keeps a backgrounded PWA from showing yesterday's fraction.
   if (hktDateString(new Date()) !== lastDrawnDateHKT) redrawAll();
 }
 
-// Called once from app.js's boot() -- builds once, then just checks whether the HKT date has
-// advanced since the last paint (idempotent, cheap; a defensive guard against a future second
-// call, since there is no tab-activation gate to rely on for that).
-export function initWeeks() {
+export function initWeeks(person) {
+  if (person) personId = person;
   if (!built) { build(); built = true; }
   refreshIfStale();
 }
 
-// Called from app.js's visibilitychange handler, which already exists to catch installed-
-// iOS-PWA background freezes (v1.16) -- a week boundary can cross while backgrounded same as
-// a day boundary can. No-ops if Weeks was never built (e.g. initWeeks() threw during boot,
-// which v3.0 paints as an error state).
-export function refreshWeeksIfStale() {
-  if (built) refreshIfStale();
+// Called by app.js's person switch: the grid is the same grid, re-aimed at the other life.
+export function setWeeksPerson(person) {
+  personId = person;
+  if (built) redrawAll(viewId === "decade");
 }
 
-// Called from app.js on every theme change. Pre-v2.0, grid colors were theme-scoped, so the
-// memoized glow sprites had to be dropped here or the current-week markers would keep glowing
-// in the PREVIOUS theme's colors after a toggle. v2.0 fixed person colors to single constants
-// (Weeks no longer follows the page theme), so this is now a harmless no-visible-op kept for
-// wiring symmetry rather than a functional necessity -- see makeGlowSprite()'s own comment
-// above. No-ops if never built.
-export function redrawWeeksForTheme() {
-  jGlowSprite = null;
-  bGlowSprite = null;
-  if (built) redrawAll();
+// Called from app.js's visibilitychange handler, which already exists to catch installed-
+// iOS-PWA background freezes (v1.16). No-ops if Weeks was never built (e.g. initWeeks() threw
+// during boot, which app.js paints as an error state).
+export function refreshWeeksIfStale() {
+  if (built) refreshIfStale();
 }

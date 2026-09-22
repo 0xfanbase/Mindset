@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v3.0)
+# MINDSET — Autonomous Build Plan (v4.0)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -2347,6 +2347,45 @@ refreshes on a schedule anymore; the site only changes when a human pushes to `m
   separately, since deleting `daily.yml` outright already removes it.
 - **Verified:** `verify.mjs all` 66/66 (64/64 before the audit round added two guards).
 
+**v4.0 changelog (from v3.0):** owner request, eight items: a hero number; "now" as the focal
+point, filling day by day with a breathing halo synced to the figure; a quiet past with one
+person shown at a time; real grid structure (decade rules, ages, a current-decade tint);
+Life/Decade/Year views replacing the +/- zoom; the two-apps seam between page and grid closed;
+milestones; and less mono, more voice, with a two-column desktop layout — plus **dark mode
+only**. The blossom theme, the 06:00/17:00 HKT clock that switched it, the toggle button, the
+pre-paint snippet in `index.html`, and `lib.mjs`'s `hktHour`/`isDarkWindowHKT` are all retired:
+there is one `:root` token block and the page background IS the night sky, so the panel card
+that used to wrap the grid is gone too (that wrapper was the seam).
+
+- **The hero** (built by `app.js` into `#hero`): heading, a person switch (`role="radiogroup"`,
+  J default, not persisted), the number ("2,759 weeks left" + "week 1,921 of 4,680 · 41.0%
+  lived"), the epigraph (moved up from below the grid), both people's bars, and the next three
+  milestones. Every figure comes from `lib.mjs`, never a literal.
+- **`lib.mjs` additions:** `weekProgress()` (days into the current age-week and the fraction the
+  now square is filled; reports `complete` past the clamp), `MILESTONE_WEEKS` (round weeks, the
+  halfway mark, decade birthdays, the last square), `upcomingMilestones()`, and `displayWeek()`
+  (moved here from `weeks.js` so the hero, the bars and the canvas label share it).
+- **`weeks.js` rebuilt:** three views (`life` 52 cols / `decade` 52 cols at 2x pitch, scrolled
+  to centre "now" / `year` 13 cols x 4 rows) behind a `role="tablist"` switch; one person at a
+  time, with the other person present only as a 0.35-alpha lead band and a hairline outline on
+  their own current week; the now cell fills bottom-up by `weekProgress().fraction`; a DOM
+  `.now-marker` overlay carries the 7s breathing halo (matching `figure.js`'s `BREATHE_CYCLE`).
+  Retired: `ZOOM_MULT`/`setZoom`, the stat buttons, hover/sticky focus, and the glow sprites.
+- **Invariant 11 re-scoped again** (see the dated `decisions.md` entry quoting old/new wording,
+  same treatment as the v1.39 and v3.0 re-scopings): the one-screen guarantee now covers the
+  hero — heading, person switch, number and both bars — and the grid below it scrolls.
+- **Invariants 3 and 7 amended:** 3 adds "dark theme only (v4.0)" and notes that no
+  `localStorage` key remains; 7 names the aria roles on the view tabs and the person switch.
+- **`verify.mjs` — invariant-12 ratchet, 66 -> 67:** three theme-window checks removed, nine
+  retargeted or merged, five added. Full accounting by exact name is in
+  `audits/decisions.md`'s v4.0 invariant-12 entry.
+- **`sw.js` `CACHE` bumped `mindset-v24` -> `mindset-v25`** (`ASSETS` unchanged); Appendix C.2
+  below updated to match. `index.html`'s `theme-color` and the manifest's
+  `theme_color`/`background_color` are now the static `--bg` `#1C1F2A`, gated by a new check.
+- **Verified:** `verify.mjs all` 67/67, plus a Playwright pass (390x844, 320x568, 1100x900,
+  reduced motion, and the 2079/2090 clamp dates) with zero console errors and no horizontal
+  overflow.
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -2415,15 +2454,15 @@ every resumed visit, and changes only when a human pushes to `main`.
    apostrophe `'` used intra-word for a contraction or possessive, e.g. "yesterday's", is not
    a quotation mark and is allowed). Attribution style: `— after Seneca`, `— after Bill Perkins`,
    `— core principle`. Never copy sentences from books, sites, or transcripts.
-3. **Zero runtime dependencies.** Vanilla HTML/CSS/JS. No frameworks, no npm packages, no build step, no bundler, no analytics, no cookies, no third-party scripts or CDNs at runtime. `localStorage` only, keys namespaced `mindset.*`.
+3. **Zero runtime dependencies.** Vanilla HTML/CSS/JS. No frameworks, no npm packages, no build step, no bundler, no analytics, no cookies, no third-party scripts or CDNs at runtime. `localStorage` only, keys namespaced `mindset.*` — as of v4.0 there are none left, and `verify.mjs` gates zero references app-wide. **Single dark theme** (v4.0): the blossom theme and the HKT clock that switched it are retired, so there is one `:root` token block and no `[data-theme]` attribute anywhere.
 4. **Node ≥ 20 built-ins only** for scripts (global `fetch`, `node:fs`, `node:test` allowed). No `npm install` at any point. (v3.0: `scripts/generate-daily.mjs`, the one script here that ever used `fetch`, is retired along with the daily pipeline — nothing left in `scripts/` makes network calls.)
 5. **Static hosting truth:** everything must work on GitHub Pages served from `main` branch root. Include a `.nojekyll` file. All stages commit and push directly to `main` — the owner has authorized this for this repo; there is no feature-branch/PR step in this plan.
 6. **Performance budget:** total page weight ≤ 600 KB excluding fonts (raised from 350 KB in v1.32 — a logged invariant-12 exception, owner-authorized, to fit the 5-year Journal pool; see decisions.md); fonts ≤ 300 KB total; JS ≤ 65 KB total (raised from 60 KB in v1.34 — a logged invariant-12 exception, to fit the widened cross-seam no-repeat guarantee plus several bug fixes; see decisions.md); the figure animation must pause when the tab is hidden and must honour `prefers-reduced-motion`.
-7. **Accessibility floor:** WCAG AA contrast for all text token pairs (verified numerically in `verify.mjs`, including `(--muted,--bg)` and `(--accent,--bg)` — not just the on-`--surface` pairs — and gated at 4.5:1 for any pair used for normal-size text, 3:1 only where the token is genuinely large-text/UI-component use), visible keyboard focus, `aria` roles on tabs and theme toggle, tap targets ≥ 44px, semantic landmarks (`header`, `main`, `nav`, `footer`).
+7. **Accessibility floor:** WCAG AA contrast for all text token pairs (verified numerically in `verify.mjs`, including `(--muted,--bg)` and `(--accent,--bg)` — not just the on-`--surface` pairs — and gated at 4.5:1 for any pair used for normal-size text, 3:1 only where the token is genuinely large-text/UI-component use), visible keyboard focus, `aria` roles on the grid view tabs (`role="tablist"`/`tab`/`tabpanel`) and the person switch (`role="radiogroup"`/`radio`), tap targets ≥ 44px, semantic landmarks (`header`, `main`, `nav`, `footer`).
 8. **Timezone law:** every date shown or computed is **Asia/Hong_Kong**, derived via `Intl.DateTimeFormat` with an explicit `timeZone` — never a bare `new Date().toLocaleDateString()` and never the runner's local time. `app.js`/`figure.js` must not call locale-date APIs without an explicit `timeZone` (Stage 1 verify greps for this).
 9. **Search visibility:** `<meta name="robots" content="noindex">` (public but unlisted — note: this hides the Pages URL from search, but the GitHub repo itself, including `cards.json`, remains a public, indexable, code-searchable text file regardless. Don't rely on "unlisted" as a content-privacy mechanism).
 10. **Git hygiene:** no force-push, no history rewrites of already-pushed commits, no edits outside this repo, no global installs, conventional commit messages per stage as specified. `git pull --rebase origin main` (rebasing your own unpushed local commits onto another pushed commit) is explicitly permitted where noted — this is not the kind of history rewrite the ban refers to. (One owner-authorized exception is on record — the 2026-07-25 pushed-history PII purge; see `audits/decisions.md`, entries dated 2026-07-25 — logged there per the same convention invariant 12 uses for its own exceptions.)
-11. **Mobile-first law:** the phone is the PRIMARY client; desktop is the adaptation. Base CSS **is** the mobile layout; wider layouts are layered on exclusively via `min-width` media queries — **`max-width` media queries are banned** (mechanically verifiable). All URLs — assets, fetches, SW scope, manifest `start_url` — are **relative** (`./…`), never root-absolute. Viewport heights use `svh` (with a `vh` fallback line above it). Safe-area insets are respected. The page must be installable to the home screen (§4.7). The **Weeks heading and both people's stat rows are complete above the fold** on a 390×844 viewport (see §4.4) — the grid below them scrolls, the v3.0 re-scoping of the prior Journal-card guarantee (which no longer applies, since Journal is retired; see decisions.md) — this is still stricter than "mobile-first," it's "mobile-fits" for the part of the page the app opens on.
+11. **Mobile-first law:** the phone is the PRIMARY client; desktop is the adaptation. Base CSS **is** the mobile layout; wider layouts are layered on exclusively via `min-width` media queries — **`max-width` media queries are banned** (mechanically verifiable). All URLs — assets, fetches, SW scope, manifest `start_url` — are **relative** (`./…`), never root-absolute. Viewport heights use `svh` (with a `vh` fallback line above it). Safe-area insets are respected. The page must be installable to the home screen (§4.7). The **hero — heading, person switch, number and both bars — is complete above the fold** on a 390×844 viewport (see §4.4) — the grid below it scrolls, the v4.0 re-scoping of the v3.0 guarantee (which pointed at the retired stat rows; see decisions.md) — this is still stricter than "mobile-first," it's "mobile-fits" for the part of the page the app opens on.
 12. **Verifier integrity ratchet.** After Stage 0's commit, `verify.mjs` checks and budget constants may only be added or tightened, never relaxed. Any relaxation requires a `decisions.md` entry quoting the original check text and the reason. `FINAL-AUDIT.md` must include a one-paragraph diff summary of `verify.mjs` versus its Stage 0 version. This exists because the same agent that hits a hard-to-satisfy check is the one who would otherwise be tempted to quietly soften it.
 
 ---
@@ -2434,10 +2473,10 @@ every resumed visit, and changes only when a human pushes to `main`.
 /
 ├── index.html
 ├── styles.css
-├── app.js                  # UI logic: theme, date, Weeks boot (v3.0: no fetches, no daily card)
+├── app.js                  # UI logic: the hero (number, person switch, epigraph, bars, milestones), HKT date line, Weeks boot (v4.0: no theme layer, no fetches)
 ├── figure.js               # canvas glowing-bottle animation (the signature element — was drop.js/brain.js)
-├── weeks.js                # Weeks section: combined canvas life-in-weeks grid (J, B), zoom, stats — the whole page as of v3.0
-├── lib.mjs                 # SHARED pure functions: HKT date/time + life-in-weeks math (imported by browser AND node); the v1.0-v2.0 rotation engine (Appendix B) retired in v3.0
+├── weeks.js                # the grid: canvas life-in-weeks, one person at a time, Life/Decade/Year views, breathing now-marker (v4.0)
+├── lib.mjs                 # SHARED pure functions: HKT date/time + life-in-weeks math incl. weekProgress/MILESTONE_WEEKS/upcomingMilestones (imported by browser AND node); rotation engine retired v3.0, hktHour/isDarkWindowHKT retired v4.0
 ├── manifest.webmanifest    # home-screen installability (Appendix C)
 ├── sw.js                   # offline shell, network-first (Appendix C, verbatim)
 ├── assets/
@@ -2473,16 +2512,41 @@ this round's, and in `audits/CONTENT-REVIEW.md`.)*
 which exactly one thing is alive: a small bottle of light, glowing and dimming slowly and
 deliberately, on an otherwise still page. Contemplative Stoic calm + the precision of an
 automated system. All boldness is spent on the figure; everything else is disciplined and
-quiet. As of v3.0, Weeks is the whole page: its heading and both people's stat rows fit one
-phone screen without scrolling (§4.4); the grid and epigraph that follow scroll — editorial,
-not busy.
+quiet. As of v4.0 the field is the night sky, all day (the paper-white blossom theme is
+retired), and the page opens on a statement rather than a chart: the hero — heading, person
+switch, the number, the epigraph and both bars — fits one phone screen without scrolling
+(§4.4); the grid that follows scrolls — editorial, not busy.
 
-### 4.2 Design tokens (CSS custom properties on `:root, [data-theme="blossom"]` / `[data-theme="dark"]`)
+### 4.2 Design tokens (CSS custom properties on a single `:root` block)
 
-Since v1.29 the two themes are `blossom` (pink — declared on `:root` itself, so a JS-disabled
-or snippet-failed load still gets one complete valid theme) and `dark` (warm charcoal, the
-17:00–06:00 HKT default — see §4.5.1). `calm` (cream/blue) shipped v1.0–v1.28 and is retired;
-its accent `#2B5FD9` survives only as `--person-b`'s fixed light-theme value.
+**v4.0: one theme.** The `blossom`/`dark` pair, the `[data-theme]` attribute, the 06:00/17:00
+HKT clock that switched them and the toggle button are all retired — every token below is
+declared once on `:root`, and `color-scheme: dark` sits there too. Every text pair clears
+4.5:1 on both `--bg` and `--surface`, gated in `verify.mjs`.
+
+| Token | Value | Note |
+|---|---|---|
+| `--bg` | `#1C1F2A` | the night sky: the whole page |
+| `--surface` | `#2A2E3B` | the grid card and the milestone rows |
+| `--track` | `#12161F` | the bar tracks |
+| `--pill-bg` | `#10131D` | the person switch and the active view tab |
+| `--ink` | `#E6E8EF` | |
+| `--muted` | `#A9AEBB` | |
+| `--hairline` | `rgba(230,232,239,0.12)` | also the grid's decade rules |
+| `--accent` | `#DE8A68` | epigraph attributions, focus rings, the reveal scanline |
+| `--pulse` | `#F0AD82` | the figure's glow; `app.js` sets it on `<mindset-figure>` at boot |
+| `--person-j` | `#FF8BA7` | |
+| `--person-b` | `#76B0FF` | |
+| `--week-lived` | `#9399AB` | the unselected person's bar fill |
+| `--week-future` | `rgba(230,232,239,0.10)` | |
+| `--shadow` | `rgba(0,0,0,0.40)` | |
+
+*(`--week-lived` ships at `#9399AB`, not the `#8E94A6` the v4.0 spec named: that value measured
+4.47:1 on `--surface`, just under this repo's 4.5 bar. See `audits/decisions.md`.)*
+
+**Retired v4.0 — the two-theme token tables below are history, not the shipped values.** They
+are kept for the same reason Appendix B's rotation engine is: an accurate record of what the
+app used to be.
 
 **Theme `blossom` (pink — default, byte-identical to its v1.28 values):**
 
@@ -2513,13 +2577,11 @@ its accent `#2B5FD9` survives only as `--person-b`'s fixed light-theme value.
 pill, its only consumer anywhere in the app; retired in v1.38 along with that pill. Checked
 directly before removing: nothing else in `styles.css` or any JS file ever read it.)*
 
-Rules: verify **contrast ≥ 4.5:1** numerically for (`--ink`,`--bg`), (`--ink`,`--surface`),
-(`--muted`,`--surface`), (`--muted`,`--bg`), (`--accent`,`--surface`), (`--accent`,`--bg`) in
-BOTH themes — plus, all mechanically gated since v1.29: `--person-j`/`--person-b` against both
-backgrounds per theme, and both staleness chips' text on their composited tints. (`--ink` on
-the composited `--edge` pills was also gated from v1.29 through v1.37; retired in v1.38 along
-with the token itself.) `color-scheme: light` on blossom, `dark` on dark. Every
-measured ratio is tabulated in `audits/decisions.md` (2026-07-25, v1.29).
+Rules (v4.0, one theme): verify **contrast ≥ 4.5:1** numerically for `--ink`/`--muted`/
+`--accent` on both `--bg` and `--surface`, for `--person-j`/`--person-b`/`--week-lived` on both,
+and for `--ink` on `--pill-bg`. `color-scheme: dark` on `:root`. `index.html`'s `theme-color`
+meta and the manifest's `theme_color`/`background_color` must all equal `--bg` — gated by its
+own check now that nothing syncs them at runtime.
 
 ### 4.3 Typography (three deliberate roles)
 
@@ -2531,13 +2593,17 @@ Self-host both webfonts as woff2 in `assets/fonts/` with `font-display: swap` an
 
 Type scale (px): 10 (mono meta chips) · 12–13 (mono date line) · 15.5 (journal card text, error state) · 17–18 (wordmark) — line-height ~1.45–1.5 body/card text. (A pre-existing miss, caught and fixed while already in this area for anchor's sake: this line still listed "20 (word title)" for Word of the Day, retired since v1.35 — dropped now.)
 
-### 4.4 Layout — the Weeks heading and stat rows fit one screen; the grid scrolls below them (390×844 baseline)
+### 4.4 Layout — the hero fits one screen; the grid scrolls below it (390×844 baseline)
 
 The design supersedes v1.0's tall hero-canvas mockup with a compact layout (matching the
 "Mindset Mobile UI.dc.html" prototype, option 1c) — historically a single no-scroll screen;
 re-scoped in v1.39 when Weeks merged into the same page below the Journal card, and again in
-v3.0 when the Journal card was retired and the `.mindset-panel` came to hold Weeks alone (see
-the paragraph after the mockup, and invariant 11). The ASCII mockup below is historical through
+v3.0 when the Journal card was retired and the `.mindset-panel` came to hold Weeks alone, and
+again in v4.0, which removed the panel entirely: `<main>` now holds `#hero` and `#weeks-root`
+as siblings on the page's own background (that wrapper card was the "two apps" seam), and on
+`min-width: 900px` becomes a two-column grid — `minmax(300px, 380px) 1fr`, gap 40px — with the
+hero column sticky so the number stays put while the grid scrolls (see the paragraph after the
+mockup, and invariant 11). The ASCII mockup below is historical through
 v2.0 — it depicts the Journal-plus-tabs layout that no longer exists; nothing below it should
 be read as still describing the mockup's own tab/card markup:
 
@@ -2580,7 +2646,7 @@ since it's no longer adjacent to the notch/status bar).
 
 ### 4.5 Components
 
-1. **Theme toggle (reworked v1.29):** pill button top-right, 44×44px. The theme DEFAULT follows the HKT clock — dark 17:00–06:00, blossom otherwise (`lib.mjs isDarkWindowHKT`; `index.html`'s pre-paint inline script computes the same window before CSS loads, sets `data-theme` + inline `color-scheme`, pre-sets `theme-color`, and removes the retired `mindset.theme` key — nothing is persisted anymore). The button is a session-only override: a tap flips the theme and suppresses the visibilitychange re-check until the next fresh load, so every reload returns to the cycle. Glyphs: ◐ while pink is active ("tap for dark"), ❀ while dark is active ("tap for pink") — the calm-era glyphs with repurposed meanings, kept because they're proven to render on the owner's device. No `aria-pressed` (an action-named control whose accessible name changes per state must not also carry a pressed state); `aria-label` and `title` are the identical pinned strings `Switch to dark theme` / `Switch to pink theme`, asserted verbatim by verify.mjs.
+1. **Theme toggle — retired in v4.0 along with the blossom theme and the HKT theme clock, slot kept (not renumbered) so `item 1`/`§4.5.1` cross-references elsewhere in this file stay valid.** Through v3.0: a 44x44px pill top-right whose default followed the HKT clock (dark 17:00-06:00, blossom otherwise, via `lib.mjs`'s `isDarkWindowHKT`, with `index.html`'s pre-paint inline script computing the same window before CSS loaded) and whose tap was a session-only override. Owner request: dark mode only. Removed entirely — the button and the pre-paint snippet from `index.html`; `applyTheme`/`initTheme`/`syncThemeColorMeta`/`manualOverride`/`redrawWeeksForTheme` from `app.js`; `hktHour`/`isDarkWindowHKT` from `lib.mjs`; every `[data-theme]` block and `.theme-toggle*` rule from `styles.css`. The header keeps its `1fr auto 1fr` grid with an empty third cell so the figure stays centred, and `theme-color` is now the static `--bg`. Full detail in `audits/decisions.md`'s v4.0 entry.
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
 3. **Cards — retired in v3.0 along with Journal (the last card type standing since v1.39), slot kept (not renumbered) so `item 3`/`§4.5.3` cross-references elsewhere in this file stay valid.** Through v2.0: `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, exactly one card (Journal, a mono category chip plus one open-ended prompt in `.card-body`). Owner request (same round as this file's v3.0 changelog entry): "I now just want the 4000 weeks screen without the top journal." Removed entirely — `app.js`'s `renderJournalCard`/`paintCards`/`fetchJSON` and every code path that fetched or painted a card; `index.html`'s `#cards`; `styles.css`'s `.card`/`#cards`/`.card-chip`/`.card-body` rules. Historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`; full detail in `audits/decisions.md`'s v3.0 entry.
 4. **Staleness chip — retired in v3.0 along with the daily pipeline it measured, slot kept (not renumbered) so `item 4`/`§4.5.4` cross-references elsewhere in this file stay valid.** Through v2.0: computed staleness against an expected-refresh-boundary date (`expectedDateHKT`), showing an amber `yesterday's cards` chip or a slate `offline rotation` chip when `daily.json` was stale or unreachable. There is no daily content left to be stale about — Weeks is computed fresh from today's HKT date on every load, so this entire model (and `lib.mjs`'s `expectedDateHKT`/`staleness`) is gone, not merely hidden. Its `.chip[hidden]` display-cascade fix (v1.11) is retired with it; the `--surface`-backed `.weeks-error` state (§4.5 item 7) is the only "something's wrong" affordance left, and it surfaces a real failure rather than a content-freshness signal. Full detail in `audits/decisions.md`'s v3.0 entry.
@@ -2589,7 +2655,7 @@ since it's no longer adjacent to the notch/status bar).
 4c. **Kenya card and trip countdown — retired in v1.38, slot kept (not renumbered) so `item 4c`/`§4.5.4c` cross-references elsewhere in this file stay valid** (item 3, two items above, points here by name — "Kenya ... was retired too — see item 4c" — same live-reference situation as item 4a, which item 3 also points to). Through v1.37: a third Today card, **Kenya** (added v1.15, one fact about Kenya per day spanning geography/wildlife/history/government/culture/economy/sports), with a trip-countdown pill (`.kenya-countdown`, added v1.17, `.card-top` flex wrapper around `.card-chip`) counting down to the owner's since-completed 2026-08-15 Masai Mara trip via `lib.mjs`'s `daysUntilKenyaTrip(now)`. Owner request: "remove the Kenya block as well on the first tab." Removed entirely — `app.js`'s `renderKenyaCard`/`kenyaCountdownText` and the `kenya` destructure/guard/pick across `renderToday`'s fresh, offline-fallback, and staleness-check paths; `lib.mjs`'s `daysUntilKenyaTrip`/`KENYA_TRIP_DATE_HKT` and the `kenya` pick in `pickToday`; `styles.css`'s `.card-top`/`.kenya-countdown` rules and the now-unused `--edge` token (both themes); `data/cards.json`'s 60-entry `kenya` array; `scripts/generate-daily.mjs`'s `kenyaId` stamp; the `"kenya"` rotation salt (kept only in `verify.mjs`'s seam-gap sweep as a generic-correctness check, same treatment as the retired `"word"`/`"closing"` salts). Historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`. Full detail in `audits/decisions.md`'s v1.38 entry.
 5. **Values tab — retired in v1.37, slot kept (not renumbered), matching item 4a's treatment of Word of the Day** (unlike item 4a, no live `§4.5.5` cross-reference was actually found requiring this — checked directly, nothing in this file cites it by number — the slot is kept for consistency with the established pattern regardless). Through v1.36: the 5 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px), no numbering (values are not a sequence; cut from 10 to 5 in v1.2 — ten read as a checklist, keep only what actually matters). Owner request: "we rarely refer to it." Removed entirely — `app.js`'s `renderValues`/`renderValuesError`, `styles.css`'s `.value-row`/`.value-name`/`.value-essence`/`.value-behaviour`/`.values-empty` rules, `data/values.json` (deleted), and `index.html`'s `#tab-values`/`#panel-values`. Full detail in `audits/decisions.md`'s v1.37 entry.
 6. **Motion — the Journal-card entrance described here through v2.0 is retired in v3.0 along with the card itself, slot kept (not renumbered) so `item 6`/`§4.5.6` cross-references elsewhere in this file stay valid.** Through v2.0: the figure was the primary animated element, plus a 500ms fade/rise/scale-in on the Journal card's entrance (v1.9) and a dormant per-card stagger. v3.0 moves the entrance animation onto `.mindset-panel` itself (the panel now holds only Weeks) — same 500ms cubic-bezier fade/rise/scale-in, same `prefers-reduced-motion` suppression, no stagger (one panel, not several cards). The figure remains the primary *continuous* animated element; Weeks' own reveal-on-boot and hover lift are described in item 7. Full detail in `audits/decisions.md`'s v3.0 entry.
-7. **Weeks is the whole page (v3.0, superseding the v1.39 tab-merge described below):** the Weeks life-in-weeks grid for J and B is now the entire content of `<main>` — `.mindset-panel > #weeks-root`, with no Journal card or divider above it. It still builds once at boot (`weeks.js`'s `initWeeks()`, called from `app.js`'s `boot()`), but a build failure now surfaces a visible `.weeks-error` state (`NO GRID` / "Couldn't draw the weeks grid. Refresh, or try again later.") instead of being silently swallowed, since Weeks is no longer optional content sitting beside something else — it IS the page. A `weeks-total` pill (`${commas(LIFE_WEEKS_TOTAL)} WEEKS TOTAL`) sits inside the section, just under the heading, replacing the retired cross-section seam pill. *(v1.39 history, kept for context: previously a separate tab, built lazily on first activation, v1.22–1.24; v1.39 merged it directly below the Journal card within the same `<main>`, separated by a `.section-divider`. Its own internal canvas rendering, zoom, and hover/tap-focus behavior have been unchanged since v1.22–1.24 through every one of these boundary changes.)*
+7. **The hero and the grid (v4.0, superseding the v3.0 whole-page description below):** `<main>` holds two siblings — `#hero`, built by `app.js`, and `#weeks-root`, built by `weeks.js`. The hero is the statement: an italic Fraunces heading, a `role="radiogroup"` person switch (J default, session-only, arrow keys move the selection), the number itself (`2,759` at 64px Fraunces with an italic `weeks left`, plus a mono `week 1,921 of 4,680 · 41.0% lived` line, and a clamp-safe `every week from here is a bonus` past 4,680), the epigraph, both people's bars, and the next three milestones from `lib.mjs`'s `upcomingMilestones()`. Every figure comes from `lib.mjs`, never a literal. The grid below it carries a `role="tablist"` Life/Decade/Year switch over one `role="tabpanel"` card: Life is 52 columns x 90 rows, Decade is 52 columns at 2x pitch (horizontally scrolled to centre the current week), Year is 13 columns x 4 rows with `wk 1`/`wk 14`/`wk 27`/`wk 40` gutter labels. One person at a time (item 3 of the owner's request): the selected person's lived weeks are solid, the other appears only as a 0.35-alpha lead band and a hairline outline on their own current week. The current week fills bottom-up by `weekProgress().fraction` — which is why the HKT day boundary, not just the week boundary, is load-bearing — and a DOM `.now-marker` overlay carries a 7s breathing halo matching `figure.js`'s `BREATHE_CYCLE`. Structure: a `--hairline` rule at every decade row boundary, a `rgba(255,255,255,0.03)` tint on the current decade, the current row underlined in the person's colour, and a `now` gutter label in it. A build failure still surfaces the visible `.weeks-error` state (`NO GRID`). *(Retired v4.0: the `weeks-total` pill, the heading, the per-person stat buttons, the +/- zoom, hover/sticky focus and the canvas glow sprites — the hero and the DOM marker replace them.)*
 
 ### 4.6 The figure (signature element — `figure.js`, was the water drop in v1.1, "the brain" in v1.0)
 
@@ -2646,7 +2712,7 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 
 **Installability (home-screen app):**
 7. `manifest.webmanifest` — use the Appendix C JSON verbatim; `display: standalone`, relative `start_url`/`scope`.
-8. `<link rel="manifest">`, `<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">`, `<meta name="mobile-web-app-capable" content="yes">`, `<meta name="apple-mobile-web-app-status-bar-style" content="default">`, and `<meta name="theme-color">` — pre-set by index.html's inline script to the clock's theme before first paint, then kept on the live `--bg` by JS on every theme change (v1.29). Note, direction FLIPPED in v1.29: the manifest's static `theme_color`/`background_color` are now the DARK bg `#242119` while the static meta fallback stays blossom's `#FBF4F6` — the manifest owns the cold-launch splash, which renders before any JS/CSS exists at all, and a light splash flashing at 23:00 is the exact harm the dark theme removes, while a dark splash flashing at 10:00 is a shrug. Same known, logged cosmetic limitation as before, now deliberately parked on daytime launches. Unverifiable from this environment: how `apple-mobile-web-app-status-bar-style: default` treats a dark `theme-color` on an installed iOS PWA — needs the owner's on-device check after 17:00 HKT; `black-translucent` is the named fallback, not applied speculatively.
+8. `<link rel="manifest">`, `<link rel="apple-touch-icon" href="assets/icons/apple-touch-icon.png">`, `<meta name="mobile-web-app-capable" content="yes">`, `<meta name="apple-mobile-web-app-status-bar-style" content="default">`, and `<meta name="theme-color">`. **v4.0: `theme-color` is static again.** With one theme there is nothing to sync at runtime, so the meta is written once as `--bg` `#1C1F2A` and the manifest's `theme_color`/`background_color` are the same value — the cold-launch splash, the status bar and the page now agree by construction instead of by a JS handoff, and the v1.29 daytime-splash mismatch this note used to describe is simply gone. A `verify.mjs` check pins all three against the `:root` `--bg` token, since nothing else keeps them honest any more. Unverifiable from this environment: how `apple-mobile-web-app-status-bar-style: default` treats a dark `theme-color` on an installed iOS PWA — needs the owner's on-device check; `black-translucent` is the named fallback, not applied speculatively.
 9. `sw.js` — Appendix C **verbatim (as amended in this v1.1 — see C.2)**: network-first for every GET with cache fallback. Registered with the one-liner in Appendix C.
 10. **Icon pipeline (this environment is Linux, not macOS):** check for an available rasterizer first — `rsvg-convert`, ImageMagick (`convert`/`magick`), or Inkscape's CLI, in that order of preference — and use whichever is present to render `favicon.svg` to 512/192/180px PNGs. If none is available (and none can be installed — `npm install` and global installs are banned), ship the manifest with the SVG icon entry only, skip `apple-touch-icon`, log the decision, and continue — icons are never a hard blocker, but do check for a real rasterizer before assuming none exists.
 
@@ -3025,7 +3091,7 @@ trigger is closest, plus the raw error — don't spend cycles deliberating the t
 - [ ] Pages URL returns 200 for `/`, `/manifest.webmanifest`, `/sw.js` (v3.0: `/data/daily.json` no longer exists)
 - [ ] `verify.mjs all` green; budgets met; contrast pairs pass at the corrected thresholds
 - [ ] `pages-deploy.yml` has ≥ 1 green run on the current head (v3.0: `daily.yml`/`watchdog.yml` retired — the historical Stage-4 stale-detection test no longer applies)
-- [ ] Zero PII about the owner/his wife (scripted email/phone/financial-figure sweep + human confirmation there's no accidental self-reference); zero quotation-mark glyphs or banned phrases in user-facing copy (v3.0: the Weeks epigraph is the only copy left)
+- [ ] Zero PII about the owner/his wife (scripted email/phone/financial-figure sweep + human confirmation there's no accidental self-reference); zero quotation-mark glyphs or banned phrases in user-facing copy (v4.0: the hero's epigraph, heading, number sub-line and milestone labels)
 - [ ] Mobile-first proven mechanically: zero `max-width` queries · zero root-absolute local URLs · safe-area + `svh` + `touch-action` present · no fixed widths ≥ 400px in `styles.css`
 - [ ] Installable: manifest valid + served 200 · icons exist (or SVG-fallback decision logged) · `sw.js` byte-identical to the amended Appendix C.2 modulo `ASSETS`, registered, served 200
 - [ ] README runbook complete; `v1.0` tag pushed
@@ -3033,16 +3099,16 @@ trigger is closest, plus the raw error — don't spend cycles deliberating the t
 - [ ] FINAL-AUDIT.md written with an honest "known imperfections" section and the `verify.mjs` diff-vs-Stage-0 summary
 
 **Explicitly deferred to §13 human review (mark UNVERIFIED in FINAL-AUDIT, do not check off here):**
-- [ ] Today's HKT date shows; the Weeks grid, both stat rows and the total pill render; no console errors
-- [ ] Theme toggle works both ways; a reload returns to the HKT time-of-day theme (the override is session-only, v1.29); no wrong-theme flash
-- [ ] The bottle's light visibly breathes (brightens/dims slowly) in both themes; pauses when hidden; static under reduced motion; feels calm, not busy
+- [ ] Today's HKT date shows; the hero number, both bars, the three milestones and the grid render; switching J/B and Life/Decade/Year repaints everything; no console errors
+- [ ] One dark theme end to end (v4.0): no toggle, no flash, and the splash/status bar match the page
+- [ ] The bottle's light visibly breathes (brightens/dims slowly) and the now-marker breathes with it on the same 7s cycle; both pause/stop under reduced motion; feels calm, not busy
 - [ ] Offline shell demonstrated live on a phone (airplane mode): the page and grid load from the service-worker cache (v3.0: there is no data to rotate anymore)
 
 ## §13 — Human review checklist (the ONE human step, ~20 min, after completion)
 
-1. Open the Pages URL **on your phone**. Does the bottle's light clearly, slowly breathe, feeling alive and calm, not busy? Rotate the phone, scroll — nothing clipped, nothing under the notch or home bar, no sideways scroll; the Weeks heading, the total pill and both stat rows should be visible without scrolling, and scrolling down should reveal the full grid and the epigraph (v3.0 — Weeks is the whole page).
+1. Open the Pages URL **on your phone**. Does the bottle's light clearly, slowly breathe, feeling alive and calm, not busy? Rotate the phone, scroll — nothing clipped, nothing under the notch or home bar, no sideways scroll; the hero (heading, person switch, the number and both bars) should be visible without scrolling, and scrolling down should reveal the view switch and the full grid (v4.0).
 2. Safari: Share → **Add to Home Screen**. Reopen from the icon — it should launch full-screen like an app, with a proper icon and the chrome matching the theme.
-3. Toggle between pink and dark. Would its intended user smile? (Standalone chrome should follow — the cold-launch splash is always dark-toned since v1.29, a known, logged limitation now parked on daytime launches instead of nights. After 17:00 HKT, also confirm the iOS status bar text reads correctly over the dark chrome — §4.7.8's flagged on-device check.)
+3. Switch between J and B, then between Life, Decade and Year. Would its intended user smile? (There is one theme as of v4.0 — the cold-launch splash, the status bar and the page are all `#1C1F2A`, so no daytime/night mismatch remains. Confirm the iOS status bar text reads correctly over the dark chrome — §4.7.8's flagged on-device check.)
 4. **Airplane mode**, reopen from the icon: the shell loads instantly and the grid renders from the cached shell, computed from today's date (v3.0: nothing is fetched, so there is no offline chip and nothing to go stale). Turn network back on, pull to refresh — nothing should visibly change.
 5. Toggle OS **Reduce Motion** and confirm the figure renders a static frame and the grid appears instantly, unclipped, with no scanline. (The Values tab this step used to cover was retired in v1.37.)
 6. Tap J, then B: the other person's squares should fade, the bar should lift, and the canvas label should say who is highlighted. Zoom in twice, scroll the grid sideways, zoom back out. (v3.0: replaces the card-reading step — there are no cards.)
@@ -3167,7 +3233,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v24";
+const CACHE = "mindset-v25";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs", "./weeks.js",
   "./manifest.webmanifest", "./assets/favicon.svg",

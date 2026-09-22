@@ -102,17 +102,15 @@ function extractTokens(css, selectorRegex) {
   while ((mm = re.exec(block))) tokens[mm[1]] = mm[2].trim();
   return tokens;
 }
-// v1.29 theme model: blossom lives on `:root, [data-theme="blossom"]`, dark overrides after.
-// Both extractions are guarded non-empty (same rationale as the retired evening-block guard:
-// a moved/renamed block must fail loudly, never silently extract {} and trivially pass).
-const BLOSSOM_SEL = /:root\s*,\s*\[data-theme=["']blossom["']\]\s*\{/;
-const DARK_SEL = /\[data-theme=["']dark["']\]\s*\{/;
+// v4.0: one theme. The blossom/dark pair is retired, so token extraction is a single :root
+// block -- guarded non-empty (same rationale as the retired per-theme guards: a moved or
+// renamed block must fail loudly, never silently extract {} and trivially pass).
+const ROOT_SEL = /:root\s*\{/;
 function themeTokens(cssText) {
-  const blossom = extractTokens(cssText, BLOSSOM_SEL);
-  const darkOverride = extractTokens(cssText, DARK_SEL);
-  assert.ok(blossom.bg && blossom.ink, "could not extract tokens from the `:root, [data-theme=blossom]` block");
-  assert.ok(darkOverride.bg, "could not extract a non-empty [data-theme=dark] --bg token");
-  return { blossom, dark: { ...blossom, ...darkOverride } };
+  const tokens = extractTokens(cssText, ROOT_SEL);
+  assert.ok(tokens.bg && tokens.ink && tokens.surface,
+    "could not extract --bg/--ink/--surface from the single :root block");
+  return tokens;
 }
 // v3.0: parseRgba/compositeOver/ruleTintAndColor existed only to composite the retired
 // staleness chip's rgba() tint over --bg for its contrast check; removed as genuinely unused
@@ -289,65 +287,69 @@ function stage1() {
   check("stage1", "robots noindex present", () => {
     assert.match(html(), /<meta\s+name=["']robots["']\s+content=["']noindex["']/);
   });
-  check("stage1", "tab system retired (v1.39): no tablist/tab/tabpanel/aria-selected; toggle labels pinned in app.js, no aria-pressed on it", () => {
-    // v1.39: the Today/Weeks tab system was retired in favor of one scrolling page. This
-    // check used to assert these roles were PRESENT; flipped in place to assert their ABSENCE
-    // (same treatment as the Mara/Values retired-file guards and the isEveningWindowHKT/
-    // isFocusWindowHKT retirement guards below) so a reintroduction is caught, not just
-    // silently unchecked.
-    assert.doesNotMatch(html(), /role=["']tablist["']/, "role=tablist must not be reintroduced (tab system retired v1.39)");
-    assert.doesNotMatch(html(), /role=["']tab["']/, "role=tab must not be reintroduced (tab system retired v1.39)");
-    assert.doesNotMatch(html(), /role=["']tabpanel["']/, "role=tabpanel must not be reintroduced (tab system retired v1.39)");
-    assert.doesNotMatch(html(), /aria-selected/, "aria-selected must not be reintroduced (tab system retired v1.39)");
-    // v1.29: the theme toggle is an action-named control (its accessible name changes per
-    // state) and must NOT also carry aria-pressed — the old `aria-pressed`-in-index.html
-    // assertion is retargeted to the exact two label strings app.js swaps between.
-    assert.ok(appjs().includes('"Switch to dark theme"'), 'app.js missing pinned label "Switch to dark theme"');
-    assert.ok(appjs().includes('"Switch to pink theme"'), 'app.js missing pinned label "Switch to pink theme"');
-    const toggleTag = /<button id="theme-toggle"[^>]*>/.exec(html());
-    assert.ok(toggleTag, "no theme-toggle button in index.html");
-    assert.doesNotMatch(toggleTag[0], /aria-pressed/, "theme-toggle must not carry aria-pressed");
+  check("stage1", "theme toggle retired (v4.0): no theme-toggle, no data-theme, no aria-pressed in index.html; exactly one role=tablist (the grid view switch) with 3 tabs", () => {
+    // Retargeted from v1.39's "tab system retired" guard, which asserted tablist/tab/tabpanel
+    // were ABSENT. v4.0 reintroduces exactly one tablist -- the Life/Decade/Year view switch,
+    // which is genuinely a tab pattern (three controls, one panel) -- so the guard flips from
+    // "none" to "exactly one, with three tabs", and takes over the theme toggle's own
+    // retirement in the same check (the toggle, its two pinned labels and the data-theme
+    // attribute all went with the blossom theme).
+    const src = html();
+    assert.doesNotMatch(src, /theme-toggle/, "theme-toggle must not be reintroduced (retired v4.0)");
+    assert.doesNotMatch(src, /data-theme/, "data-theme must not be reintroduced (single theme, v4.0)");
+    assert.doesNotMatch(src, /aria-pressed/, "aria-pressed must not be reintroduced (no toggle-state controls remain)");
+    assert.doesNotMatch(src, /role=["']tablist["']/, "the tablist is built by weeks.js, not declared in index.html");
+    const shipped = ["index.html", "app.js", "weeks.js", "figure.js", "lib.mjs", "sw.js"].filter(exists);
+    let tablists = 0;
+    for (const f of shipped) tablists += (read(f).match(/["']tablist["']/g) || []).length;
+    assert.equal(tablists, 1, `expected exactly one role=tablist app-wide, found ${tablists}`);
+    const order = /const VIEW_ORDER = \[([^\]]*)\]/.exec(read("weeks.js"));
+    assert.ok(order, "could not find VIEW_ORDER in weeks.js");
+    assert.equal(order[1].split(",").filter((x) => x.trim()).length, 3, "the view tablist must have exactly 3 tabs");
+    for (const f of ["app.js", "weeks.js"]) {
+      assert.doesNotMatch(read(f), /applyTheme|initTheme|isDarkWindowHKT|redrawWeeksForTheme/,
+        `${f} still references the retired theme layer (v4.0)`);
+    }
   });
-  check("stage1", "single page (v3.0): .mindset-panel > #weeks-root is main's only content; #cards/.seam/#staleness-chip retired", () => {
-    // v3.0: the Journal card is retired, and with it everything that only ever shared main
-    // with Weeks -- #cards, .seam (the divider between them), #staleness-chip (the Journal
-    // freshness indicator). Weeks is now the entire page. Retargeted from the v1.39/v2.0 check
-    // of the same name/spirit, which asserted .mindset-panel > #cards -> .seam -> #weeks-root
-    // DOM order; that ordering assumption no longer applies since two of the three nodes it
-    // ordered are gone -- a loud absence guard, not a bare deletion, so a reintroduction (a bad
-    // merge, a stray revert) is caught rather than silently shipped.
+  check("stage1", "single page (v4.0): main holds #hero then #weeks-root, nothing else; .mindset-panel retired", () => {
+    // v4.0 removed the panel wrapper: the page background IS the night sky, so main holds the
+    // hero section and the weeks region as siblings and nothing else. Retargeted from the v3.0
+    // check of the same name, which asserted .mindset-panel -> #weeks-root. The retired-node
+    // list is carried forward unchanged and extended with .mindset-panel, so a reintroduction
+    // (a bad merge, a stray revert) fails loudly rather than shipping silently.
     const src = html();
     const mainOpen = src.indexOf("<main>");
     assert.ok(mainOpen !== -1, "no <main> tag found");
     const mainClose = src.indexOf("</main>", mainOpen);
     assert.ok(mainClose !== -1, "no closing </main> tag found");
-    const mainHTML = src.slice(mainOpen, mainClose);
-    const iPanel = mainHTML.indexOf('class="mindset-panel"');
+    const mainHTML = src.slice(mainOpen + 6, mainClose);
+    const iHero = mainHTML.indexOf('id="hero"');
     const iWeeks = mainHTML.indexOf('id="weeks-root"');
-    assert.ok(iPanel !== -1, ".mindset-panel not found inside main");
+    assert.ok(iHero !== -1, "#hero not found inside main");
     assert.ok(iWeeks !== -1, "#weeks-root not found inside main");
-    assert.ok(iPanel < iWeeks, "expected DOM order .mindset-panel -> #weeks-root inside main");
+    assert.ok(iHero < iWeeks, "expected DOM order #hero -> #weeks-root inside main");
+    const tags = [...mainHTML.matchAll(/<(\w[\w-]*)/g)].map((m) => m[1]);
+    assert.deepEqual(tags, ["section", "div"], `main must hold exactly #hero then #weeks-root, found <${tags.join("><")}>`);
+    assert.doesNotMatch(src, /mindset-panel/, ".mindset-panel must not be reintroduced (retired v4.0)");
     assert.doesNotMatch(src, /id="cards"/, "#cards must not be reintroduced (Journal card retired v3.0)");
     assert.doesNotMatch(src, /class="seam"/, ".seam must not be reintroduced (Journal card retired v3.0)");
     assert.doesNotMatch(src, /id="staleness-chip"/, "#staleness-chip must not be reintroduced (Journal card retired v3.0)");
   });
-  check("stage1", "localStorage: mindset.theme only in a removeItem; zero other localStorage use app-wide", () => {
-    // v1.29 retired theme persistence entirely — the ONLY localStorage touch permitted
-    // anywhere in the app is index.html's removeItem cleanup of the retired key, which
-    // runs on every load (idempotent and harmless once the key is gone, not a one-shot).
+  check("stage1", "localStorage: zero references in any shipped file (v4.0)", () => {
+    // v1.29 retired theme persistence and left one permitted touch: index.html's removeItem
+    // cleanup of the retired mindset.theme key. Fourteen months later the key is gone
+    // everywhere it could have been set, and v4.0 removed the pre-paint snippet that carried
+    // the cleanup -- so the rule tightens from "exactly one removeItem" to "none at all"
+    // (invariant 3: localStorage keys mindset.* only, and there are now no keys).
+    // Comments stripped first: figure.js's own "NEVER persisted to localStorage" note is prose
+    // about the rule, not a use of it (same treatment the Journal retirement guard uses).
+    const strip = (src) => src.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "").replace(/<!--[\s\S]*?-->/g, "");
     const files = ["index.html", "app.js", "figure.js", "lib.mjs", "weeks.js", "sw.js"].filter(exists);
     const offenders = [];
-    let removes = 0;
     for (const f of files) {
-      const src = read(f);
-      for (const m of src.matchAll(/localStorage\s*(?:\.\s*(\w+)|\[)/g)) {
-        if (m[1] === "removeItem") { removes++; continue; }
-        offenders.push(`${f}: ${m[0].trim()}`);
-      }
+      for (const m of strip(read(f)).matchAll(/localStorage/g)) offenders.push(`${f}: localStorage at ${m.index}`);
     }
     assert.equal(offenders.length, 0, `unexpected localStorage usage: ${offenders.join(" | ")}`);
-    assert.equal(removes, 1, `expected exactly one localStorage.removeItem (the index.html cleanup), found ${removes}`);
-    assert.match(html(), /localStorage\.removeItem\("mindset\.theme"\)/);
   });
   check("stage1", "safe-area insets present", () => assert.match(css(), /env\(safe-area-inset/));
   check("stage1", "svh sizing present (with vh fallback line above)", () => {
@@ -415,56 +417,23 @@ function stage1() {
     for (const f of jsFiles) nodeCheckSyntax(f);
   });
 
-  check("stage1", "WCAG contrast pairs pass at corrected thresholds (blossom + dark)", () => {
-    // v1.29: calm and the evening --bg shift are retired; the theme set is blossom + dark
-    // (themeTokens() carries the old evening check's loud-failure extraction guard forward).
-    // v2.0 added three --surface-2 pairs (the Journal card's nested inner prompt box) to every
-    // existing pair list a real --surface pairing already covered. v3.0 retired --surface-2
-    // itself along with the Journal card it was styled for, so those three pairs are dropped
-    // here (invariant-12 logged exception -- see decisions.md); the remaining six are unchanged.
-    const themes = themeTokens(css());
-    const pairs = [
-      ["ink", "bg", 4.5], ["ink", "surface", 4.5],
-      ["muted", "surface", 4.5], ["muted", "bg", 4.5],
-      ["accent", "surface", 4.5], ["accent", "bg", 4.5],
-    ];
-    const failures = [];
-    for (const [themeName, tokens] of Object.entries(themes)) {
-      for (const [a, b, min] of pairs) {
-        assert.ok(tokens[a] && tokens[b], `${themeName}: missing token --${a} or --${b}`);
-        const ratio = contrastRatio(tokens[a], tokens[b]);
-        if (ratio < min) failures.push(`${themeName} (--${a} on --${b}) = ${ratio.toFixed(2)} < ${min}`);
-      }
+  check("stage1", "WCAG contrast pairs (single dark theme, v4.0): ink/muted/accent on bg and surface; person-j/person-b/week-lived on bg and surface; ink on pill-bg; accent on bg", () => {
+    // v4.0 merges two checks into one. The old pair list was run twice (blossom + dark) and a
+    // sibling check covered the Weeks section's own fixed --weeks-* palette against its own
+    // surfaces. There is now one theme and one surface set, so the person/graphic colours are
+    // checked against the same --bg/--surface everything else uses, and --pill-bg (the person
+    // switch and the active view tab) is checked where --ink actually renders on it.
+    const t = themeTokens(css());
+    const pairs = [];
+    for (const fg of ["ink", "muted", "accent", "person-j", "person-b", "week-lived"]) {
+      for (const bg of ["bg", "surface"]) pairs.push([fg, bg]);
     }
-    assert.equal(failures.length, 0, failures.join(" | "));
-  });
-
-  // v2.0: the Weeks section became a permanently dark card, independent of the page's
-  // blossom/dark theme (see styles.css's --weeks-* token comment and audits/decisions.md
-  // v2.0) -- --person-j/--person-b/--weeks-muted/--weeks-ink are now fixed constants, not
-  // theme-scoped, so this replaces the old "person colors vs --bg/--surface in both themes"
-  // check (that pairing no longer reflects where these colors actually render) with checks
-  // against the surfaces they now actually sit on: --weeks-bg (the section) and --weeks-card
-  // (the nested grid card, the harder constraint since it's the lighter of the two). Still
-  // looped over both theme extractions for parity with the rest of this file, even though
-  // blossom/dark resolve to the identical fixed values by construction.
-  check("stage1", "weeks-section colors >= 4.5:1 on --weeks-bg and --weeks-card, both theme extractions (v2.0)", () => {
-    const themes = themeTokens(css());
+    pairs.push(["ink", "pill-bg"]);
     const failures = [];
-    for (const [themeName, tokens] of Object.entries(themes)) {
-      for (const p of ["person-j", "person-b", "weeks-muted", "weeks-ink"]) {
-        for (const base of ["weeks-bg", "weeks-card"]) {
-          assert.ok(tokens[p] && tokens[base], `${themeName}: missing token --${p} or --${base}`);
-          const ratio = contrastRatio(tokens[p], tokens[base]);
-          if (ratio < 4.5) failures.push(`${themeName} (--${p} on --${base}) = ${ratio.toFixed(2)} < 4.5`);
-        }
-      }
-      // --weeks-ink additionally renders directly on --weeks-pill-bg (the seam pill).
-      const pillRatio = contrastRatio(tokens["weeks-ink"], tokens["weeks-pill-bg"]);
-      if (pillRatio < 4.5) failures.push(`${themeName} (--weeks-ink on --weeks-pill-bg) = ${pillRatio.toFixed(2)} < 4.5`);
-      // --weeks-accent renders as real text only in the epigraph attribution, on --weeks-bg.
-      const accentRatio = contrastRatio(tokens["weeks-accent"], tokens["weeks-bg"]);
-      if (accentRatio < 4.5) failures.push(`${themeName} (--weeks-accent on --weeks-bg) = ${accentRatio.toFixed(2)} < 4.5`);
+    for (const [a, b] of pairs) {
+      assert.ok(t[a] && t[b], `missing token --${a} or --${b}`);
+      const ratio = contrastRatio(t[a], t[b]);
+      if (ratio < 4.5) failures.push(`--${a} on --${b} = ${ratio.toFixed(2)} < 4.5`);
     }
     assert.equal(failures.length, 0, failures.join(" | "));
   });
@@ -473,19 +442,16 @@ function stage1() {
   // tint-composited contrast check has nothing left to iterate -- removed (invariant-12 logged
   // exception, see decisions.md), replaced below by a check of the new .weeks-error state,
   // which is now the only failure-surfacing UI on the page.
-  check("stage1", "error state: --muted and --ink >= 4.5:1 on --surface, both themes (v3.0 .weeks-error)", () => {
-    // Weeks is no longer optional -- it IS the page -- so its failure state (.weeks-error,
-    // painted when initWeeks() throws) must itself be legible in both themes. --error-label
-    // renders in --muted, --error-msg in --ink, both directly on --surface (no tint compositing
-    // involved, unlike the retired chip).
-    const themes = themeTokens(css());
+  check("stage1", "error state: --muted and --ink >= 4.5:1 on --surface (single theme, v4.0 .weeks-error)", () => {
+    // Weeks is not optional -- it IS the page -- so its failure state (.weeks-error, painted
+    // when the build throws) has to be legible too. --error-label renders in --muted,
+    // --error-msg in --ink, both directly on --surface.
+    const t = themeTokens(css());
     const failures = [];
-    for (const [themeName, tokens] of Object.entries(themes)) {
-      for (const fg of ["muted", "ink"]) {
-        assert.ok(tokens[fg] && tokens.surface, `${themeName}: missing token --${fg} or --surface`);
-        const ratio = contrastRatio(tokens[fg], tokens.surface);
-        if (ratio < 4.5) failures.push(`${themeName} (--${fg} on --surface) = ${ratio.toFixed(2)} < 4.5`);
-      }
+    for (const fg of ["muted", "ink"]) {
+      assert.ok(t[fg] && t.surface, `missing token --${fg} or --surface`);
+      const ratio = contrastRatio(t[fg], t.surface);
+      if (ratio < 4.5) failures.push(`--${fg} on --surface = ${ratio.toFixed(2)} < 4.5`);
     }
     assert.equal(failures.length, 0, failures.join(" | "));
   });
@@ -508,14 +474,11 @@ function stage1() {
   // the 05:00 HKT content boundary they modeled no longer exists (removed, invariant-12
   // logged exception, see decisions.md).
 
-  check("stage1", "app.js: visibilitychange resume re-checks theme, calendar day, and Weeks (v3.0)", () => {
-    // v3.0: the Journal card, its 05:00 HKT content boundary, and the expectedDateHKT/staleness
-    // model that judged it are all retired -- the only day boundary left is HKT midnight, and
-    // the only content to refresh on resume is Weeks (computed fresh from today's HKT date,
-    // never fetched). Retargeted from the v1.30/v1.34 check of the same name/spirit, which
-    // pinned paintedDateHKT (the Journal CONTENT-day tracker) against expectedDateHKT; that
-    // tracker and the bug class it guarded no longer exist. Source-pattern check, not a
-    // behavioral one: app.js runs in a DOM this harness lacks.
+  check("stage1", "app.js: visibilitychange resume re-checks calendar day and Weeks (v4.0, no theme)", () => {
+    // The only boundary left on resume is HKT midnight: the theme clock went with the blossom
+    // theme in v4.0, and the 05:00 content boundary went with the daily pipeline in v3.0. The
+    // pinned source patterns and the negative list are carried forward unchanged (source-pattern
+    // check, not a behavioral one: app.js runs in a DOM this harness lacks).
     const src = read("app.js");
     assert.match(src, /paintedCalendarDateHKT\s*=\s*hktDateString\(now\)/,
       "paintedCalendarDateHKT must be stamped from hktDateString(now)");
@@ -530,6 +493,8 @@ function stage1() {
     assert.doesNotMatch(src, /staleness\(/, "staleness( must not be reintroduced (retired v3.0)");
     assert.doesNotMatch(src, /renderJournalCard/, "renderJournalCard must not be reintroduced (Journal card retired v3.0)");
     assert.doesNotMatch(src, /showChip/, "showChip must not be reintroduced (staleness chip retired v3.0)");
+    assert.doesNotMatch(src, /manualOverride|applyTheme|initTheme|syncThemeColorMeta/,
+      "the theme layer must not be reintroduced into app.js (retired v4.0)");
   });
 
   check("stage1", "lib.mjs: isFocusWindowHKT retired, not reintroduced (v1.39 -- focus/morning-hiding mode removed, unused)", async () => {
@@ -558,59 +523,10 @@ function stage1() {
     }
   });
 
-  check("stage1", "lib.mjs: isDarkWindowHKT correct at the 06:00 and 17:00 HKT boundaries", async () => {
-    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    // 2026-07-14T21:59:59Z = 2026-07-15T05:59:59 HKT — last second of the overnight dark window
-    assert.equal(lib.isDarkWindowHKT(new Date("2026-07-14T21:59:59Z")), true);
-    // 2026-07-14T22:00:00Z = 2026-07-15T06:00:00 HKT — blossom takes over
-    assert.equal(lib.isDarkWindowHKT(new Date("2026-07-14T22:00:00Z")), false);
-    // 2026-07-15T08:59:59Z = 2026-07-15T16:59:59 HKT — last blossom second
-    assert.equal(lib.isDarkWindowHKT(new Date("2026-07-15T08:59:59Z")), false);
-    // 2026-07-15T09:00:00Z = 2026-07-15T17:00:00 HKT — dark window opens for the evening
-    assert.equal(lib.isDarkWindowHKT(new Date("2026-07-15T09:00:00Z")), true);
-  });
-
-  check("stage1", "lib.mjs: 1440-minute sweep — dark/blossom partition the HKT day (transitions exactly at 06:00/17:00), hktHour always 0-23", async () => {
-    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    // 2026-07-14T16:00:00Z = 2026-07-15T00:00 HKT; walk one full HKT day minute by minute.
-    // The hktHour range assertion doubles as the h23-vs-h24 ICU-safety guard for ALL three
-    // window functions at once (each is a pure comparison on hktHour's return value).
-    const start = Date.parse("2026-07-14T16:00:00Z");
-    const transitions = [];
-    let prev = null;
-    for (let m = 0; m < 1440; m++) {
-      const d = new Date(start + m * 60000);
-      const h = lib.hktHour(d);
-      assert.ok(Number.isInteger(h) && h >= 0 && h <= 23, `hktHour at minute ${m} = ${h}, outside [0,23]`);
-      const dark = lib.isDarkWindowHKT(d);
-      assert.equal(typeof dark, "boolean", `isDarkWindowHKT at minute ${m} is not boolean`);
-      if (prev !== null && dark !== prev) transitions.push(m);
-      prev = dark;
-    }
-    assert.deepEqual(transitions, [360, 1020],
-      `expected exactly two dark/blossom transitions, at 06:00 (minute 360) and 17:00 (minute 1020) HKT; got [${transitions.join(", ")}]`);
-  });
-
-  check("stage1", "index.html pre-paint snippet agrees with lib.mjs isDarkWindowHKT (anti-drift)", async () => {
-    // The snippet can't import lib.mjs, so it duplicates the boundary logic — this pins the
-    // two together: structural match on the numbers/strings, behavioral match at all 24 hours.
-    const src = html();
-    const m = /var dark = \(h < (\d+) \|\| h >= (\d+)\);/.exec(src);
-    assert.ok(m, "could not find `var dark = (h < N || h >= M);` in index.html's inline script");
-    const lo = Number(m[1]), hi = Number(m[2]);
-    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    const midnightHKT = Date.parse("2026-07-14T16:00:00Z"); // 2026-07-15T00:00 HKT
-    for (let hour = 0; hour < 24; hour++) {
-      const d = new Date(midnightHKT + hour * 3600000);
-      const snippetSays = hour < lo || hour >= hi;
-      assert.equal(snippetSays, lib.isDarkWindowHKT(d),
-        `HKT hour ${hour}: snippet boundaries (${lo},${hi}) say ${snippetSays}, lib.mjs says ${lib.isDarkWindowHKT(d)}`);
-    }
-    assert.match(src, /root\.setAttribute\("data-theme", dark \? "dark" : "blossom"\)/,
-      "snippet must set the same two theme ids app.js/styles.css use");
-    assert.match(src, /timeZone:\s*"Asia\/Hong_Kong",\s*hour:\s*"2-digit",\s*hour12:\s*false/,
-      "snippet's hour read must be HKT-pinned, 2-digit, hour12:false (mirrors lib.mjs hktHour)");
-  });
+  // v4.0: the isDarkWindowHKT boundary check, the 1440-minute dark/blossom partition sweep and
+  // the index.html pre-paint anti-drift check were all removed with the theme layer they proved
+  // -- hktHour/isDarkWindowHKT no longer exist and there is no snippet left to drift from
+  // (invariant-12 logged exceptions, see decisions.md).
 
   check("stage1", "lib.mjs: weeksLived/percentLifeSpent correct at month-start, +6d, +7d, and clamped far-future (J and B)", async () => {
     const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
@@ -658,24 +574,34 @@ function stage1() {
     }
   });
 
-  check("stage1", "weeks.js: no quotation-mark glyphs or banned platitudes in user-facing copy (EPIGRAPH text/attr)", () => {
-    // v1.24: CAPTION (a flat string) became EPIGRAPH (an array of {text, attr} lines); the
-    // legend this check also used to scan was removed entirely (see decisions.md). Updated to
-    // match rather than left checking a constant that no longer exists -- a verify.mjs check
-    // silently going stale exactly like this was the async-check bug this ratchet exists to
-    // catch (v1.23). v3.0: with data/cards.json's platitude scan retired alongside the Journal
-    // card, EPIGRAPH is the only user-facing copy verify.mjs still scans -- widened here to also
-    // run findPlatitude over it (tightening, not a new category: the same guard, just no longer
-    // only for cards.json).
-    if (!exists("weeks.js")) return;
-    const src = read("weeks.js");
+  check("stage1", "app.js: no quotation-mark glyphs or banned platitudes in user-facing copy (EPIGRAPH text/attr)", () => {
+    // The EPIGRAPH constant moved from weeks.js to app.js in v4.0 with the epigraph itself,
+    // which now sits in the hero -- so this follows it rather than being left scanning a file
+    // the constant no longer lives in (a verify.mjs check silently going stale exactly like
+    // that is what this ratchet exists to catch). Widened at the same time: every string
+    // literal assigned through textContent in app.js/weeks.js is now scanned too, so no
+    // user-facing copy anywhere on the page escapes invariant 2.
     const problems = [];
+    const src = read("app.js");
     const textMatches = [...src.matchAll(/text:\s*"((?:[^"\\]|\\.)*)"/g)];
     const attrMatches = [...src.matchAll(/attr:\s*"((?:[^"\\]|\\.)*)"/g)];
-    for (const m of textMatches) if (hasQuoteGlyph(m[1])) problems.push(`EPIGRAPH text: ${m[1]}`);
-    for (const m of textMatches) { const p = findPlatitude(m[1]); if (p) problems.push(`EPIGRAPH text platitude "${p}": ${m[1]}`); }
+    for (const m of textMatches) {
+      if (hasQuoteGlyph(m[1])) problems.push(`EPIGRAPH text: ${m[1]}`);
+      const pl = findPlatitude(m[1]);
+      if (pl) problems.push(`EPIGRAPH text platitude "${pl}": ${m[1]}`);
+    }
     for (const m of attrMatches) if (hasQuoteGlyph(m[1])) problems.push(`EPIGRAPH attr: ${m[1]}`);
-    assert.ok(textMatches.length >= 2, `expected >=2 EPIGRAPH text lines, found ${textMatches.length} -- check the check itself, not just weeks.js`);
+    assert.ok(textMatches.length >= 2, `expected >=2 EPIGRAPH text lines, found ${textMatches.length} -- check the check itself, not just app.js`);
+    let scanned = 0;
+    for (const f of ["app.js", "weeks.js"].filter(exists)) {
+      for (const m of read(f).matchAll(/textContent\s*=\s*(["'`])((?:[^\\]|\\.)*?)\1/g)) {
+        scanned++;
+        if (hasQuoteGlyph(m[2])) problems.push(`${f} textContent: ${m[2]}`);
+        const pl = findPlatitude(m[2]);
+        if (pl) problems.push(`${f} textContent platitude "${pl}": ${m[2]}`);
+      }
+    }
+    assert.ok(scanned >= 3, `expected >=3 textContent string literals to scan, found ${scanned} -- check the check itself`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
 
@@ -685,16 +611,138 @@ function stage1() {
   // Journal card is gone (invariant-12 logged exception, see decisions.md). Its absence is now
   // covered by the "rotation engine retired" guard above instead.
 
-  check("stage1", "styles.css: Journal-era rules retired (v3.0): no --surface-2, .chip, .seam, #cards, .card-body selectors", () => {
+  check("stage1", "styles.css: Journal-era and theme-era rules retired (v4.0): no --surface-2, .chip, .seam, #cards, .card-body, data-theme, .theme-toggle, .weeks-zoom, .weeks-stat selectors", () => {
     // v3.0 audit finding (N1): re-adding --surface-2 passed 64/64 -- the token's three contrast
     // pairs were dropped with the Journal card, so nothing forbade its return as a dead token
     // that could drift out of contrast compliance unmeasured. Same loud-absence treatment the
     // other retirements got (wordOfDay/kenya/Mara/Values guards above and below).
     // Comments stripped first: the token block's own "--surface-2 retired" note is prose, not a rule.
     const src = css().replace(/\/\*[\s\S]*?\*\//g, "");
-    for (const needle of [/--surface-2\b/, /^\s*\.chip\b/m, /^\s*\.seam\b/m, /^\s*#cards\b/m, /\.card-body\b/, /\.card-chip\b/]) {
+    for (const needle of [/--surface-2\b/, /^\s*\.chip\b/m, /^\s*\.seam\b/m, /^\s*#cards\b/m, /\.card-body\b/, /\.card-chip\b/,
+      /data-theme/, /\.theme-toggle\b/, /\.weeks-zoom\b/, /\.weeks-stat\b/, /\.mindset-panel\b/, /\.weeks-epigraph\b/]) {
       assert.doesNotMatch(src, needle, `styles.css matches ${needle}: retired with the Journal card in v3.0, must not be reintroduced`);
     }
+  });
+
+  check("stage1", "lib.mjs: weekProgress correct at day 0..6 of a week, resets at the week boundary, and reports complete when clamped", async () => {
+    // The now square fills day by day (v4.0), so this is the function the grid's most visible
+    // pixel depends on. Walked over two whole weeks from J's anchor month-start at 12:00 HKT
+    // (04:00 UTC, unambiguous): daysIntoWeek must cycle 0..6, the fraction must be (d+1)/7, and
+    // the reset to 0 must land exactly where weeksLived increments.
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    const J = lib.LIFE_PEOPLE.find((p) => p.id === "J").birthMonthHKT;
+    const start = Date.parse("1989-12-01T04:00:00Z");
+    let prevWeeks = null;
+    for (let d = 0; d < 14; d++) {
+      const now = new Date(start + d * 86400000);
+      const pr = lib.weekProgress(J, now);
+      const weeks = lib.weeksLived(J, now);
+      assert.equal(pr.daysIntoWeek, d % 7, `day ${d}: daysIntoWeek ${pr.daysIntoWeek}`);
+      assert.equal(pr.fraction, ((d % 7) + 1) / 7, `day ${d}: fraction ${pr.fraction}`);
+      assert.equal(pr.complete, false, `day ${d}: must not report complete`);
+      assert.equal(weeks, Math.floor(d / 7), `day ${d}: weeksLived ${weeks}`);
+      if (prevWeeks !== null && weeks !== prevWeeks) {
+        assert.equal(pr.daysIntoWeek, 0, `day ${d}: the week boundary must reset daysIntoWeek to 0`);
+      }
+      prevWeeks = weeks;
+    }
+    const clamped = lib.weekProgress(J, new Date("2189-12-01T04:00:00Z"));
+    assert.deepEqual(clamped, { daysIntoWeek: 6, fraction: 1, complete: true },
+      "past the grid end there is no partial square left to fill");
+  });
+
+  check("stage1", "lib.mjs: upcomingMilestones sorted, strictly future, n-bounded, empty past the grid end, never throws 1988..2200 (weekly sweep)", async () => {
+    // Weekly sweep over the whole plausible range of dates this page can ever be loaded on,
+    // for both people. The list must always be sorted, never point backwards, never exceed n,
+    // and must empty out once weeksLived clamps -- that empty case is what the hero's "the grid
+    // is full" line depends on, and it is unreachable before ~2079, so only a sweep proves it.
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    assert.ok(lib.MILESTONE_WEEKS.length >= 10, `suspiciously short milestone table (${lib.MILESTONE_WEEKS.length})`);
+    for (let i = 1; i < lib.MILESTONE_WEEKS.length; i++) {
+      assert.ok(lib.MILESTONE_WEEKS[i].week > lib.MILESTONE_WEEKS[i - 1].week, "MILESTONE_WEEKS must be sorted and de-duplicated");
+    }
+    assert.ok(lib.MILESTONE_WEEKS.every((m) => m.week <= lib.LIFE_WEEKS_TOTAL), "no milestone may sit past the grid end");
+    const people = lib.LIFE_PEOPLE.map((p) => p.birthMonthHKT);
+    const end = Date.parse("2200-01-01T04:00:00Z");
+    let sawEmpty = false, sawFull = false;
+    for (let t = Date.parse("1988-01-01T04:00:00Z"); t < end; t += 7 * 86400000) {
+      const now = new Date(t);
+      for (const birth of people) {
+        const list = lib.upcomingMilestones(birth, now, 3);
+        assert.ok(Array.isArray(list) && list.length <= 3, "upcomingMilestones must return at most n entries");
+        if (list.length === 0) sawEmpty = true;
+        if (list.length === 3) sawFull = true;
+        const lived = lib.weeksLived(birth, now);
+        let prev = -1;
+        for (const m of list) {
+          assert.ok(Number.isInteger(m.week) && m.week > prev, "entries must be strictly ascending by week");
+          assert.equal(m.weeksUntil, m.week - lived, "weeksUntil must be week - weeksLived");
+          assert.ok(m.weeksUntil >= 0, "a milestone already passed must never be offered");
+          assert.ok(typeof m.label === "string" && m.label.length > 0, "every milestone needs a label");
+          prev = m.week;
+        }
+      }
+    }
+    assert.ok(sawFull, "the sweep never saw a full 3-entry list");
+    assert.ok(sawEmpty, "the sweep never reached the grid end, so the empty case is unproven");
+  });
+
+  check("stage1", "lib.mjs: weeksLived/weekProgress/upcomingMilestones consistent across a 100-year daily sweep for J and B (monotone, clamped, no NaN)", async () => {
+    // Daily, because the fractional now-square changes daily: the three functions have to agree
+    // with each other on every single day, not just at the week boundaries the checks above pin.
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    for (const birth of lib.LIFE_PEOPLE.map((p) => p.birthMonthHKT)) {
+      let prevWeeks = -1;
+      const start = Date.parse("2000-01-01T04:00:00Z");
+      for (let d = 0; d < 365 * 100; d += 1) {
+        const now = new Date(start + d * 86400000);
+        const weeks = lib.weeksLived(birth, now);
+        assert.ok(Number.isInteger(weeks) && weeks >= 0 && weeks <= lib.LIFE_WEEKS_TOTAL, `weeksLived out of range: ${weeks}`);
+        assert.ok(weeks >= prevWeeks, `weeksLived went backwards at day ${d}`);
+        const pr = lib.weekProgress(birth, now);
+        assert.ok(Number.isInteger(pr.daysIntoWeek) && pr.daysIntoWeek >= 0 && pr.daysIntoWeek <= 6, `daysIntoWeek out of range: ${pr.daysIntoWeek}`);
+        assert.ok(pr.fraction > 0 && pr.fraction <= 1 && !Number.isNaN(pr.fraction), `fraction out of range: ${pr.fraction}`);
+        assert.equal(pr.complete, weeks >= lib.LIFE_WEEKS_TOTAL, `complete must mean clamped (day ${d})`);
+        if (weeks > prevWeeks && prevWeeks !== -1 && !pr.complete) {
+          assert.equal(pr.daysIntoWeek, 0, `a week boundary must reset daysIntoWeek (day ${d})`);
+        }
+        const list = lib.upcomingMilestones(birth, now, 3);
+        assert.ok(list.length <= 3 && (weeks < lib.LIFE_WEEKS_TOTAL || list.length === 0),
+          `milestones must empty once the grid is full (day ${d})`);
+        prevWeeks = weeks;
+      }
+      assert.equal(prevWeeks, lib.LIFE_WEEKS_TOTAL, "a 100-year sweep must reach the clamp");
+    }
+  });
+
+  check("stage1", "index.html: theme-color meta equals :root --bg; manifest theme_color/background_color equal it too", () => {
+    // v4.0: the status-bar colour is static again (there is one theme), so nothing syncs it at
+    // runtime -- which means the three places it is written down can only be kept honest here.
+    const bg = themeTokens(css()).bg.toUpperCase();
+    const m = /<meta\s+name=["']theme-color["']\s+content=["']([^"']+)["']/.exec(html());
+    assert.ok(m, "no theme-color meta in index.html");
+    assert.equal(m[1].toUpperCase(), bg, `theme-color meta ${m[1]} != --bg ${bg}`);
+    const manifest = readJSON("manifest.webmanifest");
+    assert.equal(String(manifest.theme_color).toUpperCase(), bg, `manifest theme_color ${manifest.theme_color} != --bg ${bg}`);
+    assert.equal(String(manifest.background_color).toUpperCase(), bg, `manifest background_color ${manifest.background_color} != --bg ${bg}`);
+  });
+
+  check("stage1", "weeks.js: view model constants: three views (life/decade/year) with cols 52/52/13 and the year view count 52", () => {
+    // The three views replaced the +/- zoom in v4.0. Their column counts are the grid's whole
+    // shape -- 52 keeps a row a year, 13 turns the Year view into four quarters of 13 weeks --
+    // so a silent edit to either would change what the page means, not just how it looks.
+    const src = read("weeks.js");
+    const block = /const VIEWS = \{([\s\S]*?)\n\};/.exec(src);
+    assert.ok(block, "could not find the VIEWS constant in weeks.js");
+    for (const [id, cols] of [["life", 52], ["decade", 52], ["year", 13]]) {
+      const row = new RegExp(`${id}:\\s*\\{[^}]*cols:\\s*(\\d+)`).exec(block[1]);
+      assert.ok(row, `no ${id} view in VIEWS`);
+      assert.equal(Number(row[1]), cols, `${id} view cols ${row[1]}, expected ${cols}`);
+    }
+    const year = /year:\s*\{[^}]*count:\s*(\d+)/.exec(block[1]);
+    assert.ok(year, "no count on the year view");
+    assert.equal(Number(year[1]), 52, `year view count ${year[1]}, expected 52`);
+    assert.doesNotMatch(src, /ZOOM_MULT|setZoom|buildStatButton|stickyFocus/, "the zoom/stat/focus model was retired in v4.0");
   });
 
   check("stage1", "sw.js: every relative ASSETS entry exists on disk (addAll() rejects atomically on any 404)", () => {
