@@ -153,6 +153,27 @@ contrast check and an EPIGRAPH platitude scan (both genuine tightenings, not rep
 anything removed). Full accounting, by exact check name, is in `audits/decisions.md`'s v3.0
 invariant-12 entry. `verify.mjs all`: **64/64** at the implementation commit; **66/66** after the same-day independent audit added two tightening guards (a styles.css anti-resurrection guard for the retired Journal-era rules, and an existence check for every relative `sw.js` `ASSETS` entry — see `audits/v3.0-audit.md`), green.
 
+**2026-09-22, v4.0 update:** the owner asked for a statement rather than a chart — a hero
+number, "now" as the focal point, a quiet past with one person at a time, real grid structure,
+Life/Decade/Year views in place of the +/- zoom, the page/grid seam closed, milestones, more
+voice — plus dark mode only. Following the same discipline as every prior round: the three
+checks that proved the retired theme clock (`isDarkWindowHKT` boundaries, the 1440-minute
+dark/blossom partition sweep, the `index.html` pre-paint anti-drift pin) were removed outright
+rather than left to rot, since `hktHour`/`isDarkWindowHKT` and the snippet no longer exist;
+eight were retargeted in place (the tab/theme-toggle guard, the single-page DOM check, the
+`localStorage` check — tightened from "exactly one removeItem" to "none at all", the contrast
+check, which absorbed and replaced the separate `--weeks-*` palette check, the error-state
+contrast check, the `app.js` visibilitychange check, the EPIGRAPH scan, which followed its
+constant into `app.js` and was widened to every `textContent` string literal, and the
+`styles.css` anti-resurrection needles); and five were added, all strictly new guards
+(`weekProgress`, `upcomingMilestones`, a 100-year daily cross-consistency sweep, the
+`theme-color`/manifest/`--bg` pin, and the view-model constants). Full accounting, by exact
+check name, is in `audits/decisions.md`'s v4.0 invariant-12 entry. `verify.mjs all`: **67/67**,
+green. Also verified in a real browser (Playwright, repo served from disk, no dev server):
+390×844, 320×568, 1100×900, reduced motion, and the 2079/2090 clamp dates — zero console
+errors, no horizontal overflow, and the hero complete above the fold (bars' bottom edge at
+452px on 390×844, 465px on 320×568).
+
 ## Acceptance checklist (BUILD-PLAN.md §12)
 
 **Machine-verifiable — all green (`verify.mjs all`, 59/59):**

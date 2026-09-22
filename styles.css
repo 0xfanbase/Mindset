@@ -1,65 +1,26 @@
 /* Mindset — design tokens, mobile-first layout (BUILD-PLAN.md §4) */
 
-/* Two themes since v1.29 (calm retired): blossom (pink, 06:00-17:00 HKT) and dark (warm
-   charcoal, 17:00-06:00). blossom doubles as the :root default so a JS-disabled or
-   snippet-failed load still gets one complete, valid theme; [data-theme="dark"] is declared
-   AFTER it and wins the cascade tie at equal specificity by source order (the same principle
-   documented at this file's end for the reduced-motion block). */
-:root,
-[data-theme="blossom"] {
-  color-scheme: light;
-  --bg: #FBF4F6;
-  /* --surface (v2.0 redesign): the warm-cream light layer. Its oklch() design value was
-     converted to sRGB hex (verify.mjs's contrast math needs hex) -- see audits/decisions.md
-     v2.0. v3.0: the paired --surface-2 inner box retired with the Journal card; --surface now
-     backs the Weeks error state only. */
-  --surface: #FFF2EF;
-  --ink: #211B1A;
-  --muted: #766E6D;
-  --accent: #B84870;
-  --pulse: #F2A9C6;
-  --hairline: rgba(36, 26, 32, 0.10);
-  --shadow: rgba(36, 26, 32, 0.07);
-  /* Weeks fixed palette (v2.0 redesign): the Weeks section is now a permanently dark "night
-     sky" card -- design intent, not a --bg/[data-theme] pairing -- so every token below is
-     defined ONCE here and never overridden in the [data-theme="dark"] block; themeTokens() in
-     verify.mjs (extracts blossom, then spreads dark's overrides on top) picks these up
-     identically in both themes for free, no extraction-logic changes needed. This also
-     replaces the old theme-scoped --person-j/--person-b/--week-future (their only real use is
-     now always against these fixed weeks-* backgrounds, so a single value per person is both
-     simpler and more correct than swapping with the page theme) -- full rationale in
-     audits/decisions.md v2.0. All weeks-* text/graphic pairs are >=4.5:1 against every
-     weeks-* surface they actually render on, gated in verify.mjs. */
-  --weeks-bg: #2E3240;
-  --weeks-card: #3D4250;
-  --weeks-track: #12161F;
-  --weeks-pill-bg: #10131D;
-  --weeks-ink: #E2E4EB;
-  --weeks-muted: #A9AEBB;
-  --weeks-hairline: rgba(226, 228, 235, 0.14);
-  --weeks-accent: #DE8A68;
-  --week-future: rgba(226, 228, 235, 0.10);
+/* v4.0: one theme. The blossom/dark pair and the 06:00/17:00 HKT switch that drove it are
+   retired -- the page is the night sky, all day, and every token below is defined exactly once.
+   Every text pair here clears 4.5:1 on both --bg and --surface, gated in verify.mjs. */
+:root {
+  color-scheme: dark;
+  --bg: #1C1F2A;          /* the night sky: the whole page */
+  --surface: #2A2E3B;     /* the grid card and the milestone rows */
+  --track: #12161F;
+  --pill-bg: #10131D;
+  --ink: #E6E8EF;
+  --muted: #A9AEBB;
+  --hairline: rgba(230, 232, 239, 0.12);
+  --accent: #DE8A68;
+  --pulse: #F0AD82;       /* the figure's glow; app.js reads it from here at boot */
   --person-j: #FF8BA7;
   --person-b: #76B0FF;
-}
-/* Dark (v1.29): the 17:00-06:00 HKT default. Warm charcoal, not pure black or blue-grey;
-   elevation via --surface's lightness step, not shadow; --ink off-white, never #FFFFFF
-   (halation). --accent is the clay hue lightened for real AA headroom -- raw #D97757
-   measures 4.45:1 on --surface, under the 4.5 bar this repo was burned by before (the
-   "tightest AA pair" note in decisions.md). Every rendered pair recomputed and gated in
-   verify.mjs -- see audits/decisions.md v1.29 for the full table. */
-[data-theme="dark"] {
-  color-scheme: dark;
-  --bg: #242119;
-  --surface: #2F2C27;
-  --ink: #EDE9E1;
-  --muted: #A8A093;
-  --accent: #DE8A68;
-  --pulse: #F0AD82;
-  --hairline: rgba(237, 233, 225, 0.11);
+  /* Calm ink for an unselected person's bar. Lifted from the spec's #8E94A6, which measured
+     4.47:1 on --surface -- just under the bar this repo has been burned by before. */
+  --week-lived: #9399AB;
+  --week-future: rgba(230, 232, 239, 0.10);
   --shadow: rgba(0, 0, 0, 0.40);
-  /* No --weeks-*/--person-*/--week-future overrides here (v2.0) -- those are fixed, defined
-     once in the blossom block above; see the comment there. */
 }
 
 @font-face {
@@ -103,14 +64,9 @@ body {
   background: var(--bg);
   color: var(--ink);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  transition: background 0.4s ease, color 0.4s ease;
 }
 
-button, a { -webkit-tap-highlight-color: transparent; }
-.theme-toggle:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
+button { -webkit-tap-highlight-color: transparent; }
 
 header {
   display: grid;
@@ -123,6 +79,9 @@ header {
   padding-left: max(20px, env(safe-area-inset-left));
   padding-right: max(20px, env(safe-area-inset-right));
 }
+/* The third grid cell exists only to keep the figure in the middle one (the theme toggle used
+   to live here). */
+.header-pad { justify-self: end; }
 
 .brand {
   justify-self: start;
@@ -138,64 +97,14 @@ header {
   color: var(--ink);
 }
 
-/* v2.0: the toggle's visible mark is now a drawn half-fill circle (matching the imported
-   design) instead of a swapped text glyph (retired ◐/❀) -- purely decorative (the button's
-   own aria-label/title still carry the real "switch to X theme" state, unchanged), so one
-   static mark works for both themes and app.js no longer needs to touch textContent. The
-   44px element stays the full tap target (invariant 7); the mark itself is smaller, centered
-   via the ::before pseudo-element. */
-.theme-toggle {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  border: none;
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-  touch-action: manipulation;
-  justify-self: end;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.theme-toggle::before {
-  content: "";
-  width: 22px;
-  height: 22px;
-  border-radius: 50%;
-  border: 1.5px solid currentColor;
-  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
-  box-sizing: border-box;
-}
-.theme-toggle:active { transform: scale(0.96); }
-
-/* Block-flow, not flex (v1.39) -- main absorbs .panel's former padding and overflow-y here,
-   now that the tab system's per-panel scroll containers are gone. Plain block flow is the
-   simpler shape for a container whose only job is to hold the panel, so the flex column went
-   with the panels.
-   Measured, not assumed (v1.39 audit): the swap is layout-identical to keeping
-   display:flex/flex-direction:column -- 390x844, 390x500, 320x400, 390x2000 and 1100x900 all
-   render byte-identical geometry either way. Two reasons it can't differ here: (1) body is
-   `min-height:100svh` with an auto height, so it grows past the viewport and main (flex:1)
-   is never height-constrained -- main.scrollHeight === main.clientHeight on every load, which
-   means main's own overflow-y never actually engages and the DOCUMENT is the scroll container
-   (long-standing, app-wide, first noted in the v1.25 audit of .panel); and (2) even under a
-   constrained height, a column flex item's automatic minimum size (min-height:auto) keeps
-   auto-height children like these at their content height rather than shrinking them --
-   flex-shrink only compresses children with an explicit height. The overflow-y below is kept
-   as an inherited safety net, not as a live scroll mechanism. */
-main {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  width: 100%;
-  max-width: 1080px;
-  margin: 0 auto;
-  padding: 14px 20px 8px;
-  /* Landscape on a notched phone (viewport-fit=cover): content must clear the cutout the
-     same way header/footer already do (v1.28). */
-  padding-left: max(20px, env(safe-area-inset-left));
-  padding-right: max(20px, env(safe-area-inset-right));
+.date-line {
+  text-align: left;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8.5px;
+  letter-spacing: 0.14em;
+  color: var(--muted);
+  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .figure-wrap {
@@ -210,49 +119,319 @@ mindset-figure {
 }
 mindset-figure[role="button"] { cursor: pointer; touch-action: manipulation; }
 mindset-figure[role="button"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-mindset-figure[role="button"]:active { transform: scale(0.97); }
 
-.date-line {
-  text-align: left;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 8.5px;
-  letter-spacing: 0.14em;
+/* v4.0: no panel, no card-in-a-page seam -- the page background IS the night sky, and main
+   just holds the hero above the grid. The document is the scroll container (body is
+   min-height:100svh with an auto height, so main is never height-constrained). */
+main {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 14px 20px 8px;
+  /* Landscape on a notched phone (viewport-fit=cover): content clears the cutout the same way
+     header/footer already do (v1.28). */
+  padding-left: max(20px, env(safe-area-inset-left));
+  padding-right: max(20px, env(safe-area-inset-right));
+}
+
+/* ---- Hero (v4.0) ---- the number first, then who it is about, then what is coming. */
+.hero {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  text-align: center;
+}
+.hero-heading {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 17px;
+  line-height: 1.3;
   color: var(--muted);
-  text-transform: uppercase;
+}
+
+/* Person switch: a real radiogroup, not two toggles -- exactly one of the two is always on,
+   and the selection drives the whole page below it. */
+.person-switch {
+  display: flex;
+  gap: 8px;
+}
+.person-btn {
+  min-width: 56px;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: var(--pill-bg);
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.person-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.person-btn[aria-checked="true"] { color: var(--ink); }
+.person-btn[data-person="J"][aria-checked="true"] { border-color: var(--person-j); }
+.person-btn[data-person="B"][aria-checked="true"] { border-color: var(--person-b); }
+
+/* The hero number (item 1). Fraunces, not mono: this is a statement, not a readout. */
+.hero-number {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.hero-figure {
+  font-family: "Fraunces", Georgia, serif;
+  font-size: 56px;
+  font-weight: 500;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.hero-unit {
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-size: 18px;
+  color: var(--muted);
+}
+.hero-sub {
+  margin: -8px 0 0;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+/* Epigraph -- moved into the hero in v4.0 (it belongs with the statement, not after the grid).
+   Both lines share one treatment deliberately: one thought, ~2,000 years apart, not a
+   hierarchy, with each attribution picked out in --accent. Person colours are deliberately NOT
+   used here: those encode data identity, and prose about neither person shouldn't borrow it. */
+.epigraph {
+  max-width: 340px;
+  margin: 0 auto;
+}
+.epigraph p {
+  margin: 0;
+  font-family: "Fraunces", Georgia, serif;
+  font-style: italic;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.epigraph p + p { margin-top: 8px; }
+.epigraph-attr {
+  display: block;
+  margin-top: 2px;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+/* Both bars, always (item 3 is about the GRID; the comparison still belongs here). The
+   unselected row stays at --muted on a neutral fill rather than being dimmed with opacity,
+   which would have taken it under 4.5:1. */
+.bars {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.bar-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+}
+.bar-row.is-selected .bar-head { color: var(--ink); }
+.bar-track {
+  height: 6px;
+  border-radius: 3px;
+  background: var(--track);
+  overflow: hidden;
+}
+.bar-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--week-lived);
+  transition: width 900ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+.bar-row.is-selected[data-person="J"] .bar-fill { background: var(--person-j); }
+.bar-row.is-selected[data-person="B"] .bar-fill { background: var(--person-b); }
+
+/* Milestones (item 7): the next three named weeks, from lib.mjs's one milestone table. */
+.milestones {
+  width: 100%;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.milestone {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  background: var(--surface);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  text-align: left;
+}
+.milestone-name { color: var(--ink); }
+.milestone-when { color: var(--muted); white-space: nowrap; }
+
+/* ---- Weeks (the grid) ---- runs edge to edge under the hero; only the grid itself sits on a
+   card. min-height gives the centrepiece real presence before the canvas has sized itself. */
+.weeks-root {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 22px;
+  min-height: 60vh;
+  min-height: 60svh;
+}
+
+/* View switch (item 5): a tablist, because these three buttons switch what the one panel below
+   shows. Roving tabindex + arrow keys are wired in weeks.js. */
+.view-switch {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+.view-tab {
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 1px solid var(--hairline);
+  background: transparent;
+  color: var(--muted);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.view-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.view-tab.is-active {
+  color: var(--ink);
+  background: var(--pill-bg);
+  border-color: var(--ink);
+}
+
+.weeks-card {
+  padding: 14px 16px;
+  background: var(--surface);
+  border-radius: 16px;
+  box-shadow: 0 10px 28px var(--shadow);
+}
+.weeks-frame {
+  display: flex;
+  align-items: flex-start;
+}
+.weeks-gutter {
+  display: flex;
+  flex-direction: column;
+  width: 28px;
+  flex-shrink: 0;
+}
+.weeks-yr {
+  height: var(--pitch, 6px);
+  font-family: "IBM Plex Mono", monospace;
+  font-size: 8px;
+  line-height: 1;
+  color: var(--muted);
+  text-align: right;
+  padding-right: 5px;
   white-space: nowrap;
 }
-
-@keyframes cardIn {
-  from { opacity: 0; transform: translateY(14px) scale(0.97); }
-  to { opacity: 1; transform: none; }
+/* The one place the gutter stops being a ruler and starts being a pointer; weeks.js sets the
+   inline colour from the selected person's own token. */
+.weeks-yr.is-now { font-weight: 500; }
+.weeks-scroll {
+  flex: 1;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
 }
-/* cardIn uses fill-mode `backwards`, NOT `both` (v1.28): `both` keeps the finished animation
-   owning `transform` forever at the CSS-animations cascade origin, outranking ordinary author
-   rules. `backwards` keeps the pre-delay invisibility the entrance needs, then releases the
-   properties when the animation completes (cardIn's `to` state equals the natural resting
-   state, so nothing visibly changes at the handoff). The Weeks reveal keeps `both`
-   deliberately — its scanline's end state is NOT its natural state. */
+.weeks-scroll:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
-/* The single rounded, shadowed container holding the Weeks section (v3.0: Weeks is the whole
-   page; v2.0 held Journal above it, retired v3.0). overflow:hidden + one border-radius here
-   means the child needs no radius/shadow of its own at its outer edges -- the parent clips it
-   to match. The entrance animation lives here now, on the one thing that arrives. */
-.mindset-panel {
-  border-radius: 20px;
-  overflow: hidden;
-  box-shadow: 0 10px 28px var(--shadow);
-  animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
-  animation-delay: 0.3s;
+/* Entrance reveal (v1.23): the grid is drawn once (instant, correct) and revealed via a
+   top-down clip-path sweep with a scanline riding the edge -- GPU-composited, no per-cell JS.
+   1400ms cubic-bezier(0.65,0,0.35,1), not the house easing: the original rushed past the lived
+   rows (the entire point) and crawled through empty future cells. */
+.weeks-reveal-wrap {
+  position: relative;
+  display: inline-block;
+}
+.weeks-canvas-clip {
+  display: block;
+  animation: weeksClipReveal 1400ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+.weeks-scanline {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.5;
+  pointer-events: none;
+  animation: weeksScanline 1400ms cubic-bezier(0.65, 0, 0.35, 1) both;
+}
+@keyframes weeksClipReveal {
+  from { clip-path: inset(0 0 100% 0); }
+  to { clip-path: inset(0 0 0% 0); }
+}
+@keyframes weeksScanline {
+  0% { top: 0%; opacity: 0.5; }
+  85% { opacity: 0.5; }
+  100% { top: 100%; opacity: 0; }
 }
 
-/* The Weeks error state (v3.0): Weeks IS the page, so a build failure has to be visible --
-   app.js's renderWeeksError() paints this in place of the section. Both text colors clear
-   4.5:1 on --surface in both themes, gated in verify.mjs. */
+/* The breathing now-marker (item 2): a DOM overlay sitting exactly on the current cell, which
+   the canvas has already filled and outlined. 7s matches figure.js's BREATHE_CYCLE, so the
+   square and the figure in the header breathe together. weeks.js sets its position and its
+   colour on every redraw. */
+.now-marker {
+  position: absolute;
+  border-radius: 2px;
+  pointer-events: none;
+  color: var(--pulse);
+  animation: breathe 7s ease-in-out infinite;
+}
+@keyframes breathe {
+  0%, 100% { opacity: 0.45; box-shadow: 0 0 5px 1px currentColor; }
+  50% { opacity: 1; box-shadow: 0 0 13px 3px currentColor; }
+}
+
+/* The Weeks error state: Weeks IS the page, so a build failure has to be visible -- app.js's
+   renderWeeksError() paints this in place of the section. Both text colours clear 4.5:1 on
+   --surface, gated in verify.mjs. */
 .weeks-error {
   text-align: center;
   padding: 28px 20px;
   background: var(--surface);
   color: var(--ink);
+  border-radius: 16px;
 }
 .error-label {
   font-family: "IBM Plex Mono", monospace;
@@ -270,290 +449,6 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   max-width: 250px;
 }
 
-/* Weeks section (v1.23; a permanently dark "night sky" card since v2.0 -- see the --weeks-*
-   token comment at the top of this file for why it no longer follows the page's blossom/dark
-   theme; the whole page's content since v3.0). One combined
-   life-in-weeks grid for J and B, canvas-rendered by weeks.js. Content deliberately exceeds
-   one screen and scrolls with the document (see main's own comment above for why main's
-   overflow-y is not the mechanism it looks like) — invariant 11 scopes the above-the-fold
-   requirement to the heading and both stat rows; the grid below them scrolls. min-height
-   gives the centrepiece real presence before the canvas has sized itself. */
-.weeks-root {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  background: var(--weeks-bg);
-  color: var(--weeks-ink);
-  padding: 22px 20px 26px;
-  min-height: 60vh;
-  min-height: 60svh;
-}
-/* The grid's own total, centered under the heading (v3.0 -- took over from the retired pill
-   that used to sit above this section; text built by weeks.js from LIFE_WEEKS_TOTAL). */
-.weeks-total {
-  align-self: center;
-  background: var(--weeks-pill-bg);
-  color: var(--weeks-ink);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 9.5px;
-  letter-spacing: 0.06em;
-  padding: 4px 12px;
-  border-radius: 999px;
-  white-space: nowrap;
-  margin-top: -8px;
-}
-.weeks-heading {
-  text-align: center;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.16em;
-  color: var(--weeks-muted);
-}
-/* v2.0: J and B stack full-width, one above the other -- matches the imported design (each
-   person's row/bar/pctrow spans the whole card there, not a side-by-side 2-column split like
-   the pre-v2.0 layout used). A 2-column grid was tried first and cut B's row clean off at
-   320-390px: the richer per-row content added here (the "N weeks left" companion to the meta
-   label, both nowrap in the mockup's much wider 560px reference) doesn't fit in a ~145px half
-   column, and .mindset-panel's own overflow:hidden clipped the overflow silently instead of
-   visibly breaking -- caught in a real-browser screenshot pass, not by verify.mjs (a
-   contrast/budget/structure gate, not a layout one). Full-width stacking fixes it at the
-   source instead of shrinking type to fit. */
-.weeks-stats {
-  display: flex;
-  flex-direction: column;
-  gap: 22px;
-}
-/* Each stat is also the hover/tap focus control (v1.23) -- a real <button>, not a bare
-   :hover rule, so it works identically by tap on iOS. */
-.weeks-stat {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  min-height: 44px;
-  padding: 6px 2px 8px;
-  border: none;
-  background: transparent;
-  cursor: pointer;
-  touch-action: manipulation;
-  text-align: left;
-}
-.weeks-stat[data-person="J"] { color: var(--person-j); }
-.weeks-stat[data-person="B"] { color: var(--person-b); }
-.weeks-stat:focus-visible { outline: 2px solid var(--weeks-accent); outline-offset: 2px; }
-@media (hover: hover) {
-  .weeks-stat:hover { opacity: 0.85; }
-}
-.weeks-stat-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-.weeks-stat-meta,
-.weeks-stat-left {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: 0.02em;
-  color: var(--weeks-muted);
-}
-/* No white-space:nowrap here (unlike the mockup's own inline style, written for its fixed
-   560px reference card) -- at the mobile widths this app actually ships at (down to 320px),
-   forcing both halves of this space-between row onto one line each can still overflow; letting
-   either wrap onto a second line if it must is the safer default for a real, narrow viewport. */
-.weeks-stat-left {
-  text-align: right;
-}
-/* Bar track/fill (v2.0, new): replaces the old bare 34px percent figure with the design's
-   thin progress bar. Fill width is set inline per-render by updateStats() from the exact same
-   percentLifeSpent() used everywhere else -- no new computation. `background: currentColor`
-   on the fill inherits .weeks-stat[data-person]'s own color, so J/B never need their own
-   duplicate selector here. is-active (sticky/hover focus, still driven by syncFocusUI()) lifts
-   the bar and adds the same underline treatment the old border-bottom gave the whole button. */
-.weeks-bar-track {
-  height: 6px;
-  border-radius: 3px;
-  background: var(--weeks-track);
-  overflow: hidden;
-  position: relative;
-}
-.weeks-bar-fill {
-  height: 100%;
-  background: currentColor;
-  position: relative;
-  overflow: hidden;
-  border-radius: inherit;
-}
-.weeks-stat.is-active .weeks-bar-track { box-shadow: 0 0 0 1px currentColor; }
-/* The shine sweep: a soft diagonal highlight looping across the filled portion -- decorative,
-   killed under reduced motion in the block at the end of this file (same pattern as the
-   panel's entrance and the Weeks reveal scanline). B's sweep is staggered 1.1s behind J's so the two
-   bars don't pulse in lockstep, matching the imported design. */
-.weeks-bar-shine {
-  position: absolute;
-  top: 0; left: 0;
-  width: 45%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.55), transparent);
-  animation: shineSweep 2.6s ease-in-out infinite;
-}
-.weeks-stat[data-person="B"] .weeks-bar-shine { animation-delay: 1.1s; }
-@keyframes shineSweep {
-  0% { transform: translateX(-120%); }
-  100% { transform: translateX(320%); }
-}
-/* The lived/left row: Fraunces italic, the app's own "artistic" voice (already used for the
-   wordmark and card attribution lines), not a bigger mono digit -- a dashboard would use
-   the latter. --weeks-ink clears 4.5:1 on every weeks-* surface it renders on (gated in
-   verify.mjs), so both people share one color here rather than inheriting currentColor --
-   the bar above already carries the per-person color identity. */
-.weeks-stat-pctrow {
-  display: flex;
-  justify-content: space-between;
-  font-family: "Fraunces", Georgia, serif;
-  font-style: italic;
-  font-size: 15px;
-  color: var(--weeks-ink);
-}
-.weeks-zoom-row {
-  display: flex;
-  justify-content: flex-end;
-}
-.weeks-zoom {
-  display: flex;
-  gap: 8px;
-  flex-shrink: 0;
-}
-.weeks-zoom-btn {
-  width: 44px;
-  height: 44px;
-  border-radius: 999px;
-  border: 1px solid var(--weeks-hairline);
-  background: transparent;
-  color: var(--weeks-ink);
-  font-size: 18px;
-  line-height: 1;
-  cursor: pointer;
-  touch-action: manipulation;
-}
-.weeks-zoom-btn:active { transform: scale(0.99); border-color: var(--weeks-ink); }
-.weeks-zoom-btn:focus-visible { outline: 2px solid var(--weeks-accent); outline-offset: 2px; }
-.weeks-zoom-btn:disabled { opacity: 0.35; cursor: default; }
-@media (hover: hover) {
-  .weeks-zoom-btn:not(:disabled):hover { border-color: var(--weeks-ink); }
-}
-.weeks-card {
-  padding: 14px 16px;
-  background: var(--weeks-card);
-  border-radius: 16px;
-}
-.weeks-frame {
-  display: flex;
-  align-items: flex-start;
-  margin-top: 10px;
-}
-.weeks-gutter {
-  display: flex;
-  flex-direction: column;
-  width: 24px;
-  flex-shrink: 0;
-}
-.weeks-yr {
-  height: var(--pitch, 6px);
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 8px;
-  line-height: 1;
-  color: var(--weeks-muted);
-  text-align: right;
-  padding-right: 5px;
-  white-space: nowrap;
-}
-.weeks-scroll {
-  flex: 1;
-  min-width: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
-  -webkit-overflow-scrolling: touch;
-}
-.weeks-scroll:focus-visible { outline: 2px solid var(--weeks-accent); outline-offset: 2px; }
-/* Entrance reveal (v1.23): the grid is drawn once (instant, correct) and revealed via a
-   top-down clip-path sweep with a synced scanline riding the edge -- GPU-composited, no
-   per-cell JS animation. Previously replayed on every Weeks-tab visit via a display:none
-   animation restart (v1.16's audit); since v1.39 build() runs once at boot behind no such
-   toggle, so this now plays exactly once per page load.
-   1400ms cubic-bezier(0.65,0,0.35,1), not the house cardIn easing -- Fable's UX audit found
-   the original 1100ms/cardIn-curve reveal ~70% done by 180ms, rushing past the lived rows
-   (the entire point) and leaving the last second crawling through empty future cells; this
-   symmetric ease-in-out was tested live in the page and reads as a real traveling scan. */
-.weeks-reveal-wrap {
-  position: relative;
-  display: inline-block;
-}
-.weeks-canvas-clip {
-  display: block;
-  animation: weeksClipReveal 1400ms cubic-bezier(0.65, 0, 0.35, 1) both;
-}
-.weeks-scanline {
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 2px;
-  background: linear-gradient(90deg, transparent, var(--weeks-accent), transparent);
-  opacity: 0.5;
-  pointer-events: none;
-  animation: weeksScanline 1400ms cubic-bezier(0.65, 0, 0.35, 1) both;
-}
-@keyframes weeksClipReveal {
-  from { clip-path: inset(0 0 100% 0); }
-  to { clip-path: inset(0 0 0% 0); }
-}
-@keyframes weeksScanline {
-  0% { top: 0%; opacity: 0.5; }
-  85% { opacity: 0.5; }
-  100% { top: 100%; opacity: 0; }
-}
-/* Epigraph -- moved to the top of the section in v1.24 (per live feedback it needed real
-   display weight, "stands out from a UI angle"), moved back to the BOTTOM in v2.0 to match
-   the imported design's closing-thought placement (stats/bars -> grid -> reflective quote).
-   The display-weight decision itself still holds -- kept at full --weeks-ink contrast, not the
-   design mockup's own low-contrast dim treatment (its oklch(50% 0.02 270) measures only
-   2.13:1 on the fixed weeks background, well under this house's 4.5:1 bar) -- only the
-   POSITION reverts; see audits/decisions.md v2.0 for the full trail. Both lines (Burkeman,
-   Seneca) share one treatment deliberately: one thought, ~2,000 years apart, not a hierarchy
-   between them, with each line's attribution picked out in --weeks-accent. Person colors
-   (--person-j/b) are deliberately NOT used here: those are data-identity colors, and putting
-   them on prose would leak the grid's own color encoding into copy that isn't about either
-   person specifically. */
-.weeks-epigraph {
-  text-align: center;
-  max-width: 340px;
-  margin: 4px auto 0;
-}
-.weeks-epigraph p {
-  font-family: "Fraunces", Georgia, serif;
-  font-style: italic;
-  font-size: 15px;
-  line-height: 1.5;
-  color: var(--weeks-ink);
-  margin: 0;
-}
-.weeks-epigraph p + p {
-  margin-top: 6px;
-}
-.weeks-epigraph-attr {
-  display: block;
-  margin-top: 2px;
-  font-size: 12.5px;
-  color: var(--weeks-accent);
-}
-.weeks-divider {
-  align-self: center;
-  width: 24px;
-  height: 2px;
-  border-radius: 1px;
-  background: var(--weeks-accent);
-}
-
 footer {
   margin-top: auto;
   padding-top: 10px;
@@ -567,33 +462,37 @@ footer {
   color: var(--muted);
 }
 
-/* Desktop adaptation — min-width only, base CSS above is the mobile layout (invariant 11). */
+/* Desktop adaptation — min-width only, base CSS above is the mobile layout (invariant 11).
+   Two columns (item 8): the hero sticks while the grid scrolls past it, so the number never
+   leaves the screen. */
 @media (min-width: 900px) {
-  /* Capped on .mindset-panel itself rather than on each inner piece -- Fable's UX audit
-     originally caught the stats/zoom rows stretching to the full content width on desktop,
-     stranding J's percent in the far-left corner; capping the panel fixes every child at
-     once. v3.0 raised the cap 640px -> 720px: the grid is the centrepiece now, and 52 columns
-     at 720px lands at roughly a 13px pitch. */
-  .mindset-panel {
-    max-width: 720px;
-    width: 100%;
-    margin: 0 auto;
+  main {
+    display: grid;
+    grid-template-columns: minmax(300px, 380px) 1fr;
+    gap: 40px;
+    align-items: start;
   }
+  .hero {
+    position: sticky;
+    top: 16px;
+  }
+  .weeks-root { margin-top: 0; }
 }
 
-/* Kept last on purpose: .mindset-panel sets its own `animation: cardIn ...` at equal
-   specificity, so this override must win the cascade by source order, not just exist somewhere
-   in the file (a bug found and fixed during v1.18 -- this rule previously sat right after
-   @keyframes cardIn, before that base rule, so it silently never took effect). */
+/* 64px is the design size; the base above is the 320px fallback (invariant 11: base CSS is
+   the smallest screen, min-width queries only). */
+@media (min-width: 360px) {
+  .hero-figure { font-size: 64px; }
+}
+
+/* Kept last on purpose: these override animations declared above at equal specificity, so they
+   must win the cascade by source order, not just exist somewhere in the file (a bug found and
+   fixed in v1.18). */
 @media (prefers-reduced-motion: reduce) {
-  .mindset-panel { animation: none; }
-  /* Cancelling the animation alone is not enough here (unlike the rule above): the reveal's
-     `from` state is fully clipped/invisible, so a reduced-motion viewer must also get the
-     resting "fully visible" state explicitly, not just an animation-free freeze on frame
-     one, which would hide the grid entirely. */
+  /* Cancelling the animation alone is not enough for the reveal: its `from` state is fully
+     clipped, so a reduced-motion viewer must also get the resting visible state explicitly. */
   .weeks-canvas-clip { animation: none; clip-path: none; }
   .weeks-scanline { display: none; }
-  /* v2.0: the progress-bar shine sweep is a purely decorative loop, same treatment as the
-     other two motion effects in this block. */
-  .weeks-bar-shine { animation: none; display: none; }
+  .now-marker { animation: none; }
+  .bar-fill { transition: none; }
 }
