@@ -301,7 +301,8 @@ function stage1() {
     assert.doesNotMatch(src, /role=["']tablist["']/, "the tablist is built by weeks.js, not declared in index.html");
     const shipped = ["index.html", "app.js", "weeks.js", "figure.js", "lib.mjs", "sw.js"].filter(exists);
     let tablists = 0;
-    for (const f of shipped) tablists += (read(f).match(/["']tablist["']/g) || []).length;
+    // Comments stripped first so a prose mention of the word can never count as a role (v4.0 audit).
+    for (const f of shipped) tablists += (read(f).replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "").match(/["']tablist["']/g) || []).length;
     assert.equal(tablists, 1, `expected exactly one role=tablist app-wide, found ${tablists}`);
     const order = /const VIEW_ORDER = \[([^\]]*)\]/.exec(read("weeks.js"));
     assert.ok(order, "could not find VIEW_ORDER in weeks.js");

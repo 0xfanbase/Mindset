@@ -79,8 +79,10 @@ function sizeCanvas(canvas, ctx, cssW, cssH) {
 // already dynamic -- now with which person the grid is actually showing (v4.0).
 function ariaLabelFor(Jw, Bw) {
   return `Life in weeks: J ${commas(displayWeek(Jw))} of ${commas(LIFE_WEEKS_TOTAL)}, ` +
-    `B ${commas(displayWeek(Bw))} of ${commas(LIFE_WEEKS_TOTAL)}. Showing ${personId}. ` +
-    `B has about a 13-month head start on J.`;
+    `B ${commas(displayWeek(Bw))} of ${commas(LIFE_WEEKS_TOTAL)}. Showing ${personId}.` +
+    // The head-start sentence is about the grid, not the births: once both squares are full it
+    // no longer describes anything on screen (v4.0 audit nit 4).
+    (Jw >= LIFE_WEEKS_TOTAL && Bw >= LIFE_WEEKS_TOTAL ? "" : " B has about a 13-month head start on J.");
 }
 
 // Cells are drawn in batched fillStyle passes (future / lived / lead band, then the two
@@ -120,7 +122,9 @@ function drawGrid(view, pitch) {
   // Structure (item 4): the current decade tinted, then decade rules, then the current row.
   if (view.id === "life" || view.id === "decade") {
     const decadeRow = Math.floor(Pw / (LIFE_WEEKS_PER_ROW * 10)) * 10 - start / cols;
-    if (decadeRow >= 0 && decadeRow < rows) {
+    // Life view only: in Decade view the window IS the current decade, so the tint would cover
+    // the whole panel and mean nothing (v4.0 audit nit 1).
+    if (view.id === "life" && decadeRow >= 0 && decadeRow < rows) {
       ctx.fillStyle = DECADE_TINT;
       ctx.fillRect(0, decadeRow * pitch, cols * pitch, Math.min(10, rows - decadeRow) * pitch);
     }
@@ -241,6 +245,7 @@ function syncTabs() {
   for (const t of chart.tabs) {
     const on = t.dataset.view === viewId;
     t.setAttribute("aria-selected", String(on));
+    if (on && chart.panel) chart.panel.setAttribute("aria-labelledby", t.id);
     t.tabIndex = on ? 0 : -1;
     t.classList.toggle("is-active", on);
   }
@@ -263,7 +268,9 @@ function buildViewSwitch(root) {
     b.type = "button";
     b.className = "view-tab";
     b.dataset.view = id;
+    b.id = `view-tab-${id}`;
     b.setAttribute("role", "tab");
+    b.setAttribute("aria-controls", "weeks-panel");
     b.setAttribute("aria-selected", String(id === viewId));
     b.tabIndex = id === viewId ? 0 : -1;
     b.textContent = VIEWS[id].label;
@@ -296,8 +303,10 @@ function build() {
 
   const card = document.createElement("div");
   card.className = "weeks-card";
+  card.id = "weeks-panel";
   card.setAttribute("role", "tabpanel");
-  card.setAttribute("aria-label", "Life in weeks");
+  // Named by the selected tab (aria-labelledby, kept in sync by syncTabs()), not a fourth
+  // nested "Life in weeks" label on top of the region, the scroller and the canvas (audit nits 2/3).
   const frame = document.createElement("div");
   frame.className = "weeks-frame";
 
@@ -330,7 +339,7 @@ function build() {
   card.appendChild(frame);
   root.appendChild(card);
 
-  chart = { canvas, ctx: canvas.getContext("2d"), scroller, gutter, marker, tabs };
+  chart = { canvas, ctx: canvas.getContext("2d"), scroller, gutter, marker, tabs, panel: card };
   syncTabs();
   redrawAll();
 
