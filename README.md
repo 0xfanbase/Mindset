@@ -1,23 +1,25 @@
 # Mindset
 
-A personal mindset dashboard. One page, no backend, no dependencies — a small bottle of light
-breathing slowly, the day's date in Hong Kong time, and one short **Journal** prompt (a mindful
-reflection question) that refreshes itself every morning at 05:00 HKT.
+A life in weeks for J and B. One page, no backend, no dependencies — a small bottle of light
+breathing slowly, the day's date in Hong Kong time, and one 90-year grid of small squares, one
+square per week, filled pink-and-blue as each week passes (split cells where both have lived a
+week, solid blue where only B has so far — he's older). It's zoomable and scrollable, with a
+progress bar and percent-of-life-spent figure for each person at the top, a tap/hover toggle to highlight
+just one person's weeks, and a total-weeks pill under the heading.
+
 Two themes that follow the Hong Kong clock — `blossom` (soft pink) through the day, `dark`
 (warm charcoal) from 17:00 to 06:00 HKT. The header toggle overrides the schedule for the
 current visit only: nothing is stored, and every fresh load returns to the time-of-day cycle.
 
-Below the day's card, **Weeks** is a combined life-in-weeks chart for J and B — one 90-year
-grid of small squares, one square per week, filled pink-and-blue as each week passes (split
-cells where both have lived a week, solid blue where only B has so far — he's older), zoomable
-and scrollable, with a big percent-of-life-spent figure for each person at the top and a
-tap/hover toggle to highlight just one person's weeks. It advances on its own: since it's
-computed from today's date on every load, no daily-pipeline step is involved.
+Weeks is the entire page (v3.0 — the Journal card and its daily pipeline were retired). It
+advances on its own: since it's computed from today's HKT date on every load and on every
+resumed visit, no daily-pipeline step is involved, and nothing here refreshes on a schedule —
+the site only changes when a human pushes to `main`.
 
 Zero build step, zero runtime dependencies. The only personal data anywhere in this repo is
-two initials and two birth months (for the Weeks section above) — never full names, never an
-exact day, never anyone else's data; everything else traces to public thinkers already
-credited by name. See `BUILD-PLAN.md` for the full specification this site was built from.
+two initials and two birth months (month precision only, never an exact day) — never full
+names, never anyone else's data. See `BUILD-PLAN.md` for the full specification this site was
+built from.
 
 ## Add to Home Screen
 
@@ -30,60 +32,29 @@ day is a shrug.
 
 **Android (Chrome):** open the site → menu (⋮) → **Add to Home screen** / **Install app**.
 
-## What the chips mean
-
-- **No chip** — today's cards, generated within the last 05:00 HKT refresh window.
-- **`yesterday's cards`** (amber) — the daily refresh hasn't landed yet or briefly failed;
-  showing the most recent successful day's cards (≤ 48h old).
-- **`offline rotation`** (slate) — `data/daily.json` couldn't be reached at all (offline, or
-  > 48h stale). The page computes today's cards locally from the full card library via the
-  same deterministic rotation the daily pipeline uses, so you never see an empty screen.
-
 ## Ops runbook
 
-**Add or edit cards** — edit `data/cards.json` (journal)
-directly, commit, push to `main`. No build step. Keep the writing rules
-in `BUILD-PLAN.md` §5.3 in mind: ≤ 25 words, one open-ended question per entry, second person,
-no yes/no questions, no quotation marks, no banned platitudes.
+There is no daily job anymore. Deploy = push to `main` — `pages-deploy.yml` runs
+`node scripts/verify.mjs all` as the gate before the site goes live; nothing else runs on a
+schedule.
 
-**Replace cards, not resize the pool** — the daily rotation (`lib.mjs`'s `pickIndex`) is a
-per-cycle shuffle keyed to the pool size. Swapping one card's content for another (same
-id, same position in the array) doesn't affect anything else. **Adding or removing** cards
-changes the pool size and reshuffles the *entire* rotation from that point on — it may
-briefly repeat a recently-seen card. Fine to do, just expect that one-time ripple.
+**Change the two birth months** — edit `lib.mjs`'s `LIFE_PEOPLE` (month precision only: year +
+month, never a day). `verify.mjs` pins the current values, so update its expectations in the
+same commit or the build will correctly fail.
 
-**Manually trigger the daily refresh** — GitHub → Actions → `daily-cards` → **Run workflow**
-(branch `main`). Safe to re-run same-day (and any day) — `generate-daily.mjs` is a pure,
-deterministic function of the date, no external fetch involved (v1.10 retired the Fresh card
-and the RSS-fetching machinery that came with it), so re-running never duplicates or changes
-anything unexpectedly.
-
-**Manually trigger the watchdog** — GitHub → Actions → `watchdog` → **Run workflow**. It
-compares today's date (Hong Kong time) against both the committed `data/daily.json` and the
-*live* Pages URL, and opens a GitHub issue if either is stale — catching not just a failed
-daily run but also "the commit landed but Pages didn't redeploy."
-
-## Platform caveats (real, not bugs)
-
-- GitHub Actions cron can fire several minutes late under scheduler load — the daily job is
-  scheduled at 04:56 HKT (not top-of-hour) and the watchdog waits until 09:00 HKT before
-  alerting, specifically to absorb that.
-- Scheduled workflows auto-disable after ~60 days with no repository activity. The daily
-  bot commit keeps the repo active *while the daily job is actually succeeding* — if it
-  silently breaks for two months straight, the watchdog protecting it eventually goes quiet
-  too. There's no fix for this beyond an occasional glance (see the human checklist in
-  `BUILD-PLAN.md` §13).
-- Actions failure emails follow your own GitHub notification settings, not this repo's.
+**Bump the service-worker cache** — any time `sw.js`'s `ASSETS` list, or the bytes of any file
+already on it, meaningfully change, bump `CACHE` (e.g. `mindset-v24` → `mindset-v25`) so old
+installed clients purge stale cached files instead of serving them alongside the new ones.
+Keep `BUILD-PLAN.md` Appendix C.2's code block in sync with the real file.
 
 ## Local development
 
 There is no dev server and no build step by design (see `BUILD-PLAN.md` §9.2.3 — this
 project's autonomous build explicitly avoided local preview servers; the real Pages URL is
-the intended way to look at it). To run the generator or verifier locally:
+the intended way to look at it). To run the verifier locally:
 
 ```
 node scripts/verify.mjs all
-NODE_USE_ENV_PROXY=1 node scripts/generate-daily.mjs   # only needed behind an egress proxy
 ```
 
 ## License

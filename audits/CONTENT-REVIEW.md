@@ -1320,3 +1320,12 @@ what actually matters). The 5 shipped values:
 Cut (were always marked "reserve, held back for later curation" in the source content — not a
 new deletion, just never promoted): Courage under visibility, Temperance, Honesty with self,
 Long-game relationships, Health as the base asset.
+
+## Journal v1.32 — retired in v3.0
+
+Owner: "I now just want the 4000 weeks screen without the top journal ... 4000 weeks become
+the centre piece of the site for us." The 1825-entry Journal pool (see "Journal v1.32" above
+for the full content) was retired along with the Journal card itself and the entire daily
+pipeline that fed it — `data/cards.json`, `data/daily.json`, and the `data/` directory no
+longer exist in this repo. The pool survives in git history, at the commit immediately before
+this round's (see `git log`), and in this file's "Journal v1.32" section above, unchanged.

@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 // scripts/verify.mjs — stage-gated verification harness (BUILD-PLAN.md Appendix A, v1.1)
 // Node >= 20, zero deps. Usage: node scripts/verify.mjs <stage0..stage5|all>
+// v3.0: the Journal card, the daily pipeline that fed it, and the rotation engine it rotated
+// through are all retired -- Weeks (a life-in-weeks grid, computed from today's HKT date on
+// every load) is now the entire page. Every check that only ever existed to prove those retired
+// pieces correct was removed or retargeted; see audits/decisions.md for the exact list
+// (invariant 12's logged-exception ledger).
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -109,30 +114,10 @@ function themeTokens(cssText) {
   assert.ok(darkOverride.bg, "could not extract a non-empty [data-theme=dark] --bg token");
   return { blossom, dark: { ...blossom, ...darkOverride } };
 }
-// Composite a CSS rgba() tint over a solid hex base -> solid hex, for the pill/chip pairs
-// whose rendered background is translucent (their contrast is real but not token-vs-token).
-function parseRgba(str) {
-  const m = /rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*(?:,\s*([\d.]+)\s*)?\)/.exec(str);
-  return m ? { r: +m[1], g: +m[2], b: +m[3], a: m[4] === undefined ? 1 : +m[4] } : null;
-}
-function compositeOver(rgbaStr, baseHex) {
-  const f = parseRgba(rgbaStr);
-  if (!f) throw new Error(`not an rgba() tint: ${rgbaStr}`);
-  const b = hexToRgb(baseHex);
-  const mix = (fg, bg) => Math.round(f.a * fg + (1 - f.a) * bg);
-  const to2 = (n) => n.toString(16).padStart(2, "0");
-  return `#${to2(mix(f.r, b.r))}${to2(mix(f.g, b.g))}${to2(mix(f.b, b.b))}`;
-}
-// Pull `background:` (rgba tint) and `color:` (hex) out of one CSS rule found by regex.
-function ruleTintAndColor(cssText, selectorRegex, label) {
-  const block = extractBlock(cssText, selectorRegex);
-  assert.ok(block, `could not find rule: ${label}`);
-  const bg = /background:\s*([^;]+);/.exec(block);
-  const color = /color:\s*(#[0-9A-Fa-f]{3,8})/.exec(block);
-  assert.ok(bg && color, `rule ${label} is missing background: or a hex color:`);
-  return { tint: bg[1].trim(), color: color[1] };
-}
-function wordCount(s) { return s.trim().split(/\s+/).filter(Boolean).length; }
+// v3.0: parseRgba/compositeOver/ruleTintAndColor existed only to composite the retired
+// staleness chip's rgba() tint over --bg for its contrast check; removed as genuinely unused
+// once that check went (invariant-12 logged exception, see decisions.md). wordCount similarly
+// existed only for cards.json's retired word-cap check; removed alongside it.
 
 // quotation-mark glyphs that count as "verbatim quote" markers — an ASCII apostrophe
 // used intra-word (contraction/possessive) is explicitly allowed (invariant 2).
@@ -235,9 +220,18 @@ function stage0() {
     assert.ok(exists("audits/decisions.md"), "missing decisions.md");
   });
   check("stage0", "repo tree directories exist", () => {
-    for (const d of ["assets/fonts", "assets/icons", "data", "scripts", ".github/workflows", "audits"]) {
+    for (const d of ["assets/fonts", "assets/icons", "scripts", ".github/workflows", "audits"]) {
       assert.ok(fs.existsSync(abs(d)) && fs.statSync(abs(d)).isDirectory(), `missing dir ${d}`);
     }
+  });
+  // v3.0: the Journal card and everything that only ever fed it (the daily pipeline, the
+  // rotation engine, the content library) was retired -- data/ has no reason to exist anymore.
+  // A loud guard, not a bare deletion, so a reintroduction (a bad merge, a stray revert) is
+  // caught rather than silently shipped.
+  check("stage0", "data/ directory retired (v3.0): data/cards.json, data/daily.json, data/ do not exist", () => {
+    assert.ok(!exists("data/cards.json"), "data/cards.json exists but the Journal card was retired in v3.0");
+    assert.ok(!exists("data/daily.json"), "data/daily.json exists but the daily pipeline was retired in v3.0");
+    assert.ok(!fs.existsSync(abs("data")), "data/ exists but was retired in v3.0");
   });
   check("stage0", "invariant-1 name denylist: protected first name appears in no tracked file", () => {
     // v1.28: a protected family member's first name shipped in two prose files (BUILD-PLAN.md's
@@ -314,11 +308,14 @@ function stage1() {
     assert.ok(toggleTag, "no theme-toggle button in index.html");
     assert.doesNotMatch(toggleTag[0], /aria-pressed/, "theme-toggle must not carry aria-pressed");
   });
-  check("stage1", "single page (v1.39, DOM merge v2.0): .mindset-panel > #cards, .seam, #weeks-root appear in that order inside main", () => {
-    // v2.0: .section-divider (a bare accent line) was replaced by .seam (a gradient bar +
-    // floating pill), and #cards/#weeks-root moved one level deeper, inside a new
-    // .mindset-panel wrapper (the unified duotone card) -- selectors retargeted, same intent:
-    // still exactly one page, still Journal unconditionally above Weeks, still no tab system.
+  check("stage1", "single page (v3.0): .mindset-panel > #weeks-root is main's only content; #cards/.seam/#staleness-chip retired", () => {
+    // v3.0: the Journal card is retired, and with it everything that only ever shared main
+    // with Weeks -- #cards, .seam (the divider between them), #staleness-chip (the Journal
+    // freshness indicator). Weeks is now the entire page. Retargeted from the v1.39/v2.0 check
+    // of the same name/spirit, which asserted .mindset-panel > #cards -> .seam -> #weeks-root
+    // DOM order; that ordering assumption no longer applies since two of the three nodes it
+    // ordered are gone -- a loud absence guard, not a bare deletion, so a reintroduction (a bad
+    // merge, a stray revert) is caught rather than silently shipped.
     const src = html();
     const mainOpen = src.indexOf("<main>");
     assert.ok(mainOpen !== -1, "no <main> tag found");
@@ -326,15 +323,13 @@ function stage1() {
     assert.ok(mainClose !== -1, "no closing </main> tag found");
     const mainHTML = src.slice(mainOpen, mainClose);
     const iPanel = mainHTML.indexOf('class="mindset-panel"');
-    const iCards = mainHTML.indexOf('id="cards"');
-    const iSeam = mainHTML.indexOf('class="seam"');
     const iWeeks = mainHTML.indexOf('id="weeks-root"');
     assert.ok(iPanel !== -1, ".mindset-panel not found inside main");
-    assert.ok(iCards !== -1, "#cards not found inside main");
-    assert.ok(iSeam !== -1, ".seam not found inside main");
     assert.ok(iWeeks !== -1, "#weeks-root not found inside main");
-    assert.ok(iPanel < iCards && iCards < iSeam && iSeam < iWeeks,
-      "expected DOM order .mindset-panel -> #cards -> .seam -> #weeks-root inside main (Journal above Weeks, v1.39 merge, v2.0 panel wrap)");
+    assert.ok(iPanel < iWeeks, "expected DOM order .mindset-panel -> #weeks-root inside main");
+    assert.doesNotMatch(src, /id="cards"/, "#cards must not be reintroduced (Journal card retired v3.0)");
+    assert.doesNotMatch(src, /class="seam"/, ".seam must not be reintroduced (Journal card retired v3.0)");
+    assert.doesNotMatch(src, /id="staleness-chip"/, "#staleness-chip must not be reintroduced (Journal card retired v3.0)");
   });
   check("stage1", "localStorage: mindset.theme only in a removeItem; zero other localStorage use app-wide", () => {
     // v1.29 retired theme persistence entirely — the ONLY localStorage touch permitted
@@ -423,13 +418,15 @@ function stage1() {
   check("stage1", "WCAG contrast pairs pass at corrected thresholds (blossom + dark)", () => {
     // v1.29: calm and the evening --bg shift are retired; the theme set is blossom + dark
     // (themeTokens() carries the old evening check's loud-failure extraction guard forward).
-    // v2.0: --surface-2 (the Journal card's nested inner prompt box) added to every existing
-    // pair list a real --surface pairing already covered -- tightening, not a new category.
+    // v2.0 added three --surface-2 pairs (the Journal card's nested inner prompt box) to every
+    // existing pair list a real --surface pairing already covered. v3.0 retired --surface-2
+    // itself along with the Journal card it was styled for, so those three pairs are dropped
+    // here (invariant-12 logged exception -- see decisions.md); the remaining six are unchanged.
     const themes = themeTokens(css());
     const pairs = [
-      ["ink", "bg", 4.5], ["ink", "surface", 4.5], ["ink", "surface-2", 4.5],
-      ["muted", "surface", 4.5], ["muted", "bg", 4.5], ["muted", "surface-2", 4.5],
-      ["accent", "surface", 4.5], ["accent", "bg", 4.5], ["accent", "surface-2", 4.5],
+      ["ink", "bg", 4.5], ["ink", "surface", 4.5],
+      ["muted", "surface", 4.5], ["muted", "bg", 4.5],
+      ["accent", "surface", 4.5], ["accent", "bg", 4.5],
     ];
     const failures = [];
     for (const [themeName, tokens] of Object.entries(themes)) {
@@ -472,23 +469,22 @@ function stage1() {
     assert.equal(failures.length, 0, failures.join(" | "));
   });
 
-  check("stage1", "staleness chips: text >= 4.5:1 on its tint composited over --bg, both themes", () => {
+  // v3.0: the staleness chip was retired with the Journal card it flagged, so its
+  // tint-composited contrast check has nothing left to iterate -- removed (invariant-12 logged
+  // exception, see decisions.md), replaced below by a check of the new .weeks-error state,
+  // which is now the only failure-surfacing UI on the page.
+  check("stage1", "error state: --muted and --ink >= 4.5:1 on --surface, both themes (v3.0 .weeks-error)", () => {
+    // Weeks is no longer optional -- it IS the page -- so its failure state (.weeks-error,
+    // painted when initWeeks() throws) must itself be legible in both themes. --error-label
+    // renders in --muted, --error-msg in --ink, both directly on --surface (no tint compositing
+    // involved, unlike the retired chip).
     const themes = themeTokens(css());
-    const rules = {
-      blossom: {
-        amber: ruleTintAndColor(css(), /^\.chip\.amber\s*\{/m, ".chip.amber"),
-        slate: ruleTintAndColor(css(), /^\.chip\.slate\s*\{/m, ".chip.slate"),
-      },
-      dark: {
-        amber: ruleTintAndColor(css(), /\[data-theme=["']dark["']\]\s*\.chip\.amber\s*\{/, "dark .chip.amber"),
-        slate: ruleTintAndColor(css(), /\[data-theme=["']dark["']\]\s*\.chip\.slate\s*\{/, "dark .chip.slate"),
-      },
-    };
     const failures = [];
-    for (const [themeName, chips] of Object.entries(rules)) {
-      for (const [chipName, { tint, color }] of Object.entries(chips)) {
-        const ratio = contrastRatio(color, compositeOver(tint, themes[themeName].bg));
-        if (ratio < 4.5) failures.push(`${themeName} .chip.${chipName} = ${ratio.toFixed(2)} < 4.5`);
+    for (const [themeName, tokens] of Object.entries(themes)) {
+      for (const fg of ["muted", "ink"]) {
+        assert.ok(tokens[fg] && tokens.surface, `${themeName}: missing token --${fg} or --surface`);
+        const ratio = contrastRatio(tokens[fg], tokens.surface);
+        if (ratio < 4.5) failures.push(`${themeName} (--${fg} on --surface) = ${ratio.toFixed(2)} < 4.5`);
       }
     }
     assert.equal(failures.length, 0, failures.join(" | "));
@@ -508,41 +504,32 @@ function stage1() {
     assert.ok(d1 >= 0, "dayNumber must be non-negative for real post-epoch HKT dates");
   });
 
-  check("stage1", "lib.mjs: expectedDateHKT/staleness correct at the 05:00 HKT boundary", async () => {
-    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    // 2026-07-15T20:59:00Z = 2026-07-16T04:59 HKT — before the boundary, still expects yesterday's date
-    assert.equal(lib.expectedDateHKT(new Date("2026-07-15T20:59:00Z")), "2026-07-15");
-    // 2026-07-15T21:00:00Z = 2026-07-16T05:00 HKT — boundary crossed, expects today's date
-    assert.equal(lib.expectedDateHKT(new Date("2026-07-15T21:00:00Z")), "2026-07-16");
-    assert.equal(lib.staleness("2026-07-15", new Date("2026-07-15T20:59:00Z")), "fresh");
-    assert.equal(lib.staleness("2026-07-15", new Date("2026-07-15T21:00:00Z")), "yesterday");
-  });
+  // v3.0: expectedDateHKT/staleness were retired with the daily pipeline they judged --
+  // the 05:00 HKT content boundary they modeled no longer exists (removed, invariant-12
+  // logged exception, see decisions.md).
 
-  check("stage1", "app.js: PWA-resume day-flip check uses expectedDateHKT, not raw hktDateString for the CONTENT day (v1.30/v1.34)", () => {
-    // Bug: paintedDateHKT was stamped with the raw HKT calendar date, which flips at midnight,
-    // while content only rolls over at the 05:00 HKT boundary staleness() actually judges (the
-    // line above). A resume during 00:00-05:00 "used up" that day's flip early; a later
-    // same-morning resume (after the real 05:00 rotation, same window mode) then compared two
-    // equal raw dates, skipped the refetch, and left the prior day's cards painted with no
-    // further recheck all day -- reproduced live via Playwright clock mocking + a synthetic
-    // visibilitychange dispatch (no reload) before this check was written; see decisions.md.
-    // Source-pattern check, not a behavioral one: app.js runs in a DOM this harness lacks.
+  check("stage1", "app.js: visibilitychange resume re-checks theme, calendar day, and Weeks (v3.0)", () => {
+    // v3.0: the Journal card, its 05:00 HKT content boundary, and the expectedDateHKT/staleness
+    // model that judged it are all retired -- the only day boundary left is HKT midnight, and
+    // the only content to refresh on resume is Weeks (computed fresh from today's HKT date,
+    // never fetched). Retargeted from the v1.30/v1.34 check of the same name/spirit, which
+    // pinned paintedDateHKT (the Journal CONTENT-day tracker) against expectedDateHKT; that
+    // tracker and the bug class it guarded no longer exist. Source-pattern check, not a
+    // behavioral one: app.js runs in a DOM this harness lacks.
     const src = read("app.js");
-    assert.match(src, /paintedDateHKT\s*=\s*expectedDateHKT\(now\)/,
-      "paintedDateHKT must be stamped from expectedDateHKT(now), not the raw HKT calendar date");
-    assert.match(src, /expectedDateHKT\(now\)\s*!==\s*paintedDateHKT/,
-      "the visibilitychange day-flip comparison must use expectedDateHKT(now), matching staleness()'s boundary");
-    // v1.34: hktDateString is legitimately back, but only for a SEPARATE raw-calendar tracker
-    // (paintedCalendarDateHKT, a different bug entirely -- the header's own midnight-vs-05:00
-    // staleness gap) -- assert it, but ALSO assert the original v1.30 bug's exact anti-pattern still never
-    // reappears: paintedDateHKT (the CONTENT tracker) must never be assigned from or compared
-    // against hktDateString directly.
     assert.match(src, /paintedCalendarDateHKT\s*=\s*hktDateString\(now\)/,
       "paintedCalendarDateHKT must be stamped from hktDateString(now)");
     assert.match(src, /hktDateString\(now\)\s*!==\s*paintedCalendarDateHKT/,
-      "the visibilitychange handler must re-render on a bare calendar-day flip too, not just content-day/window-mode");
-    assert.doesNotMatch(src, /paintedDateHKT\s*=\s*hktDateString\(/, "the v1.30 bug's exact pattern: paintedDateHKT must never be stamped from hktDateString");
-    assert.doesNotMatch(src, /hktDateString\(now\)\s*!==\s*paintedDateHKT/, "the v1.30 bug's exact pattern: paintedDateHKT must never be compared against hktDateString");
+      "the visibilitychange handler must re-render on a bare calendar-day flip");
+    assert.match(src, /refreshWeeksIfStale\(\)/, "visibilitychange must call refreshWeeksIfStale()");
+    assert.match(src, /visibilitychange/, "visibilitychange handler must be present");
+    assert.doesNotMatch(src, /fetch\(/, "zero fetches remain in app.js (v3.0: nothing refreshes over the network)");
+    assert.doesNotMatch(src, /daily\.json/, "app.js must not reference daily.json (retired v3.0)");
+    assert.doesNotMatch(src, /cards\.json/, "app.js must not reference cards.json (retired v3.0)");
+    assert.doesNotMatch(src, /expectedDateHKT/, "expectedDateHKT must not be reintroduced (retired v3.0)");
+    assert.doesNotMatch(src, /staleness\(/, "staleness( must not be reintroduced (retired v3.0)");
+    assert.doesNotMatch(src, /renderJournalCard/, "renderJournalCard must not be reintroduced (Journal card retired v3.0)");
+    assert.doesNotMatch(src, /showChip/, "showChip must not be reintroduced (staleness chip retired v3.0)");
   });
 
   check("stage1", "lib.mjs: isFocusWindowHKT retired, not reintroduced (v1.39 -- focus/morning-hiding mode removed, unused)", async () => {
@@ -557,6 +544,18 @@ function stage1() {
     assert.equal(lib.isEveningWindowHKT, undefined, "isEveningWindowHKT should no longer be exported from lib.mjs");
     assert.doesNotMatch(read("app.js"), /isEveningWindowHKT|renderClosingCard|\bcards\.closing\b/,
       "evening/Closing must not be reintroduced into app.js");
+  });
+
+  check("stage1", "lib.mjs: rotation engine retired (v3.0): pickIndex/pickToday/minSeamGap/staleness/expectedDateHKT no longer exported", async () => {
+    // v3.0: the entire v1.0-v2.0 rotation engine (Appendix B) was retired with the Journal
+    // card it fed -- xmur3/mulberry32/shuffledOrder/shuffledOrderSeamSafe are internal (never
+    // exported) so aren't independently checkable here, but every exported entry point is.
+    // Same loud-absence treatment as isFocusWindowHKT/isEveningWindowHKT below: a reintroduction
+    // must fail loudly, not silently pass unchecked.
+    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
+    for (const name of ["pickIndex", "pickToday", "minSeamGap", "staleness", "expectedDateHKT"]) {
+      assert.equal(lib[name], undefined, `${name} should no longer be exported from lib.mjs (rotation engine retired v3.0)`);
+    }
   });
 
   check("stage1", "lib.mjs: isDarkWindowHKT correct at the 06:00 and 17:00 HKT boundaries", async () => {
@@ -659,94 +658,32 @@ function stage1() {
     }
   });
 
-  check("stage1", "weeks.js: no quotation-mark glyphs in user-facing copy (EPIGRAPH text/attr)", () => {
+  check("stage1", "weeks.js: no quotation-mark glyphs or banned platitudes in user-facing copy (EPIGRAPH text/attr)", () => {
     // v1.24: CAPTION (a flat string) became EPIGRAPH (an array of {text, attr} lines); the
     // legend this check also used to scan was removed entirely (see decisions.md). Updated to
     // match rather than left checking a constant that no longer exists -- a verify.mjs check
     // silently going stale exactly like this was the async-check bug this ratchet exists to
-    // catch (v1.23).
+    // catch (v1.23). v3.0: with data/cards.json's platitude scan retired alongside the Journal
+    // card, EPIGRAPH is the only user-facing copy verify.mjs still scans -- widened here to also
+    // run findPlatitude over it (tightening, not a new category: the same guard, just no longer
+    // only for cards.json).
     if (!exists("weeks.js")) return;
     const src = read("weeks.js");
     const problems = [];
     const textMatches = [...src.matchAll(/text:\s*"((?:[^"\\]|\\.)*)"/g)];
     const attrMatches = [...src.matchAll(/attr:\s*"((?:[^"\\]|\\.)*)"/g)];
     for (const m of textMatches) if (hasQuoteGlyph(m[1])) problems.push(`EPIGRAPH text: ${m[1]}`);
+    for (const m of textMatches) { const p = findPlatitude(m[1]); if (p) problems.push(`EPIGRAPH text platitude "${p}": ${m[1]}`); }
     for (const m of attrMatches) if (hasQuoteGlyph(m[1])) problems.push(`EPIGRAPH attr: ${m[1]}`);
     assert.ok(textMatches.length >= 2, `expected >=2 EPIGRAPH text lines, found ${textMatches.length} -- check the check itself, not just weeks.js`);
     assert.equal(problems.length, 0, problems.join(" | "));
   });
 
-  check("stage1", "lib.mjs: pickIndex full-cycle uniqueness for pools 1825/365/120/40/30/10", async () => {
-    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    for (const poolSize of [1825, 365, 120, 40, 30, 10]) {
-      const cycleStart = 3 * poolSize; // an arbitrary later cycle, still >= 0
-      const seen = new Set();
-      for (let d = cycleStart; d < cycleStart + poolSize; d++) {
-        const idx = lib.pickIndex(poolSize, d, "anchor");
-        assert.ok(idx >= 0 && idx < poolSize, `index ${idx} out of range for pool ${poolSize}`);
-        assert.ok(!seen.has(idx), `repeat within cycle at pool ${poolSize}, day ${d}`);
-        seen.add(idx);
-      }
-      assert.equal(seen.size, poolSize);
-    }
-  });
-
-  check("stage1", "lib.mjs: pickIndex guarantees a minimum cross-seam gap, not just no immediate repeat (v1.34)", async () => {
-    // Supersedes the v1.31-era check of the same name/spirit, which only ever proved no
-    // IMMEDIATE (1-day) repeat at a seam. The v1.34 audit found that was too weak: a real,
-    // dated 4-day repeat was still possible one step further into the same seam, because
-    // nothing constrained days 2..G -- only day 1 was ever checked. This asserts the actual
-    // stronger guarantee lib.mjs now makes (minSeamGap, also exported so this test can't drift
-    // from the real formula): for every item, any two appearances within `window` days of a
-    // seam are more than minSeamGap(poolSize) days apart. Swept across 8 consecutive seams per
-    // pool (not just 1) and every salt ever used, current or retired ("closing" since v1.31,
-    // "word" since v1.35, "kenya" since v1.38, "anchor" since v1.39 -- all kept here anyway as
-    // a generic-correctness check, proving the guarantee isn't accidentally salt-specific --
-    // plus one synthetic salt), so a fix that
-    // happens to work for one lucky seed can't pass silently. (This also subsumes the old
-    // no-immediate-repeat property: gap > minSeamGap >= 1 rules out gap === 1 too.)
-    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    for (const poolSize of [1825, 365, 60, 40, 34, 30, 10, 5]) {
-      const gap = lib.minSeamGap(poolSize);
-      const window = Math.min(poolSize, gap * 2 + 5); // margin past the guaranteed danger zone
-      for (const salt of ["anchor", "journal", "kenya", "word", "closing", "arbitrary-salt"]) {
-        for (let cycle = 1; cycle <= 8; cycle++) {
-          const seamDay = cycle * poolSize; // first day of `cycle`, i.e. dayNumber%poolSize===0
-          const seenBefore = new Map(); // index -> most recent dayNumber, for [seamDay-window, seamDay)
-          for (let d = Math.max(0, seamDay - window); d < seamDay; d++) {
-            seenBefore.set(lib.pickIndex(poolSize, d, salt), d);
-          }
-          for (let d = seamDay; d < seamDay + window; d++) {
-            const idx = lib.pickIndex(poolSize, d, salt);
-            if (seenBefore.has(idx)) {
-              const actualGap = d - seenBefore.get(idx);
-              assert.ok(actualGap > gap,
-                `pool ${poolSize} salt "${salt}" cycle ${cycle}: index ${idx} repeated after only ${actualGap} days across the seam (day ${seenBefore.get(idx)} -> day ${d}), need > ${gap}`);
-            }
-          }
-        }
-      }
-    }
-  });
-
-  check("stage1", "lib.mjs: pickIndex is internally consistent -- every day in a cycle agrees on that cycle's order (v1.31/v1.34 regression guard)", async () => {
-    // The bug the seam fix itself had, caught before shipping: if the swap decision depended
-    // on WHICH dayNumber triggered it instead of the cycle alone, two different days inside the
-    // SAME cycle could each recompute a different order and collide with each other -- proven
-    // by reconstructing each cycle's full picked sequence from its individual per-day calls and
-    // checking it's still a genuine permutation (every index appears exactly once). Still
-    // exactly as applicable to v1.34's wider swap-fixup construction, which is equally a pure
-    // function of (poolSize, salt, cycle) alone -- this check would catch it just as fast if
-    // that stopped being true.
-    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    for (const poolSize of [1825, 365, 40, 34, 10]) {
-      for (let cycle = 0; cycle <= 4; cycle++) {
-        const picks = [];
-        for (let i = 0; i < poolSize; i++) picks.push(lib.pickIndex(poolSize, cycle * poolSize + i, "journal"));
-        assert.equal(new Set(picks).size, poolSize, `pool ${poolSize} cycle ${cycle}: per-day calls don't form a permutation`);
-      }
-    }
-  });
+  // v3.0: the three pickIndex checks that used to live here (full-cycle uniqueness, minimum
+  // cross-seam gap, internal consistency across a cycle) were retired along with pickIndex
+  // itself -- the rotation engine they proved correct has nothing left to iterate now that the
+  // Journal card is gone (invariant-12 logged exception, see decisions.md). Its absence is now
+  // covered by the "rotation engine retired" guard above instead.
 
   check("stage1", "fonts present or fallback decision logged", () => {
     const fontsDir = abs("assets/fonts");
@@ -781,44 +718,35 @@ function stage2() {
 // ---------- Stage 3 ----------
 
 function stage3() {
-  check("stage3", "data/cards.json valid JSON with required shape", () => {
-    const d = readJSON("data/cards.json");
-    assert.ok(Array.isArray(d.journal));
-    assert.equal(d.anchors, undefined, "anchors pool retired in v1.39 (Anchor card removed) -- must not be reintroduced");
-    assert.equal(d.closing, undefined, "closing pool retired in v1.31 (evening feature removed) -- must not be reintroduced");
-    assert.equal(d.wordOfDay, undefined, "wordOfDay pool retired in v1.35 (word-of-day feature removed) -- must not be reintroduced");
-    assert.equal(d.kenya, undefined, "kenya pool retired in v1.38 (Kenya card removed) -- must not be reintroduced");
-  });
-  check("stage3", "journal = 1825", () => {
-    const d = readJSON("data/cards.json");
-    assert.equal(d.journal.length, 1825, `journal = ${d.journal.length}`);
-  });
-  check("stage3", "all ids unique within each pool", () => {
-    const d = readJSON("data/cards.json");
-    for (const [name, pool] of Object.entries(d)) {
-      const ids = pool.map((x) => x.id);
-      assert.equal(new Set(ids).size, ids.length, `${name} has duplicate ids`);
+  // v3.0: the Journal card and the 1825-prompt data/cards.json pool that fed it are retired --
+  // its six shape/count/word-cap/quote-glyph/platitude checks and the two rotation-simulation
+  // checks below (invariant-12 logged exceptions, see decisions.md) have nothing left to
+  // iterate. Historical content survives in git history (the commit before this round's) and in
+  // audits/CONTENT-REVIEW.md's retirement note. Replaced with a loud absence guard, kept
+  // alongside the pre-existing Mara/Values retired-file guards this file already used for the
+  // same purpose.
+  check("stage3", "Journal retired (v3.0): no journal/cards.json references in shipped code", () => {
+    // Strips comments before scanning so the retirement notes THIS FILE and its sibling docs
+    // agent write (which legitimately say "journal"/"cards.json" in prose) can't ever be
+    // mistaken for a real reference living in shipped code.
+    const stripJsComments = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    const stripHtmlComments = (s) => s.replace(/<!--[\s\S]*?-->/g, "");
+    const targets = [
+      ["index.html", stripHtmlComments],
+      ["app.js", stripJsComments],
+      ["weeks.js", stripJsComments],
+      ["lib.mjs", stripJsComments],
+      ["sw.js", stripJsComments],
+    ];
+    const offenders = [];
+    for (const [f, strip] of targets) {
+      if (!exists(f)) continue;
+      const src = strip(read(f));
+      for (const needle of [/cards\.json/i, /daily\.json/i, /journal/i]) {
+        if (needle.test(src)) offenders.push(`${f}: matches ${needle}`);
+      }
     }
-  });
-  check("stage3", "word caps respected (journal prompts <=25w)", () => {
-    const d = readJSON("data/cards.json");
-    const problems = [];
-    for (const j of d.journal) if (wordCount(j.prompt) > 25) problems.push(`${j.id}: ${wordCount(j.prompt)}w`);
-    assert.equal(problems.length, 0, problems.join(" | "));
-  });
-  check("stage3", "zero quotation-mark glyphs in card string fields", () => {
-    const d = readJSON("data/cards.json");
-    const problems = [];
-    const scan = (label, s) => { if (s && hasQuoteGlyph(s)) problems.push(`${label}: ${s}`); };
-    for (const j of d.journal) scan(`${j.id}.prompt`, j.prompt);
-    assert.equal(problems.length, 0, problems.join(" | "));
-  });
-  check("stage3", "no banned platitudes", () => {
-    const d = readJSON("data/cards.json");
-    const problems = [];
-    const scan = (label, s) => { const p = s && findPlatitude(s); if (p) problems.push(`${label}: "${p}"`); };
-    for (const j of d.journal) scan(j.id, j.prompt);
-    assert.equal(problems.length, 0, problems.join(" | "));
+    assert.equal(offenders.length, 0, offenders.join(" | "));
   });
 
   check("stage3", "Mara tab retired (v1.36): mara.js, data/mara.json, assets/mara/ do not exist", () => {
@@ -847,87 +775,32 @@ function stage3() {
     assert.ok(!exists("data/values.json"), "data/values.json exists but the Values tab was retired in v1.37");
   });
 
-  check("stage3", "journal: exact-duplicate guard + near-duplicate proxy (v1.32, 1825 entries) — informational, non-blocking", () => {
-    // Exact duplicates ARE a hard failure (unlike the fuzzy proxy below) -- a byte-identical
-    // repeat in a pool explicitly sized for "no repeat" would defeat the entire point of the
-    // v1.31 pickIndex seam fix. Near-duplicates stay informational -- run once per authoring
-    // pass, not worth blocking CI on. Threshold lowered 75% -> 70% in v1.33: the shipped
-    // corpus's real max was exactly 75.00% (one pair, a strict `>` away from ever firing), so
-    // the check had zero margin -- structurally unable to ever flag anything again short of a
-    // regression at exactly the ceiling. 70% still clears every false-positive pair the v1.32
-    // authoring pass already read and accepted (shared connective scaffold -- "today", "you",
-    // "which of today's" -- around substantively different content); it surfaces 12 pairs as
-    // informational notes now, a real signal instead of a check that can only ever pass silent.
-    const d = readJSON("data/cards.json");
-    const seen = new Map();
-    const exactDupes = [];
-    for (const j of d.journal) {
-      const key = j.prompt.trim().toLowerCase();
-      if (seen.has(key)) exactDupes.push(`${seen.get(key)} ~ ${j.id}`);
-      else seen.set(key, j.id);
-    }
-    assert.equal(exactDupes.length, 0, `exact duplicate journal prompts: ${exactDupes.join(", ")}`);
-    const tok = (s) => new Set(s.toLowerCase().replace(/[^\w\s]/g, "").split(/\s+/).filter((w) => w.length > 3));
-    const toks = d.journal.map((j) => tok(j.prompt));
-    const flagged = [];
-    for (let i = 0; i < d.journal.length; i++) {
-      for (let j = i + 1; j < d.journal.length; j++) {
-        const a = toks[i], b = toks[j];
-        const overlap = [...a].filter((w) => b.has(w)).length;
-        const denom = Math.min(a.size, b.size) || 1;
-        if (overlap / denom > 0.70) flagged.push(`${d.journal[i].id} ~ ${d.journal[j].id}`);
-      }
-    }
-    return flagged.length ? `flagged for human review: ${flagged.join(", ")}` : "no near-duplicates flagged (>70%)";
-  });
-  check("stage3", "rotation: three simulated dates give distinct in-range picks", async () => {
-    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    const d = readJSON("data/cards.json");
-    const dates = [new Date("2026-07-13T00:00:00Z"), new Date("2026-07-14T00:00:00Z"), new Date("2026-07-20T00:00:00Z")];
-    const picks = dates.map((dt) => lib.pickIndex(d.journal.length, lib.hktDayNumber(dt), "journal"));
-    for (const p of picks) assert.ok(p >= 0 && p < d.journal.length);
-    assert.ok(new Set(picks).size >= 2, "expected at least 2 distinct picks across 3 well-separated dates");
-  });
-  check("stage3", "offline/stale fallback selects valid ids (simulated)", async () => {
-    const lib = await import(`file://${abs("lib.mjs")}?t=${Date.now()}`);
-    const d = readJSON("data/cards.json");
-    // simulate: daily.json missing/stale -> compute locally via rotation, same contract as app.js/lib.mjs
-    const dayNumber = lib.hktDayNumber(new Date());
-    const journal = d.journal[lib.pickIndex(d.journal.length, dayNumber, "journal")];
-    assert.ok(journal && journal.id);
-  });
   check("stage3", "audits/CONTENT-REVIEW.md exists", () => assert.ok(exists("audits/CONTENT-REVIEW.md"), "missing"));
 }
 
 // ---------- Stage 4 ----------
 
 function stage4() {
-  check("stage4", ".github/workflows/daily.yml exists with cron + timeout + permissions", () => {
-    assert.ok(exists(".github/workflows/daily.yml"), "missing");
-    const y = read(".github/workflows/daily.yml");
-    assert.match(y, /cron:\s*"[\d*\s]+"/);
-    assert.match(y, /timeout-minutes:\s*10/);
-    assert.match(y, /contents:\s*write/);
+  // v3.0: the daily pipeline (the cron workflow, the watchdog that only ever checked its output
+  // for staleness, the generator script, and the generated file's schema) is retired wholesale
+  // along with the Journal card it fed -- nothing about the site refreshes daily anymore.
+  // Replaced with a loud absence guard (invariant-12 logged exception, see decisions.md).
+  check("stage4", "daily pipeline retired (v3.0): daily.yml, watchdog.yml, scripts/generate-daily.mjs do not exist", () => {
+    assert.ok(!exists(".github/workflows/daily.yml"), ".github/workflows/daily.yml exists but the daily pipeline was retired in v3.0");
+    assert.ok(!exists(".github/workflows/watchdog.yml"), ".github/workflows/watchdog.yml exists but it only ever checked daily.json staleness, retired in v3.0");
+    assert.ok(!exists("scripts/generate-daily.mjs"), "scripts/generate-daily.mjs exists but the daily pipeline was retired in v3.0");
   });
-  check("stage4", ".github/workflows/watchdog.yml exists with cron + permissions", () => {
-    assert.ok(exists(".github/workflows/watchdog.yml"), "missing");
-    const y = read(".github/workflows/watchdog.yml");
-    assert.match(y, /cron:\s*"[\d*\s]+"/);
-    assert.match(y, /issues:\s*write/);
-  });
-  check("stage4", "scripts/generate-daily.mjs exists, node --check passes", () => {
-    assert.ok(exists("scripts/generate-daily.mjs"), "missing");
-    require("node:child_process").execFileSync(process.execPath, ["--check", abs("scripts/generate-daily.mjs")], { stdio: "pipe" });
-  });
-  check("stage4", "data/daily.json schema valid", () => {
-    const d = readJSON("data/daily.json");
-    assert.match(d.dateHKT, /^\d{4}-\d{2}-\d{2}$/);
-    assert.ok(typeof d.generatedAtISO === "string" && !Number.isNaN(Date.parse(d.generatedAtISO)));
-    assert.ok(typeof d.journalId === "string");
-    assert.equal(d.anchorId, undefined, "anchorId retired in v1.39 (Anchor card removed) -- must not be reintroduced");
-    assert.equal(d.closingId, undefined, "closingId retired in v1.31 (evening feature removed) -- must not be reintroduced");
-    assert.equal(d.wordId, undefined, "wordId retired in v1.35 (word-of-day feature removed) -- must not be reintroduced");
-    assert.equal(d.kenyaId, undefined, "kenyaId retired in v1.38 (Kenya card removed) -- must not be reintroduced");
+
+  check("stage4", "pages-deploy.yml: on push to main, runs verify.mjs all before deploy, fetch-depth 0, stages no data/ dir", () => {
+    // v3.0: data/ no longer exists, so pages-deploy.yml's staging step must not try to `cp -r`
+    // it (that line would fail every deploy) -- the fetch-depth 0 and verify.mjs all gates this
+    // check already relied on are unchanged; only the data/ clause is new here.
+    assert.ok(exists(".github/workflows/pages-deploy.yml"), "missing");
+    const y = read(".github/workflows/pages-deploy.yml");
+    assert.match(y, /branches:\s*\[main\]/);
+    assert.match(y, /node scripts\/verify\.mjs all/);
+    assert.match(y, /fetch-depth:\s*0/);
+    assert.doesNotMatch(y, /cp -r data/, "pages-deploy.yml must not stage data/ (retired v3.0)");
   });
 }
 
@@ -968,12 +841,14 @@ function stage5() {
       assert.ok(fontsTotal <= 300 * 1024, `fonts total ${fontsTotal} bytes > 300KB`);
     }
   });
-  check("stage5", "page weight (index.html+styles.css+data jsons) <= 600KB excl. fonts", () => {
+  check("stage5", "page weight (index.html+styles.css+js+manifest+sw) <= 600KB excl. fonts", () => {
     // Budget raised 350KB -> 600KB in v1.32 (invariant-12 logged exception, owner-authorized)
     // to fit the 1825-entry, 5-year Journal pool; see audits/decisions.md for the original
-    // text this replaced and the reasoning.
-    const files = ["index.html", "styles.css", "app.js", "figure.js", "lib.mjs", "weeks.js", "manifest.webmanifest", "sw.js",
-      "data/cards.json", "data/daily.json"].filter(exists);
+    // text this replaced and the reasoning. v3.0: data/cards.json and data/daily.json are
+    // retired along with the Journal card and no longer exist, so the two data-json entries are
+    // dropped from the summed file list (the file list only got smaller; the cap itself is
+    // unchanged -- still a tightening in spirit, not a relaxation).
+    const files = ["index.html", "styles.css", "app.js", "figure.js", "lib.mjs", "weeks.js", "manifest.webmanifest", "sw.js"].filter(exists);
     const total = files.reduce((sum, f) => sum + sizeOf(f), 0);
     assert.ok(total <= 600 * 1024, `total ${total} bytes > 600KB (${files.join(",")})`);
   });

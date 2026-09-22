@@ -1,9 +1,10 @@
 // weeks.js -- the Weeks section: one combined "life in weeks" grid for J and B, canvas-
 // rendered, zoomable, with a hover/tap highlight per person. BUILD-PLAN.md v1.23 (v1.22
 // shipped two separate grids; this redesign combines them -- see audits/decisions.md for the
-// cell-state model). Built at boot (v1.39) -- its container is part of the single-page layout,
-// visible from load, so (like figure.js's always-visible element) there's a real size to
-// measure the first time build() runs.
+// cell-state model). As of v3.0 this section is the WHOLE page: app.js's boot() builds it
+// directly, and a throw here surfaces as a visible error state rather than being swallowed.
+// Its container is visible from load, so (like figure.js's always-visible element) there's a
+// real size to measure the first time build() runs.
 import {
   hktDateString, weeksLived, percentLifeSpent, commas,
   LIFE_WEEKS_TOTAL, LIFE_WEEKS_PER_ROW, LIFE_WEEKS_YEARS, LIFE_PEOPLE,
@@ -331,6 +332,15 @@ function build() {
   heading.textContent = "WHERE WE ARE, WHAT'S LEFT";
   root.appendChild(heading);
 
+  // The grid's own real total (LIFE_WEEKS_TOTAL, 4,680 -- see lib.mjs on why 90 years, not
+  // the literal 4,000/77), never a literal here. v3.0: built inside the section, under the
+  // heading, taking over from the pill that used to sit above it.
+  const totalPill = document.createElement("div");
+  totalPill.className = "weeks-total";
+  totalPill.id = "weeks-total-pill";
+  totalPill.textContent = `${commas(LIFE_WEEKS_TOTAL)} WEEKS TOTAL`;
+  root.appendChild(totalPill);
+
   const statsRow = document.createElement("div");
   statsRow.className = "weeks-stats";
   jStat = buildStatButton(LIFE_PEOPLE.find((p) => p.id === "J"));
@@ -359,7 +369,7 @@ function build() {
   root.appendChild(zoomRow);
 
   const card = document.createElement("div");
-  card.className = "card weeks-card";
+  card.className = "weeks-card";
   const frame = document.createElement("div");
   frame.className = "weeks-frame";
 
@@ -432,7 +442,7 @@ function refreshIfStale() {
 
 // Called once from app.js's boot() -- builds once, then just checks whether the HKT date has
 // advanced since the last paint (idempotent, cheap; a defensive guard against a future second
-// call, now that there's no tab-activation gate to rely on for that).
+// call, since there is no tab-activation gate to rely on for that).
 export function initWeeks() {
   if (!built) { build(); built = true; }
   refreshIfStale();
@@ -440,7 +450,8 @@ export function initWeeks() {
 
 // Called from app.js's visibilitychange handler, which already exists to catch installed-
 // iOS-PWA background freezes (v1.16) -- a week boundary can cross while backgrounded same as
-// a day boundary can. No-ops if Weeks was never built (e.g. initWeeks() threw during boot).
+// a day boundary can. No-ops if Weeks was never built (e.g. initWeeks() threw during boot,
+// which v3.0 paints as an error state).
 export function refreshWeeksIfStale() {
   if (built) refreshIfStale();
 }

@@ -139,6 +139,20 @@ since it wasn't obvious mid-round and is worth a future reader not re-discoverin
 name.) Full accounting in `audits/decisions.md`'s v1.39 entry. `verify.mjs all`: **76/76**,
 green.
 
+**2026-09-22, v3.0 update:** the Journal card, the daily pipeline that fed it, and the
+rotation engine were all retired (owner: "I now just want the 4000 weeks screen without the
+top journal ... 4000 weeks become the centre piece of the site for us"); Weeks is now the
+entire page. Following the same discipline as every prior round: checks with nothing left to
+check (every `cards.json`/`daily.json`/rotation/staleness/chip check, plus the `data` entry in
+the repo-tree check) were removed outright rather than left to rot; a handful were retargeted
+in place (the single-page DOM-order check, the contrast-pairs check, the app.js
+visibilitychange check, the page-weight file list); new guards were added proving each retired
+feature is actually gone (`data/` directory retirement, rotation-engine retirement, journal/
+cards.json-reference retirement, daily-pipeline-file retirement) plus a new `.weeks-error`
+contrast check and an EPIGRAPH platitude scan (both genuine tightenings, not replacements for
+anything removed). Full accounting, by exact check name, is in `audits/decisions.md`'s v3.0
+invariant-12 entry. `verify.mjs all`: **64/64**, green.
+
 ## Acceptance checklist (BUILD-PLAN.md §12)
 
 **Machine-verifiable — all green (`verify.mjs all`, 59/59):**
