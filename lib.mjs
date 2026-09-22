@@ -28,8 +28,9 @@ export function hktDateParts(d = new Date()) {
   return o;
 }
 
-// The HKT hour, 0-23. Kept here rather than inline in app.js's DOM code so the clock model
-// below it stays headlessly testable (the sole caller since the 05:00 content pivot retired).
+// The HKT hour, 0-23. isDarkWindowHKT (below) is its only shipped caller since the 05:00
+// content pivot retired in v3.0; it stays exported because verify.mjs's 1440-minute sweep
+// asserts on it directly.
 export function hktHour(d = new Date()) {
   return Number(
     new Intl.DateTimeFormat("en-GB", { timeZone: "Asia/Hong_Kong", hour: "2-digit", hour12: false }).format(d)

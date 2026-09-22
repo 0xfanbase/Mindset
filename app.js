@@ -98,6 +98,8 @@ function boot() {
   try {
     initWeeks();
   } catch (e) {
+    // Loud as well as visible: the error panel tells the user, the console tells whoever debugs.
+    console.error("[mindset] initWeeks failed:", e);
     renderWeeksError();
   }
 }

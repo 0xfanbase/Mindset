@@ -685,6 +685,31 @@ function stage1() {
   // Journal card is gone (invariant-12 logged exception, see decisions.md). Its absence is now
   // covered by the "rotation engine retired" guard above instead.
 
+  check("stage1", "styles.css: Journal-era rules retired (v3.0): no --surface-2, .chip, .seam, #cards, .card-body selectors", () => {
+    // v3.0 audit finding (N1): re-adding --surface-2 passed 64/64 -- the token's three contrast
+    // pairs were dropped with the Journal card, so nothing forbade its return as a dead token
+    // that could drift out of contrast compliance unmeasured. Same loud-absence treatment the
+    // other retirements got (wordOfDay/kenya/Mara/Values guards above and below).
+    // Comments stripped first: the token block's own "--surface-2 retired" note is prose, not a rule.
+    const src = css().replace(/\/\*[\s\S]*?\*\//g, "");
+    for (const needle of [/--surface-2\b/, /^\s*\.chip\b/m, /^\s*\.seam\b/m, /^\s*#cards\b/m, /\.card-body\b/, /\.card-chip\b/]) {
+      assert.doesNotMatch(src, needle, `styles.css matches ${needle}: retired with the Journal card in v3.0, must not be reintroduced`);
+    }
+  });
+
+  check("stage1", "sw.js: every relative ASSETS entry exists on disk (addAll() rejects atomically on any 404)", () => {
+    // v3.0 audit finding (N2): a nonexistent path in ASSETS passed 64/64 locally, yet
+    // cache.addAll() fails the whole install on a single 404, which would silently break every
+    // offline visit. The Appendix C.2 byte-identity check is deliberately modulo this array;
+    // this only asserts the listed files exist, not what the list contains.
+    const m = /const ASSETS = \[([\s\S]*?)\];/.exec(read("sw.js"));
+    assert.ok(m, "could not find the ASSETS array in sw.js");
+    const entries = [...m[1].matchAll(/"([^"]+)"/g)].map((x) => x[1]);
+    assert.ok(entries.length >= 8, `suspiciously short ASSETS list (${entries.length})`);
+    const missing = entries.filter((e) => e !== "./" && !exists(e.replace(/^\.\//, "")));
+    assert.equal(missing.length, 0, `ASSETS entries missing on disk: ${missing.join(", ")}`);
+  });
+
   check("stage1", "fonts present or fallback decision logged", () => {
     const fontsDir = abs("assets/fonts");
     const hasFonts = fs.existsSync(fontsDir) && fs.readdirSync(fontsDir).some((f) => f.endsWith(".woff2"));

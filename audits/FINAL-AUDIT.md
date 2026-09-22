@@ -151,7 +151,7 @@ feature is actually gone (`data/` directory retirement, rotation-engine retireme
 cards.json-reference retirement, daily-pipeline-file retirement) plus a new `.weeks-error`
 contrast check and an EPIGRAPH platitude scan (both genuine tightenings, not replacements for
 anything removed). Full accounting, by exact check name, is in `audits/decisions.md`'s v3.0
-invariant-12 entry. `verify.mjs all`: **64/64**, green.
+invariant-12 entry. `verify.mjs all`: **64/64** at the implementation commit; **66/66** after the same-day independent audit added two tightening guards (a styles.css anti-resurrection guard for the retired Journal-era rules, and an existence check for every relative `sw.js` `ASSETS` entry — see `audits/v3.0-audit.md`), green.
 
 ## Acceptance checklist (BUILD-PLAN.md §12)
 

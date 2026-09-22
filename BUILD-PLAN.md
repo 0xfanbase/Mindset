@@ -2333,7 +2333,7 @@ refreshes on a schedule anymore; the site only changes when a human pushes to `m
   same treatment as the v1.39 re-scoping): the one-screen guarantee now covers the Weeks
   heading and both people's stat rows, not the Journal card (which no longer exists) — the grid
   below them scrolls, by design.
-- **`verify.mjs` — invariant-12 ratchet, 76 -> 64:** full accounting (every check removed,
+- **`verify.mjs` — invariant-12 ratchet, 76 -> 64 at the implementation commit, 66 after the audit round's two added guards:** full accounting (every check removed,
   retargeted, or added, by exact name and reason) is in `audits/decisions.md`'s v3.0
   invariant-12 entry.
 - **`sw.js` `CACHE` bumped `mindset-v23` -> `mindset-v24`** (`ASSETS` drops
@@ -2345,7 +2345,7 @@ refreshes on a schedule anymore; the site only changes when a human pushes to `m
   moot** — `daily.yml` no longer exists, so there is nothing left for that retry loop to guard.
   Left in git history as an accurate record of what it fixed at the time; not reverted
   separately, since deleting `daily.yml` outright already removes it.
-- **Verified:** `verify.mjs all` 64/64.
+- **Verified:** `verify.mjs all` 66/66 (64/64 before the audit round added two guards).
 
 ---
 
@@ -3022,10 +3022,10 @@ trigger is closest, plus the raw error — don't spend cycles deliberating the t
 ## §12 — Final acceptance checklist (Stage 5 gate)
 
 **Machine-verifiable (gate Stage 5's `verify.mjs all`):**
-- [ ] Pages URL returns 200 for `/` and `/data/daily.json`, `/manifest.webmanifest`, `/sw.js`
+- [ ] Pages URL returns 200 for `/`, `/manifest.webmanifest`, `/sw.js` (v3.0: `/data/daily.json` no longer exists)
 - [ ] `verify.mjs all` green; budgets met; contrast pairs pass at the corrected thresholds
-- [ ] Both workflows have ≥ 1 green run via dispatch against real content; watchdog's stale-detection path proven via the prescribed mechanism (expected-red, doesn't count against the green-dispatch line)
-- [ ] Zero PII about the owner/his wife (scripted email/phone/financial-figure sweep + human confirmation there's no accidental self-reference); zero quotation-mark glyphs in card bodies; zero banned phrases
+- [ ] `pages-deploy.yml` has ≥ 1 green run on the current head (v3.0: `daily.yml`/`watchdog.yml` retired — the historical Stage-4 stale-detection test no longer applies)
+- [ ] Zero PII about the owner/his wife (scripted email/phone/financial-figure sweep + human confirmation there's no accidental self-reference); zero quotation-mark glyphs or banned phrases in user-facing copy (v3.0: the Weeks epigraph is the only copy left)
 - [ ] Mobile-first proven mechanically: zero `max-width` queries · zero root-absolute local URLs · safe-area + `svh` + `touch-action` present · no fixed widths ≥ 400px in `styles.css`
 - [ ] Installable: manifest valid + served 200 · icons exist (or SVG-fallback decision logged) · `sw.js` byte-identical to the amended Appendix C.2 modulo `ASSETS`, registered, served 200
 - [ ] README runbook complete; `v1.0` tag pushed
@@ -3033,23 +3033,23 @@ trigger is closest, plus the raw error — don't spend cycles deliberating the t
 - [ ] FINAL-AUDIT.md written with an honest "known imperfections" section and the `verify.mjs` diff-vs-Stage-0 summary
 
 **Explicitly deferred to §13 human review (mark UNVERIFIED in FINAL-AUDIT, do not check off here):**
-- [ ] Today's HKT date shows; cards populated; no console errors
+- [ ] Today's HKT date shows; the Weeks grid, both stat rows and the total pill render; no console errors
 - [ ] Theme toggle works both ways; a reload returns to the HKT time-of-day theme (the override is session-only, v1.29); no wrong-theme flash
 - [ ] The bottle's light visibly breathes (brightens/dims slowly) in both themes; pauses when hidden; static under reduced motion; feels calm, not busy
-- [ ] Offline rotation demonstrated live on a phone (airplane mode)
+- [ ] Offline shell demonstrated live on a phone (airplane mode): the page and grid load from the service-worker cache (v3.0: there is no data to rotate anymore)
 
 ## §13 — Human review checklist (the ONE human step, ~20 min, after completion)
 
-1. Open the Pages URL **on your phone**. Does the bottle's light clearly, slowly breathe, feeling alive and calm, not busy? Rotate the phone, scroll — nothing clipped, nothing under the notch or home bar, no sideways scroll; the day's card should be visible without scrolling, and scrolling down should reveal the Weeks grid below it (v1.39 — Weeks merged into this same page).
+1. Open the Pages URL **on your phone**. Does the bottle's light clearly, slowly breathe, feeling alive and calm, not busy? Rotate the phone, scroll — nothing clipped, nothing under the notch or home bar, no sideways scroll; the Weeks heading, the total pill and both stat rows should be visible without scrolling, and scrolling down should reveal the full grid and the epigraph (v3.0 — Weeks is the whole page).
 2. Safari: Share → **Add to Home Screen**. Reopen from the icon — it should launch full-screen like an app, with a proper icon and the chrome matching the theme.
 3. Toggle between pink and dark. Would its intended user smile? (Standalone chrome should follow — the cold-launch splash is always dark-toned since v1.29, a known, logged limitation now parked on daytime launches instead of nights. After 17:00 HKT, also confirm the iOS status bar text reads correctly over the dark chrome — §4.7.8's flagged on-device check.)
-4. **Airplane mode**, reopen from the icon: the shell loads instantly and the `offline rotation` chip appears with valid cards. Turn network back on, pull to refresh — today returns.
-5. Open the **Values** tab and skim all 5 — confirm it reads as the same visual style as Today's cards. Toggle OS **Reduce Motion** and confirm the figure renders a static frame.
-6. Read today's card aloud. Would you keep it? (Your monthly curation replaces the weakest cards — that's where the library becomes *yours*.)
+4. **Airplane mode**, reopen from the icon: the shell loads instantly and the grid renders from the cached shell, computed from today's date (v3.0: nothing is fetched, so there is no offline chip and nothing to go stale). Turn network back on, pull to refresh — nothing should visibly change.
+5. Toggle OS **Reduce Motion** and confirm the figure renders a static frame and the grid appears instantly, unclipped, with no scanline. (The Values tab this step used to cover was retired in v1.37.)
+6. Tap J, then B: the other person's squares should fade, the bar should lift, and the canvas label should say who is highlighted. Zoom in twice, scroll the grid sideways, zoom back out. (v3.0: replaces the card-reading step — there are no cards.)
 7. Skim `audits/CONTENT-REVIEW.md` (~15 min) — delete or reword anything you wouldn't sign, especially any card whose attribution feels like a guess rather than a known idea.
 8. Skim `audits/FINAL-AUDIT.md` "honest notes" + `decisions.md`.
-9. Confirm you received the watchdog test issue/email (from the Stage 4 stale-detection test). Close it if still open.
-10. Tomorrow at 05:00 HKT, glance once — on the phone. Then stop checking — LOOP-C watches so you don't have to.
+9. (Retired in v3.0 — there is no watchdog anymore; slot kept so the numbering below stays valid.)
+10. Tomorrow, glance once — on the phone — and confirm the date line and the grid advanced on their own (both are computed from the clock; nothing runs on a schedule anymore, v3.0). Next Monday, confirm one more square filled in.
 
 ---
 
