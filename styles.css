@@ -9,14 +9,11 @@
 [data-theme="blossom"] {
   color-scheme: light;
   --bg: #FBF4F6;
-  /* --surface/--surface-2 (v2.0 redesign): the Journal card is now two nested light layers,
-     not one flat white -- an outer warm-cream frame (--surface) holding an inner near-white
-     prompt box (--surface-2), matching the imported design. Both colors are the design's own
-     oklch() values converted to sRGB hex (verify.mjs's contrast math needs hex, and browsers
-     resolving the original oklch() would have rendered fine but couldn't be gated) -- see
-     audits/decisions.md v2.0 for the conversion + tuning. */
+  /* --surface (v2.0 redesign): the warm-cream light layer. Its oklch() design value was
+     converted to sRGB hex (verify.mjs's contrast math needs hex) -- see audits/decisions.md
+     v2.0. v3.0: the paired --surface-2 inner box retired with the Journal card; --surface now
+     backs the Weeks error state only. */
   --surface: #FFF2EF;
-  --surface-2: #FEFBFA;
   --ink: #211B1A;
   --muted: #766E6D;
   --accent: #B84870;
@@ -55,10 +52,6 @@
   color-scheme: dark;
   --bg: #242119;
   --surface: #2F2C27;
-  /* --surface-2 (v2.0): the dark-theme inner prompt box, one elevation step lighter than
-     --surface -- same "elevation via lightness, not shadow" philosophy as --surface itself
-     (see this file's theme-model comment at the top), applied one layer deeper. */
-  --surface-2: #3A362D;
   --ink: #EDE9E1;
   --muted: #A8A093;
   --accent: #DE8A68;
@@ -178,8 +171,8 @@ header {
 
 /* Block-flow, not flex (v1.39) -- main absorbs .panel's former padding and overflow-y here,
    now that the tab system's per-panel scroll containers are gone. Plain block flow is the
-   simpler shape for a container whose only job is to stack three siblings, so the flex
-   column went with the panels.
+   simpler shape for a container whose only job is to hold the panel, so the flex column went
+   with the panels.
    Measured, not assumed (v1.39 audit): the swap is layout-identical to keeping
    display:flex/flex-direction:column -- 390x844, 390x500, 320x400, 390x2000 and 1100x900 all
    render byte-identical geometry either way. Two reasons it can't differ here: (1) body is
@@ -229,88 +222,38 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   white-space: nowrap;
 }
 
-.chip {
-  display: table;
-  margin: 0 auto 12px;
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  padding: 5px 12px;
-  border-radius: 999px;
-  border: 1px solid transparent;
-}
-.chip.amber { background: rgba(180, 120, 26, 0.10); color: #8A5A00; border-color: rgba(180, 120, 26, 0.35); }
-.chip.slate { background: rgba(90, 100, 112, 0.10); color: #4A5462; border-color: rgba(90, 100, 112, 0.35); }
-/* Dark theme: same two hues, text lightened -- the light-theme text hexes measure 2.39:1
-   (amber) / 1.93:1 (slate) on their tints over dark --bg. Both pairs gated in verify.mjs. */
-[data-theme="dark"] .chip.amber { background: rgba(180, 120, 26, 0.14); color: #E3B25E; border-color: rgba(227, 178, 94, 0.35); }
-[data-theme="dark"] .chip.slate { background: rgba(90, 100, 112, 0.14); color: #B7C2D2; border-color: rgba(183, 194, 210, 0.35); }
-.chip[hidden] { display: none; }
-
 @keyframes cardIn {
   from { opacity: 0; transform: translateY(14px) scale(0.97); }
   to { opacity: 1; transform: none; }
 }
-/* Every cardIn shorthand below uses fill-mode `backwards`, NOT `both` (v1.28): `both`
-   keeps the finished animation owning `transform` forever at the CSS-animations cascade
-   origin, which outranks ordinary author rules — so .card:hover's lift silently never
-   applied once the entrance finished. `backwards` keeps the pre-delay invisibility the
-   stagger needs, then releases the properties when the animation completes. (cardIn's `to`
-   state equals the natural resting state, so nothing visibly changes at the handoff.) The
-   Weeks reveal keeps `both` deliberately — its scanline's end state is NOT its natural
-   state. */
+/* cardIn uses fill-mode `backwards`, NOT `both` (v1.28): `both` keeps the finished animation
+   owning `transform` forever at the CSS-animations cascade origin, outranking ordinary author
+   rules. `backwards` keeps the pre-delay invisibility the entrance needs, then releases the
+   properties when the animation completes (cardIn's `to` state equals the natural resting
+   state, so nothing visibly changes at the handoff). The Weeks reveal keeps `both`
+   deliberately — its scanline's end state is NOT its natural state. */
 
-/* v2.0: Journal and Weeks are now one unified "panel" -- a single rounded, shadowed container
-   (this rule) whose top zone (#cards, warm-cream) and bottom zone (#weeks-root, fixed dark)
-   read as one continuous card, joined by the .seam gradient+pill between them. overflow:hidden
-   + one border-radius here means the children below need no radius/shadow of their own at
-   their outer edges -- the parent clips them to match. */
+/* The single rounded, shadowed container holding the Weeks section (v3.0: Weeks is the whole
+   page; v2.0 held Journal above it, retired v3.0). overflow:hidden + one border-radius here
+   means the child needs no radius/shadow of its own at its outer edges -- the parent clips it
+   to match. The entrance animation lives here now, on the one thing that arrives. */
 .mindset-panel {
   border-radius: 20px;
   overflow: hidden;
   box-shadow: 0 10px 28px var(--shadow);
-}
-
-/* #cards is the outer cream frame (design's outer card layer); .card is the nested inner
-   prompt box (design's inner near-white layer) -- two light layers, not one flat surface
-   (v2.0). Exactly one card now (v1.39 retired Anchor, the last thing #cards ever shared the
-   screen with) -- a single Journal card clears 390x844 with enormous headroom regardless of
-   prompt length. Full history in audits/decisions.md, v1.28 through v1.39; the nested-box
-   split is v2.0. */
-#cards {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-  background: var(--surface);
-  padding: 24px 20px 28px;
-}
-.card {
-  background: var(--surface-2);
-  border-radius: 16px;
-  box-shadow: 0 1px 2px var(--shadow);
-  padding: 18px 20px;
   animation: cardIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: 0.3s;
 }
-@media (hover: hover) {
-  .card:hover { transform: translateY(-2px); }
-}
-.card { transition: transform 0.15s ease; }
 
-.card-chip {
-  font-family: "IBM Plex Mono", monospace;
-  font-size: 9px;
-  letter-spacing: 0.26em;
-  color: var(--muted);
-}
-.card-body {
-  font-family: "Fraunces", Georgia, serif;
-  font-size: 15.5px;
-  line-height: 1.55;
+/* The Weeks error state (v3.0): Weeks IS the page, so a build failure has to be visible --
+   app.js's renderWeeksError() paints this in place of the section. Both text colors clear
+   4.5:1 on --surface in both themes, gated in verify.mjs. */
+.weeks-error {
+  text-align: center;
+  padding: 28px 20px;
+  background: var(--surface);
   color: var(--ink);
-  margin: 10px 0 8px;
 }
-.error-card { text-align: center; }
 .error-label {
   font-family: "IBM Plex Mono", monospace;
   font-size: 9.5px;
@@ -327,24 +270,28 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   max-width: 250px;
 }
 
-/* The seam (v2.0, replaces the old plain .section-divider accent line) -- marks the handoff
-   from the day's card into the Weeks section below it, matching the imported design: a thin
-   person-J-to-person-B gradient bar with a floating pill on top stating the grid's own real
-   total (LIFE_WEEKS_TOTAL from lib.mjs, populated by app.js -- never a literal "4,000"; the
-   grid's actual total is 4,680, see lib.mjs's own comment on why 90 years, not 77). The
-   gradient's two stops are deliberately more saturated than --person-j/--person-b (those are
-   tuned pale enough to read as text/graphics on the fixed dark weeks background) -- a bold
-   one-off transition, not reused as a token. Purely decorative (aria-hidden). */
-.seam {
-  position: relative;
-  height: 2px;
-  background: linear-gradient(90deg, #BA1F5A, #195CC7);
+/* Weeks section (v1.23; a permanently dark "night sky" card since v2.0 -- see the --weeks-*
+   token comment at the top of this file for why it no longer follows the page's blossom/dark
+   theme; the whole page's content since v3.0). One combined
+   life-in-weeks grid for J and B, canvas-rendered by weeks.js. Content deliberately exceeds
+   one screen and scrolls with the document (see main's own comment above for why main's
+   overflow-y is not the mechanism it looks like) — invariant 11 scopes the above-the-fold
+   requirement to the heading and both stat rows; the grid below them scrolls. min-height
+   gives the centrepiece real presence before the canvas has sized itself. */
+.weeks-root {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  background: var(--weeks-bg);
+  color: var(--weeks-ink);
+  padding: 22px 20px 26px;
+  min-height: 60vh;
+  min-height: 60svh;
 }
-.seam-pill {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+/* The grid's own total, centered under the heading (v3.0 -- took over from the retired pill
+   that used to sit above this section; text built by weeks.js from LIFE_WEEKS_TOTAL). */
+.weeks-total {
+  align-self: center;
   background: var(--weeks-pill-bg);
   color: var(--weeks-ink);
   font-family: "IBM Plex Mono", monospace;
@@ -353,25 +300,7 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
   padding: 4px 12px;
   border-radius: 999px;
   white-space: nowrap;
-}
-
-/* Weeks section (v1.23; merged into the single page in v1.39; a permanently dark "night sky"
-   card since v2.0 -- see the --weeks-* token comment at the top of this file for why it no
-   longer follows the page's blossom/dark theme). One combined life-in-weeks grid for J and B,
-   canvas-rendered by weeks.js. Content deliberately exceeds one screen and scrolls with the
-   document (see main's own comment above for why main's overflow-y is not the mechanism it
-   looks like) — see audits/decisions.md for why this section is a deliberate exception to
-   §4.4's single-screen framing (re-scoped in v1.39 to cover only the Journal card above it;
-   Weeks was always the exception, invariant 11 now says so directly), and for the full
-   combined-cell-state / hover-focus / entrance-animation rationale (v1.22 shipped two
-   separate grids; this redesign combines them). */
-.weeks-root {
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
-  background: var(--weeks-bg);
-  color: var(--weeks-ink);
-  padding: 22px 20px 26px;
+  margin-top: -8px;
 }
 .weeks-heading {
   text-align: center;
@@ -456,8 +385,8 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 }
 .weeks-stat.is-active .weeks-bar-track { box-shadow: 0 0 0 1px currentColor; }
 /* The shine sweep: a soft diagonal highlight looping across the filled portion -- decorative,
-   killed under reduced motion in the block at the end of this file (same pattern as .card's
-   entrance and the Weeks reveal scanline). B's sweep is staggered 1.1s behind J's so the two
+   killed under reduced motion in the block at the end of this file (same pattern as the
+   panel's entrance and the Weeks reveal scanline). B's sweep is staggered 1.1s behind J's so the two
    bars don't pulse in lockstep, matching the imported design. */
 .weeks-bar-shine {
   position: absolute;
@@ -548,9 +477,9 @@ mindset-figure[role="button"]:active { transform: scale(0.97); }
 .weeks-scroll:focus-visible { outline: 2px solid var(--weeks-accent); outline-offset: 2px; }
 /* Entrance reveal (v1.23): the grid is drawn once (instant, correct) and revealed via a
    top-down clip-path sweep with a synced scanline riding the edge -- GPU-composited, no
-   per-cell JS animation. Previously replayed on every Weeks-tab visit via the same
-   display:none animation-restart .card relies on (v1.16's audit); since v1.39 build() runs
-   once at boot behind no such toggle, so this now plays exactly once per page load.
+   per-cell JS animation. Previously replayed on every Weeks-tab visit via a display:none
+   animation restart (v1.16's audit); since v1.39 build() runs once at boot behind no such
+   toggle, so this now plays exactly once per page load.
    1400ms cubic-bezier(0.65,0,0.35,1), not the house cardIn easing -- Fable's UX audit found
    the original 1100ms/cardIn-curve reveal ~70% done by 180ms, rushing past the lived rows
    (the entire point) and leaving the last second crawling through empty future cells; this
@@ -640,24 +569,24 @@ footer {
 
 /* Desktop adaptation — min-width only, base CSS above is the mobile layout (invariant 11). */
 @media (min-width: 900px) {
-  /* v2.0: capped on .mindset-panel itself (the unified card) rather than each inner piece --
-     Fable's UX audit originally caught the stats/zoom rows stretching to the full content
-     width on desktop, stranding J's percent in the far-left corner; capping the whole panel
-     achieves the same fix for every child at once, including #weeks-root/.weeks-card, which
-     didn't exist as separate targets before v2.0 merged them into one panel. */
+  /* Capped on .mindset-panel itself rather than on each inner piece -- Fable's UX audit
+     originally caught the stats/zoom rows stretching to the full content width on desktop,
+     stranding J's percent in the far-left corner; capping the panel fixes every child at
+     once. v3.0 raised the cap 640px -> 720px: the grid is the centrepiece now, and 52 columns
+     at 720px lands at roughly a 13px pitch. */
   .mindset-panel {
-    max-width: 640px;
+    max-width: 720px;
     width: 100%;
     margin: 0 auto;
   }
 }
 
-/* Kept last on purpose: .card sets its own `animation: cardIn ...` at equal specificity, so
-   this override must win the cascade by source order, not just exist somewhere in the file (a
-   bug found and fixed during v1.18 -- this rule previously sat right after @keyframes cardIn,
-   before that base rule, so it silently never took effect). */
+/* Kept last on purpose: .mindset-panel sets its own `animation: cardIn ...` at equal
+   specificity, so this override must win the cascade by source order, not just exist somewhere
+   in the file (a bug found and fixed during v1.18 -- this rule previously sat right after
+   @keyframes cardIn, before that base rule, so it silently never took effect). */
 @media (prefers-reduced-motion: reduce) {
-  .card { animation: none; }
+  .mindset-panel { animation: none; }
   /* Cancelling the animation alone is not enough here (unlike the rule above): the reveal's
      `from` state is fully clipped/invisible, so a reduced-motion viewer must also get the
      resting "fully visible" state explicitly, not just an animation-free freeze on frame

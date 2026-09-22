@@ -41,7 +41,7 @@ jobs:
         run: |
           mkdir _site
           cp index.html styles.css app.js figure.js lib.mjs weeks.js sw.js manifest.webmanifest .nojekyll _site/
-          cp -r data assets _site/
+          cp -r assets _site/
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site

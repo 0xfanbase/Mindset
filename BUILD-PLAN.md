@@ -1,4 +1,4 @@
-# MINDSET — Autonomous Build Plan (v1.39)
+# MINDSET — Autonomous Build Plan (v3.0)
 
 > **This file is the single source of truth.** It is written to be executed by Claude Code
 > end-to-end with zero human input except the three escalation triggers in §11 (plus the
@@ -2310,6 +2310,43 @@ sequence, and invariant 11's one-screen guarantee is re-scoped rather than simpl
     Separately noted, pre-existing and out of this round's scope: `audits/build-log.md`'s last
     heartbeat is v1.27, stale across every round since.
 
+**v3.0 changelog (from v2.0 — note v2.0, the 2026-08-24 UI redesign, was logged only in
+audits/decisions.md and never received a BUILD-PLAN changelog entry or title bump; this entry
+covers both):** owner request (verbatim): "I now just want the 4000 weeks screen without the
+top journal ... 4000 weeks become the centre piece of the site for us ... re-audit and rework
+the entire stack." The Journal card is retired, and with it everything that existed only to
+feed it: the daily pipeline (`scripts/generate-daily.mjs`, `data/daily.json`,
+`.github/workflows/daily.yml`), the watchdog (`.github/workflows/watchdog.yml` — it only ever
+checked `daily.json` staleness), the content library (`data/cards.json`, 1825 journal prompts —
+historical content survives in git history, at the commit immediately before this round's, and
+in `audits/CONTENT-REVIEW.md`, which keeps a retirement note), the rotation engine in `lib.mjs`
+(`pickIndex`, `xmur3`, `mulberry32`, `shuffledOrder`, `shuffledOrderSeamSafe`, `minSeamGap`,
+`pickToday`), the staleness model (`staleness`, `expectedDateHKT`, the chip), and the `data/`
+directory itself. What stays: the header (wordmark, HKT date line, breathing figure
+`figure.js`, theme toggle), the two-theme clock model, the Weeks section (heading, per-person
+stat buttons with progress bars, zoom, canvas grid, epigraph), PWA installability, the footer,
+and `pages-deploy.yml` (on push, unchanged in trigger). Weeks is now the entire page content,
+computed from today's HKT date on every load and on every `visibilitychange` resume — nothing
+refreshes on a schedule anymore; the site only changes when a human pushes to `main`.
+
+- **Invariant 11 re-scoped again** (see the dated `decisions.md` entry quoting old/new wording,
+  same treatment as the v1.39 re-scoping): the one-screen guarantee now covers the Weeks
+  heading and both people's stat rows, not the Journal card (which no longer exists) — the grid
+  below them scrolls, by design.
+- **`verify.mjs` — invariant-12 ratchet, 76 -> 64 at the implementation commit, 66 after the audit round's two added guards:** full accounting (every check removed,
+  retargeted, or added, by exact name and reason) is in `audits/decisions.md`'s v3.0
+  invariant-12 entry.
+- **`sw.js` `CACHE` bumped `mindset-v23` -> `mindset-v24`** (`ASSETS` drops
+  `./data/cards.json`/`./data/daily.json`, since `data/` no longer exists); Appendix C.2 below
+  updated to match.
+- **`pages-deploy.yml`** — the stage step's `cp -r data assets _site/` is now `cp -r assets
+  _site/`; the old line would fail the deploy now that `data/` is gone.
+- **The 2026-09-22 ops fix (daily-cards dispatch retry on transient GitHub API errors) is now
+  moot** — `daily.yml` no longer exists, so there is nothing left for that retry loop to guard.
+  Left in git history as an accurate record of what it fixed at the time; not reverted
+  separately, since deleting `daily.yml` outright already removes it.
+- **Verified:** `verify.mjs all` 66/66 (64/64 before the audit round added two guards).
+
 ---
 
 ## KICKOFF PROMPT (human copies this into Claude Code, run from the repo root)
@@ -2346,19 +2383,15 @@ logged in decisions.md.
 
 ## §1 — Mission & product summary
 
-A single-page, public, static website hosted on GitHub Pages. It is a personal
-mindset dashboard that refreshes itself every morning at **05:00 Hong Kong time**
-with three short grounding cards, headed by a living "mind" — a small bottle of light,
-glowing and dimming on a slow breathing cycle, on repeat. Two tabs: **Today** (figure + date +
-3 cards) and **Values** (a quiet list of core qualities). Two themes: a soft pink daytime
-default and a warm-charcoal dark theme that owns 17:00–06:00 HKT (v1.29).
-Zero backend. Zero dependencies. Zero personal data (about the owner — see §2.1).
-
-The three daily cards:
-
-1. **Anchor** — a timeless principle (Stoicism, Die With Zero, growth mindset, relationships, wealth principles, focus/energy), written as an original paraphrase with attribution.
-2. **Journal** (v1.12, replacing Shift) — a mindful reflection prompt, an open-ended question meant to be actually sat with, not a quick from/to reframe.
-3. **Word of the Day** (v1.10, replacing Fresh) — one word worth knowing (often untranslatable — *wabi-sabi*, *ikigai*, *amor fati*) with its origin and a one-line meaning, deterministically rotated the same way as Anchor/Journal.
+A single-page, public, static website hosted on GitHub Pages (v3.0 — "Weeks is the site"). It
+is a life-in-weeks chart for J and B — one combined 90-year grid, one square per week, headed
+by a living "mind" — a small bottle of light, glowing and dimming on a slow breathing cycle, on
+repeat — and the current date, always Asia/Hong_Kong. Two themes: a soft pink daytime default
+and a warm-charcoal dark theme that owns 17:00–06:00 HKT (v1.29). Zero backend. Zero
+dependencies. Zero personal data (about the owner — see §2.1). There are no daily cards
+anymore: the Journal card and everything that fed it were retired in v3.0 (see the v3.0
+changelog entry above); the page is computed fresh from today's HKT date on every load and
+every resumed visit, and changes only when a human pushes to `main`.
 
 ---
 
@@ -2383,14 +2416,14 @@ The three daily cards:
    a quotation mark and is allowed). Attribution style: `— after Seneca`, `— after Bill Perkins`,
    `— core principle`. Never copy sentences from books, sites, or transcripts.
 3. **Zero runtime dependencies.** Vanilla HTML/CSS/JS. No frameworks, no npm packages, no build step, no bundler, no analytics, no cookies, no third-party scripts or CDNs at runtime. `localStorage` only, keys namespaced `mindset.*`.
-4. **Node ≥ 20 built-ins only** for scripts (global `fetch`, `node:fs`, `node:test` allowed). No `npm install` at any point. When running `generate-daily.mjs` locally in this environment, set `NODE_USE_ENV_PROXY=1` so Node's built-in `fetch` honours the environment's egress proxy (GitHub Actions runners are unaffected and need no flag).
+4. **Node ≥ 20 built-ins only** for scripts (global `fetch`, `node:fs`, `node:test` allowed). No `npm install` at any point. (v3.0: `scripts/generate-daily.mjs`, the one script here that ever used `fetch`, is retired along with the daily pipeline — nothing left in `scripts/` makes network calls.)
 5. **Static hosting truth:** everything must work on GitHub Pages served from `main` branch root. Include a `.nojekyll` file. All stages commit and push directly to `main` — the owner has authorized this for this repo; there is no feature-branch/PR step in this plan.
 6. **Performance budget:** total page weight ≤ 600 KB excluding fonts (raised from 350 KB in v1.32 — a logged invariant-12 exception, owner-authorized, to fit the 5-year Journal pool; see decisions.md); fonts ≤ 300 KB total; JS ≤ 65 KB total (raised from 60 KB in v1.34 — a logged invariant-12 exception, to fit the widened cross-seam no-repeat guarantee plus several bug fixes; see decisions.md); the figure animation must pause when the tab is hidden and must honour `prefers-reduced-motion`.
 7. **Accessibility floor:** WCAG AA contrast for all text token pairs (verified numerically in `verify.mjs`, including `(--muted,--bg)` and `(--accent,--bg)` — not just the on-`--surface` pairs — and gated at 4.5:1 for any pair used for normal-size text, 3:1 only where the token is genuinely large-text/UI-component use), visible keyboard focus, `aria` roles on tabs and theme toggle, tap targets ≥ 44px, semantic landmarks (`header`, `main`, `nav`, `footer`).
 8. **Timezone law:** every date shown or computed is **Asia/Hong_Kong**, derived via `Intl.DateTimeFormat` with an explicit `timeZone` — never a bare `new Date().toLocaleDateString()` and never the runner's local time. `app.js`/`figure.js` must not call locale-date APIs without an explicit `timeZone` (Stage 1 verify greps for this).
 9. **Search visibility:** `<meta name="robots" content="noindex">` (public but unlisted — note: this hides the Pages URL from search, but the GitHub repo itself, including `cards.json`, remains a public, indexable, code-searchable text file regardless. Don't rely on "unlisted" as a content-privacy mechanism).
-10. **Git hygiene:** no force-push, no history rewrites of already-pushed commits, no edits outside this repo, no global installs, conventional commit messages per stage as specified. `git pull --rebase origin main` (rebasing your own unpushed local commits onto a workflow's bot commit) is explicitly permitted and required where noted (Stage 4/5) — this is not the kind of history rewrite the ban refers to. (One owner-authorized exception is on record — the 2026-07-25 pushed-history PII purge; see `audits/decisions.md`, entries dated 2026-07-25 — logged there per the same convention invariant 12 uses for its own exceptions.)
-11. **Mobile-first law:** the phone is the PRIMARY client; desktop is the adaptation. Base CSS **is** the mobile layout; wider layouts are layered on exclusively via `min-width` media queries — **`max-width` media queries are banned** (mechanically verifiable). All URLs — assets, fetches, SW scope, manifest `start_url` — are **relative** (`./…`), never root-absolute. Viewport heights use `svh` (with a `vh` fallback line above it). Safe-area insets are respected. The page must be installable to the home screen (§4.7). The day's **Journal card is complete above the fold** on a 390×844 viewport (see §4.4) — the Weeks section below it scrolls, the carried-forward, re-scoped form of the original single-screen guarantee (v1.39; see decisions.md) — this is still stricter than "mobile-first," it's "mobile-fits" for the card the app opens on.
+10. **Git hygiene:** no force-push, no history rewrites of already-pushed commits, no edits outside this repo, no global installs, conventional commit messages per stage as specified. `git pull --rebase origin main` (rebasing your own unpushed local commits onto another pushed commit) is explicitly permitted where noted — this is not the kind of history rewrite the ban refers to. (One owner-authorized exception is on record — the 2026-07-25 pushed-history PII purge; see `audits/decisions.md`, entries dated 2026-07-25 — logged there per the same convention invariant 12 uses for its own exceptions.)
+11. **Mobile-first law:** the phone is the PRIMARY client; desktop is the adaptation. Base CSS **is** the mobile layout; wider layouts are layered on exclusively via `min-width` media queries — **`max-width` media queries are banned** (mechanically verifiable). All URLs — assets, fetches, SW scope, manifest `start_url` — are **relative** (`./…`), never root-absolute. Viewport heights use `svh` (with a `vh` fallback line above it). Safe-area insets are respected. The page must be installable to the home screen (§4.7). The **Weeks heading and both people's stat rows are complete above the fold** on a 390×844 viewport (see §4.4) — the grid below them scrolls, the v3.0 re-scoping of the prior Journal-card guarantee (which no longer applies, since Journal is retired; see decisions.md) — this is still stricter than "mobile-first," it's "mobile-fits" for the part of the page the app opens on.
 12. **Verifier integrity ratchet.** After Stage 0's commit, `verify.mjs` checks and budget constants may only be added or tightened, never relaxed. Any relaxation requires a `decisions.md` entry quoting the original check text and the reason. `FINAL-AUDIT.md` must include a one-paragraph diff summary of `verify.mjs` versus its Stage 0 version. This exists because the same agent that hits a hard-to-satisfy check is the one who would otherwise be tempted to quietly soften it.
 
 ---
@@ -2401,29 +2434,24 @@ The three daily cards:
 /
 ├── index.html
 ├── styles.css
-├── app.js                  # UI logic: theme, date, the day's card, staleness, Weeks boot
+├── app.js                  # UI logic: theme, date, Weeks boot (v3.0: no fetches, no daily card)
 ├── figure.js               # canvas glowing-bottle animation (the signature element — was drop.js/brain.js)
-├── weeks.js                # Weeks section: combined canvas life-in-weeks grid (J, B), zoom, stats (v1.22-1.24)
-├── lib.mjs                 # SHARED pure functions: HKT date, day number, rotation (imported by browser AND node)
+├── weeks.js                # Weeks section: combined canvas life-in-weeks grid (J, B), zoom, stats — the whole page as of v3.0
+├── lib.mjs                 # SHARED pure functions: HKT date/time + life-in-weeks math (imported by browser AND node); the v1.0-v2.0 rotation engine (Appendix B) retired in v3.0
 ├── manifest.webmanifest    # home-screen installability (Appendix C)
 ├── sw.js                   # offline shell, network-first (Appendix C, verbatim)
 ├── assets/
 │   ├── fonts/              # self-hosted woff2 + OFL.txt licences
 │   ├── icons/              # icon-192.png, icon-512.png, apple-touch-icon.png (180)
 │   └── favicon.svg
-├── data/
-│   ├── cards.json          # journal[1825] (v1.32; v1.34 -- min ~10mo gap/seam; v1.39 -- anchors retired)
-│   └── daily.json          # written by the pipeline daily
 ├── scripts/
-│   ├── generate-daily.mjs
-│   └── verify.mjs          # stage-gated verification harness
+│   └── verify.mjs          # stage-gated verification harness (v3.0: generate-daily.mjs retired)
 ├── .github/workflows/
-│   ├── daily.yml
-│   └── watchdog.yml
+│   └── pages-deploy.yml    # v3.0: daily.yml/watchdog.yml retired along with the daily pipeline
 ├── audits/
 │   ├── build-log.md        # heartbeat log
 │   ├── decisions.md        # ADR-lite decision log
-│   ├── CONTENT-REVIEW.md   # Stage 3: all cards grouped by attribution, QA flags inline
+│   ├── CONTENT-REVIEW.md   # Stage 3: all cards grouped by attribution, QA flags inline; v3.0: retirement note
 │   └── stage-N-audit.md    # one per stage + FINAL-AUDIT.md
 ├── CLAUDE.md               # created in Stage 0: invariants summary + pointer here
 ├── BUILD-PLAN.md           # this file
@@ -2431,6 +2459,10 @@ The three daily cards:
 ├── .gitignore              # .claude/ only (added v1.37 -- agent-worktree tooling state, never shipped)
 └── README.md
 ```
+
+*(v3.0 retired the `data/` directory entirely — `data/cards.json` and `data/daily.json` no
+longer exist; historical content survives in git history, at the commit immediately before
+this round's, and in `audits/CONTENT-REVIEW.md`.)*
 
 ---
 
@@ -2441,8 +2473,9 @@ The three daily cards:
 which exactly one thing is alive: a small bottle of light, glowing and dimming slowly and
 deliberately, on an otherwise still page. Contemplative Stoic calm + the precision of an
 automated system. All boldness is spent on the figure; everything else is disciplined and
-quiet. The day's card fits one phone screen without scrolling (§4.4); the Weeks section that
-follows it scrolls — editorial, not busy.
+quiet. As of v3.0, Weeks is the whole page: its heading and both people's stat rows fit one
+phone screen without scrolling (§4.4); the grid and epigraph that follow scroll — editorial,
+not busy.
 
 ### 4.2 Design tokens (CSS custom properties on `:root, [data-theme="blossom"]` / `[data-theme="dark"]`)
 
@@ -2498,12 +2531,15 @@ Self-host both webfonts as woff2 in `assets/fonts/` with `font-display: swap` an
 
 Type scale (px): 10 (mono meta chips) · 12–13 (mono date line) · 15.5 (journal card text, error state) · 17–18 (wordmark) — line-height ~1.45–1.5 body/card text. (A pre-existing miss, caught and fixed while already in this area for anchor's sake: this line still listed "20 (word title)" for Word of the Day, retired since v1.35 — dropped now.)
 
-### 4.4 Layout — the day's card fits one screen; Weeks scrolls below it (390×844 baseline)
+### 4.4 Layout — the Weeks heading and stat rows fit one screen; the grid scrolls below them (390×844 baseline)
 
 The design supersedes v1.0's tall hero-canvas mockup with a compact layout (matching the
 "Mindset Mobile UI.dc.html" prototype, option 1c) — historically a single no-scroll screen;
-re-scoped in v1.39 when Weeks merged into the same page below the Journal card (see the
-paragraph after the mockup, and invariant 11):
+re-scoped in v1.39 when Weeks merged into the same page below the Journal card, and again in
+v3.0 when the Journal card was retired and the `.mindset-panel` came to hold Weeks alone (see
+the paragraph after the mockup, and invariant 11). The ASCII mockup below is historical through
+v2.0 — it depicts the Journal-plus-tabs layout that no longer exists; nothing below it should
+be read as still describing the mockup's own tab/card markup:
 
 ```
 ┌────────────────────────────────────┐
@@ -2528,13 +2564,14 @@ paragraph after the mockup, and invariant 11):
 └────────────────────────────────────┘
 ```
 
-On mobile, the day's Journal card (header through the card, before the section divider) must
-fit one viewport height (`100svh`, `vh` fallback) without scrolling; the Weeks section below
-the divider is a deliberate, expected scroll, not an overflow fallback (v1.39 — previously
-Weeks lived behind its own tab, so the one-screen rule covered the whole page; merging it into
-the same page re-scoped the rule to just the part the app opens on). If a very small viewport
-or large system font forces the Journal card itself to overflow, allow the page to scroll
-further rather than clipping content — never clip.
+On mobile, the header through the Weeks heading and both people's stat rows must fit one
+viewport height (`100svh`, `vh` fallback) without scrolling; the grid and epigraph below them
+are a deliberate, expected scroll, not an overflow fallback (v3.0 — Weeks is now the sole page
+content, so the one-screen rule covers only the part of Weeks the app opens on, not the full
+scrollable grid; before that, v1.39 had already re-scoped the same rule once, from the whole
+page down to just the Journal card, when Weeks first merged in below it). If a very small
+viewport or large system font forces the heading/stats themselves to overflow, allow the page
+to scroll further rather than clipping content — never clip.
 
 **v1.4:** the figure moved out of `<main>` to be `<body>`'s first child, ahead of `<header>` —
 live feedback asked for it to sit at the true top of the page. It carries the safe-area-inset-top
@@ -2545,17 +2582,14 @@ since it's no longer adjacent to the notch/status bar).
 
 1. **Theme toggle (reworked v1.29):** pill button top-right, 44×44px. The theme DEFAULT follows the HKT clock — dark 17:00–06:00, blossom otherwise (`lib.mjs isDarkWindowHKT`; `index.html`'s pre-paint inline script computes the same window before CSS loads, sets `data-theme` + inline `color-scheme`, pre-sets `theme-color`, and removes the retired `mindset.theme` key — nothing is persisted anymore). The button is a session-only override: a tap flips the theme and suppresses the visibilitychange re-check until the next fresh load, so every reload returns to the cycle. Glyphs: ◐ while pink is active ("tap for dark"), ❀ while dark is active ("tap for pink") — the calm-era glyphs with repurposed meanings, kept because they're proven to render on the owner's device. No `aria-pressed` (an action-named control whose accessible name changes per state must not also carry a pressed state); `aria-label` and `title` are the identical pinned strings `Switch to dark theme` / `Switch to pink theme`, asserted verbatim by verify.mjs.
 2. **Date line:** always HKT (invariant 8), computed via `lib.mjs`'s `hktDateParts`. Format: `MONDAY · 13 JULY 2026` (uppercase, letterspaced, mono).
-3. **Cards (v1.9 — restored as actual cards):** `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding. Exactly one card renders now — **Journal** (v1.39 retired Anchor, its last remaining companion — see item 8 in §5.3 for the authoring-side retirement, and item 4b below for the focus-mode toggle that also went with it); the v1.9 gap rule (`#cards { display:flex; flex-direction:column; gap:14px }`) is vestigial for a single child but left in place, harmless if a future card type joins Journal here. v1.8 had briefly flattened Today's cards to match the now-retired Values tab's flat/hairline row style (§4.5 item 5); live feedback reversed that specifically for Today ("I want to see actual cards ... easy to read ... to be mindful and to learn something new") — Today is meant to be read and learned from, not just glanced at as a reference. Header row = mono category chip (JOURNAL, no emoji — plain mono text per the prototype). Body in Fraunces. Journal card (v1.12, replacing Shift) is just a chip + one open-ended prompt in `.card-body` — no separate from/to structure needed. (v1.35: Word of the Day, which used to render fourth with its own headline/pronunciation-button treatment, was retired — see item 4a. v1.38: Kenya, third, with a trip-countdown pill, was retired too — see item 4c. v1.39: Anchor, second, with an attribution footer, was retired too — its content-authoring rules are stubbed at §5.3 item 8, its focus-mode UI at item 4b below.)
-4. **Staleness chip (mono, small):**
-   - Staleness is computed against the **expected refresh boundary**, not the bare calendar date: `expectedDateHKT = now(HKT) >= 05:00 ? today(HKT) : yesterday(HKT)`. `daily.json`'s `dateHKT` matching `expectedDateHKT` → no chip. Off by one day (and ≤ 48h old) → amber chip `yesterday's cards`. (This fixes a v1.0 ambiguity that would otherwise show a false amber chip to every visitor between midnight and 05:00 HKT, every single day.)
-   - `daily.json` unreachable, > 48h stale, or fetch fails → page computes the day's card locally via `lib.mjs` rotation → slate chip `offline rotation`. Every pool is deterministic (v1.10 retired the old fetched-content Fresh card for exactly this property), so this path always picks the exact same content the server would have for that date — there is no divergent "fallback" content.
-   - **`.chip[hidden] { display: none; }` (v1.11, real bug fix):** `#staleness-chip` keeps `class="chip"` at all times, including while hidden; `.chip`'s own `display: table` (author-origin CSS) unconditionally overrode the browser's default `[hidden] { display: none }` (user-agent-origin CSS) — author styles always win over user-agent styles at equal specificity, regardless of selector order. The hidden chip was never actually disappearing; it sat empty but still consumed its padding/margin box in the default "fresh" case, every load. Fixed with an explicit override, matching the pattern `.panel[hidden] { display: none; }` already used correctly elsewhere in the same stylesheet.
+3. **Cards — retired in v3.0 along with Journal (the last card type standing since v1.39), slot kept (not renumbered) so `item 3`/`§4.5.3` cross-references elsewhere in this file stay valid.** Through v2.0: `--surface` background, 20px radius, shadow `0 10px 28px var(--shadow)`, 18px/20px padding, exactly one card (Journal, a mono category chip plus one open-ended prompt in `.card-body`). Owner request (same round as this file's v3.0 changelog entry): "I now just want the 4000 weeks screen without the top journal." Removed entirely — `app.js`'s `renderJournalCard`/`paintCards`/`fetchJSON` and every code path that fetched or painted a card; `index.html`'s `#cards`; `styles.css`'s `.card`/`#cards`/`.card-chip`/`.card-body` rules. Historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`; full detail in `audits/decisions.md`'s v3.0 entry.
+4. **Staleness chip — retired in v3.0 along with the daily pipeline it measured, slot kept (not renumbered) so `item 4`/`§4.5.4` cross-references elsewhere in this file stay valid.** Through v2.0: computed staleness against an expected-refresh-boundary date (`expectedDateHKT`), showing an amber `yesterday's cards` chip or a slate `offline rotation` chip when `daily.json` was stale or unreachable. There is no daily content left to be stale about — Weeks is computed fresh from today's HKT date on every load, so this entire model (and `lib.mjs`'s `expectedDateHKT`/`staleness`) is gone, not merely hidden. Its `.chip[hidden]` display-cascade fix (v1.11) is retired with it; the `--surface`-backed `.weeks-error` state (§4.5 item 7) is the only "something's wrong" affordance left, and it surfaces a real failure rather than a content-freshness signal. Full detail in `audits/decisions.md`'s v3.0 entry.
 4a. **Word pronunciation — retired in v1.35, slot kept (not renumbered) so `item 4a`/`§4.5.4a` cross-references elsewhere in this file stay valid.** Through v1.34 this held Word of the Day's card: the word itself as a Fraunces headline (`.word-title`) plus a 44×44px pronunciation button (`.word-speak`, v1.11) calling `window.speechSynthesis.speak(...)`. Owner request: "remove the word of the day block... that is not helpful." Removed entirely — `app.js`'s `renderWordCard`/`speak`, `styles.css`'s `.word-*` rules, `data/cards.json`'s 30-entry `wordOfDay` pool, `wordId` from the daily pipeline/schema, and the `"word"` rotation salt (kept only in `verify.mjs`'s seam-gap sweep as a generic-correctness check, same treatment as the retired `"closing"` salt). Historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`. Full detail in `audits/decisions.md`'s v1.35 entry.
 4b. **Pre-09:00 HKT focus mode — retired in v1.39, slot kept (not renumbered) so `item 4b`/`§4.5.4b` cross-references elsewhere in this file stay valid** (item 3, above, points here twice by name — "item 4b below for the focus-mode toggle that also went with it" and "its focus-mode UI at item 4b below" — the same live-reference situation as items 4a and 4c, which item 3 also points to; the v1.39 audit corrected an earlier claim in `decisions.md` that no such pointer existed). Through v1.38: `lib.mjs`'s `isFocusWindowHKT(now)` (HKT hour < 9) gated `renderToday`'s output — inside the window, only the Journal card rendered, followed by a `.reveal-rest` disclosure button (`aria-expanded`/`aria-controls`, 44px tap target, mono pill styling matching the staleness chip/theme toggle) and a `#cards-more` wrapper (`hidden` by default) holding Anchor (held Anchor/Kenya through v1.37, before Kenya's v1.38 retirement); outside the window, both cards rendered flat with no button. Owner request (same round as Anchor's own retirement): "remove the morning hiding function." Removed entirely — `app.js`'s `paintFocusedToday`/`windowMode`/`paintedWindowMode` and the `winMode`/focus branching inside `renderToday`; `lib.mjs`'s `isFocusWindowHKT`; `styles.css`'s `.reveal-rest`/`#cards-more` rules and the desktop `#cards.focus` override. Journal now always renders flat, exactly as item 3 describes, with no button and no wrapper at any hour. Full detail in `audits/decisions.md`'s v1.39 entry.
 4c. **Kenya card and trip countdown — retired in v1.38, slot kept (not renumbered) so `item 4c`/`§4.5.4c` cross-references elsewhere in this file stay valid** (item 3, two items above, points here by name — "Kenya ... was retired too — see item 4c" — same live-reference situation as item 4a, which item 3 also points to). Through v1.37: a third Today card, **Kenya** (added v1.15, one fact about Kenya per day spanning geography/wildlife/history/government/culture/economy/sports), with a trip-countdown pill (`.kenya-countdown`, added v1.17, `.card-top` flex wrapper around `.card-chip`) counting down to the owner's since-completed 2026-08-15 Masai Mara trip via `lib.mjs`'s `daysUntilKenyaTrip(now)`. Owner request: "remove the Kenya block as well on the first tab." Removed entirely — `app.js`'s `renderKenyaCard`/`kenyaCountdownText` and the `kenya` destructure/guard/pick across `renderToday`'s fresh, offline-fallback, and staleness-check paths; `lib.mjs`'s `daysUntilKenyaTrip`/`KENYA_TRIP_DATE_HKT` and the `kenya` pick in `pickToday`; `styles.css`'s `.card-top`/`.kenya-countdown` rules and the now-unused `--edge` token (both themes); `data/cards.json`'s 60-entry `kenya` array; `scripts/generate-daily.mjs`'s `kenyaId` stamp; the `"kenya"` rotation salt (kept only in `verify.mjs`'s seam-gap sweep as a generic-correctness check, same treatment as the retired `"word"`/`"closing"` salts). Historical content preserved, retired-labeled, in `audits/CONTENT-REVIEW.md`. Full detail in `audits/decisions.md`'s v1.38 entry.
 5. **Values tab — retired in v1.37, slot kept (not renumbered), matching item 4a's treatment of Word of the Day** (unlike item 4a, no live `§4.5.5` cross-reference was actually found requiring this — checked directly, nothing in this file cites it by number — the slot is kept for consistency with the established pattern regardless). Through v1.36: the 5 values as quiet rows — value name (Fraunces, ~17px), one-line essence (Fraunces italic, ~13.5px), one observable behaviour (muted, ~12px), no numbering (values are not a sequence; cut from 10 to 5 in v1.2 — ten read as a checklist, keep only what actually matters). Owner request: "we rarely refer to it." Removed entirely — `app.js`'s `renderValues`/`renderValuesError`, `styles.css`'s `.value-row`/`.value-name`/`.value-essence`/`.value-behaviour`/`.values-empty` rules, `data/values.json` (deleted), and `index.html`'s `#tab-values`/`#panel-values`. Full detail in `audits/decisions.md`'s v1.37 entry.
-6. **Motion:** the figure is the primary animated element. The Journal card's entrance (v1.9, more noticeable per live feedback: "a small animation when I open up the page ... opening up of the cards") = a 500ms fade/rise/scale-in; the per-card 90ms stagger this used to produce across multiple Today cards is dormant now that only Journal renders (v1.39), left in place rather than removed since a future Today card would want it back for free. Nothing on scroll — the Weeks reveal below (item 7) plays once at boot, not on scroll-into-view; respects `prefers-reduced-motion` (animation suppressed, content appears instantly). Hover lift 2px desktop only.
-7. **Weeks section joins the single page (v1.39):** previously a separate tab (`role="tabpanel"`, built lazily on first activation, v1.22–1.24), the Weeks life-in-weeks grid for J and B now renders directly below the Journal card within the same `<main>`, separated by a `.section-divider` (a 24×2px `--accent` bar, echoing `.weeks-divider`'s own internal one). It builds once at boot (`weeks.js`'s `initWeeks()`, called from `app.js`'s `boot()`, wrapped so a failure there can't take down Journal's own render) rather than on tab activation, since its container has real layout size from load now that there is no `hidden` panel to wait behind. Its own internal layout, canvas rendering, zoom, and hover/tap-focus behavior are unchanged from v1.22–1.24 — this item documents only the boundary change (tab → page section), not a redesign of Weeks itself.
+6. **Motion — the Journal-card entrance described here through v2.0 is retired in v3.0 along with the card itself, slot kept (not renumbered) so `item 6`/`§4.5.6` cross-references elsewhere in this file stay valid.** Through v2.0: the figure was the primary animated element, plus a 500ms fade/rise/scale-in on the Journal card's entrance (v1.9) and a dormant per-card stagger. v3.0 moves the entrance animation onto `.mindset-panel` itself (the panel now holds only Weeks) — same 500ms cubic-bezier fade/rise/scale-in, same `prefers-reduced-motion` suppression, no stagger (one panel, not several cards). The figure remains the primary *continuous* animated element; Weeks' own reveal-on-boot and hover lift are described in item 7. Full detail in `audits/decisions.md`'s v3.0 entry.
+7. **Weeks is the whole page (v3.0, superseding the v1.39 tab-merge described below):** the Weeks life-in-weeks grid for J and B is now the entire content of `<main>` — `.mindset-panel > #weeks-root`, with no Journal card or divider above it. It still builds once at boot (`weeks.js`'s `initWeeks()`, called from `app.js`'s `boot()`), but a build failure now surfaces a visible `.weeks-error` state (`NO GRID` / "Couldn't draw the weeks grid. Refresh, or try again later.") instead of being silently swallowed, since Weeks is no longer optional content sitting beside something else — it IS the page. A `weeks-total` pill (`${commas(LIFE_WEEKS_TOTAL)} WEEKS TOTAL`) sits inside the section, just under the heading, replacing the retired cross-section seam pill. *(v1.39 history, kept for context: previously a separate tab, built lazily on first activation, v1.22–1.24; v1.39 merged it directly below the Journal card within the same `<main>`, separated by a `.section-divider`. Its own internal canvas rendering, zoom, and hover/tap-focus behavior have been unchanged since v1.22–1.24 through every one of these boundary changes.)*
 
 ### 4.6 The figure (signature element — `figure.js`, was the water drop in v1.1, "the brain" in v1.0)
 
@@ -2618,6 +2652,11 @@ Design at **390×844** first; adapt upward. Desktop must look intentional, but e
 
 ## §5 — Content specification
 
+**Retired in v3.0** along with the Journal card and the daily pipeline that fed it — there is
+no content library left to specify. The sub-sections below (5.1–5.3) are kept as history, not
+current spec; the 1825-entry journal pool they describe survives in git history, at the commit
+immediately before this round's, and in `audits/CONTENT-REVIEW.md`.
+
 ### 5.1 `cards.json` schema
 
 ```json
@@ -2664,7 +2703,12 @@ rather than a short list of what actually matters (§5.3.6).
 
 ## §6 — Data & logic
 
-### 6.1 `daily.json` schema
+**§6.1/6.2/6.3 all retired in v3.0** along with the daily pipeline, `daily.json`, and the
+rotation engine — Weeks needs none of this, since it is computed directly from today's HKT
+date via `lib.mjs`'s HKT date/time and life-in-weeks helpers (kept, unchanged), not picked from
+a content pool. Kept below as history.
+
+### 6.1 `daily.json` schema (retired v3.0)
 
 ```json
 {
@@ -2682,7 +2726,7 @@ id through v1.37, retired in v1.38; `anchorId` was the second id through v1.38, 
 v1.39. Each ordinal counts the ids that existed alongside it at the time, the same convention
 this note has used since v1.35.)
 
-### 6.2 Deterministic rotation (in `lib.mjs`, shared browser + node)
+### 6.2 Deterministic rotation (retired v3.0; was in `lib.mjs`, shared browser + node)
 
 - `hktDateString(d)` → `YYYY-MM-DD` via `Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Hong_Kong' })`.
 - `hktDayNumber(d)` → `floor(Date.UTC(y, m-1, day) / 86400000)` from the HKT date parts.
@@ -2690,7 +2734,7 @@ this note has used since v1.35.)
 - `pickIndex(poolSize, dayNumber, salt)` → per-cycle Fisher–Yates permutation seeded with `xmur3(salt + ":" + floor(dayNumber/poolSize))` feeding `mulberry32`; return `order[dayNumber % poolSize]`. **Use the reference implementation in Appendix B verbatim.** Guarantees, as of v1.34 (superseding the v1.0–v1.30 text this replaced, which wrongly called a cycle-boundary repeat "expected and not a bug" — a real, dated 1-day repeat is exactly what prompted the v1.31 fix below): no repeats *within* a full cycle; at a cycle SEAM, every item is guaranteed at least `minSeamGap(poolSize)` days (pool/6, floored) before it can repeat — journal 305+ days — with the REAL average gap from an arbitrary start date roughly poolSize/2 days (journal ≈ 2.5 years) and the typical (median) gap close to a full cycle (journal ≈ 5 years, matching the pool's own sizing intent). A true "zero repeats within any poolSize-day window from every possible start date" is provably impossible without abandoning per-cycle reshuffling for one exact repeating order forever (proof sketch + full verification numbers in decisions.md's v1.34 entry) — the bounded-gap guarantee above is the strongest available while keeping each cycle's shuffle genuinely independent. Fully stateless, identical results in node and browser. Note for future curation (put this in the README runbook, not enforced by code): replace cards 1-for-1; adding or removing cards changes the pool size and reshuffles the whole rotation, which may repeat a recently-seen card once.
 - Salts: `"journal"`. (`"word"` retired in v1.35, `"kenya"` retired in v1.38, `"anchor"` retired in v1.39, each along with the pool it rotated.)
 
-### 6.3 Client behaviour (`app.js`)
+### 6.3 Client behaviour (retired v3.0; was in `app.js`)
 
 1. Fetch `data/daily.json` (+ `cards.json`) with `cache: "no-store"`.
 2. Compare `daily.dateHKT` against the expected-refresh-boundary date (§4.5.4) → render as-is, or apply staleness rules.
@@ -2699,7 +2743,10 @@ this note has used since v1.35.)
 
 ---
 
-## §7 — Daily pipeline (`scripts/generate-daily.mjs`)
+## §7 — Daily pipeline (retired v3.0)
+
+**Retired in v3.0** along with the Journal card it fed — `scripts/generate-daily.mjs` is
+deleted, and there is nothing left in the repo that stamps a daily pick. Kept below as history.
 
 **v1.10 note:** through v1.9, this script fetched five external RSS/YouTube feeds for the
 Fresh card, with a whole subsystem of liveness/identity verification (old §7.1), a mindset-
@@ -2738,7 +2785,11 @@ automated pipeline is alive, independent of which specific cards it's stamping.
 
 ## §8 — Workflows (copy these, adjusted per this v1.1, then validate)
 
-### 8.1 `.github/workflows/daily.yml`
+**§8.1/8.2 retired in v3.0** — `daily.yml` and `watchdog.yml` are both deleted; only
+`pages-deploy.yml` (on push to `main`, unchanged in trigger) remains. The YAML blocks below stay
+as history.
+
+### 8.1 `.github/workflows/daily.yml` (retired v3.0)
 
 ```yaml
 name: daily-cards
@@ -2772,7 +2823,7 @@ jobs:
           git push
 ```
 
-### 8.2 `.github/workflows/watchdog.yml`
+### 8.2 `.github/workflows/watchdog.yml` (retired v3.0)
 
 ```yaml
 name: watchdog
@@ -2863,14 +2914,21 @@ for stage in 0..5:
 
 ### 9.3 Runtime loops (production — mapping to the "two /loops" requirement)
 
+**LOOP-A (daily refresh) and LOOP-C (dead-man's switch) are retired in v3.0** along with the
+daily pipeline and the watchdog — there is no scheduled content to refresh or watch for
+staleness anymore. LOOP-B is moot with them (nothing left to hang). Only `pages-deploy.yml`
+remains, on push to `main`.
+
 | Loop | Mechanism | Catches |
 |---|---|---|
-| **LOOP-A** daily refresh | Actions cron 04:56 HKT + `workflow_dispatch` | the core auto-run |
-| **LOOP-B** stuck-build killer | `timeout-minutes: 10` + `concurrency.cancel-in-progress` | any hung/overlapping run — killed inside 10 min, never "stuck for hours" |
-| **LOOP-C** dead-man's switch | watchdog 09:00 HKT → checks the *live* site, not just git → GitHub issue (deduped) + email | silent failures LOOP-B can't see (cron never fired, push failed, **or Pages didn't redeploy**) |
-| **LOOP-D** graceful degrade | client staleness chip (boundary-aware) + offline deterministic rotation (journal — anchor retired v1.39) | everything else — the page NEVER shows an empty slot |
+| **LOOP-A** daily refresh — *retired v3.0* | ~~Actions cron 04:56 HKT + `workflow_dispatch`~~ | ~~the core auto-run~~ |
+| **LOOP-B** stuck-build killer — *retired v3.0, nothing left to hang* | ~~`timeout-minutes: 10` + `concurrency.cancel-in-progress`~~ | ~~any hung/overlapping run~~ |
+| **LOOP-C** dead-man's switch — *retired v3.0* | ~~watchdog 09:00 HKT → checks the *live* site, not just git → GitHub issue (deduped) + email~~ | ~~silent failures LOOP-B can't see~~ |
+| **LOOP-D** graceful degrade — v3.0: Weeks computes fresh from today's HKT date, no fetch, nothing to degrade from | client renders Weeks directly from `lib.mjs`; a build failure shows the `.weeks-error` state (§4.5 item 7) | the page never shows a blank screen on a real failure, it shows an honest error |
 
-Design consequence: the worst possible failure is one morning of yesterday's (or locally rotated) cards, visibly labelled, followed by self-healing the next cron. No standing agents, no machine that must stay awake.
+Design consequence (v3.0): the page has nothing left that can go stale, since it never fetches
+anything — the only production loop left is a human pushing to `main`, which `pages-deploy.yml`
+deploys after `verify.mjs all` gates it green.
 
 ---
 
@@ -2964,10 +3022,10 @@ trigger is closest, plus the raw error — don't spend cycles deliberating the t
 ## §12 — Final acceptance checklist (Stage 5 gate)
 
 **Machine-verifiable (gate Stage 5's `verify.mjs all`):**
-- [ ] Pages URL returns 200 for `/` and `/data/daily.json`, `/manifest.webmanifest`, `/sw.js`
+- [ ] Pages URL returns 200 for `/`, `/manifest.webmanifest`, `/sw.js` (v3.0: `/data/daily.json` no longer exists)
 - [ ] `verify.mjs all` green; budgets met; contrast pairs pass at the corrected thresholds
-- [ ] Both workflows have ≥ 1 green run via dispatch against real content; watchdog's stale-detection path proven via the prescribed mechanism (expected-red, doesn't count against the green-dispatch line)
-- [ ] Zero PII about the owner/his wife (scripted email/phone/financial-figure sweep + human confirmation there's no accidental self-reference); zero quotation-mark glyphs in card bodies; zero banned phrases
+- [ ] `pages-deploy.yml` has ≥ 1 green run on the current head (v3.0: `daily.yml`/`watchdog.yml` retired — the historical Stage-4 stale-detection test no longer applies)
+- [ ] Zero PII about the owner/his wife (scripted email/phone/financial-figure sweep + human confirmation there's no accidental self-reference); zero quotation-mark glyphs or banned phrases in user-facing copy (v3.0: the Weeks epigraph is the only copy left)
 - [ ] Mobile-first proven mechanically: zero `max-width` queries · zero root-absolute local URLs · safe-area + `svh` + `touch-action` present · no fixed widths ≥ 400px in `styles.css`
 - [ ] Installable: manifest valid + served 200 · icons exist (or SVG-fallback decision logged) · `sw.js` byte-identical to the amended Appendix C.2 modulo `ASSETS`, registered, served 200
 - [ ] README runbook complete; `v1.0` tag pushed
@@ -2975,23 +3033,23 @@ trigger is closest, plus the raw error — don't spend cycles deliberating the t
 - [ ] FINAL-AUDIT.md written with an honest "known imperfections" section and the `verify.mjs` diff-vs-Stage-0 summary
 
 **Explicitly deferred to §13 human review (mark UNVERIFIED in FINAL-AUDIT, do not check off here):**
-- [ ] Today's HKT date shows; cards populated; no console errors
+- [ ] Today's HKT date shows; the Weeks grid, both stat rows and the total pill render; no console errors
 - [ ] Theme toggle works both ways; a reload returns to the HKT time-of-day theme (the override is session-only, v1.29); no wrong-theme flash
 - [ ] The bottle's light visibly breathes (brightens/dims slowly) in both themes; pauses when hidden; static under reduced motion; feels calm, not busy
-- [ ] Offline rotation demonstrated live on a phone (airplane mode)
+- [ ] Offline shell demonstrated live on a phone (airplane mode): the page and grid load from the service-worker cache (v3.0: there is no data to rotate anymore)
 
 ## §13 — Human review checklist (the ONE human step, ~20 min, after completion)
 
-1. Open the Pages URL **on your phone**. Does the bottle's light clearly, slowly breathe, feeling alive and calm, not busy? Rotate the phone, scroll — nothing clipped, nothing under the notch or home bar, no sideways scroll; the day's card should be visible without scrolling, and scrolling down should reveal the Weeks grid below it (v1.39 — Weeks merged into this same page).
+1. Open the Pages URL **on your phone**. Does the bottle's light clearly, slowly breathe, feeling alive and calm, not busy? Rotate the phone, scroll — nothing clipped, nothing under the notch or home bar, no sideways scroll; the Weeks heading, the total pill and both stat rows should be visible without scrolling, and scrolling down should reveal the full grid and the epigraph (v3.0 — Weeks is the whole page).
 2. Safari: Share → **Add to Home Screen**. Reopen from the icon — it should launch full-screen like an app, with a proper icon and the chrome matching the theme.
 3. Toggle between pink and dark. Would its intended user smile? (Standalone chrome should follow — the cold-launch splash is always dark-toned since v1.29, a known, logged limitation now parked on daytime launches instead of nights. After 17:00 HKT, also confirm the iOS status bar text reads correctly over the dark chrome — §4.7.8's flagged on-device check.)
-4. **Airplane mode**, reopen from the icon: the shell loads instantly and the `offline rotation` chip appears with valid cards. Turn network back on, pull to refresh — today returns.
-5. Open the **Values** tab and skim all 5 — confirm it reads as the same visual style as Today's cards. Toggle OS **Reduce Motion** and confirm the figure renders a static frame.
-6. Read today's card aloud. Would you keep it? (Your monthly curation replaces the weakest cards — that's where the library becomes *yours*.)
+4. **Airplane mode**, reopen from the icon: the shell loads instantly and the grid renders from the cached shell, computed from today's date (v3.0: nothing is fetched, so there is no offline chip and nothing to go stale). Turn network back on, pull to refresh — nothing should visibly change.
+5. Toggle OS **Reduce Motion** and confirm the figure renders a static frame and the grid appears instantly, unclipped, with no scanline. (The Values tab this step used to cover was retired in v1.37.)
+6. Tap J, then B: the other person's squares should fade, the bar should lift, and the canvas label should say who is highlighted. Zoom in twice, scroll the grid sideways, zoom back out. (v3.0: replaces the card-reading step — there are no cards.)
 7. Skim `audits/CONTENT-REVIEW.md` (~15 min) — delete or reword anything you wouldn't sign, especially any card whose attribution feels like a guess rather than a known idea.
 8. Skim `audits/FINAL-AUDIT.md` "honest notes" + `decisions.md`.
-9. Confirm you received the watchdog test issue/email (from the Stage 4 stale-detection test). Close it if still open.
-10. Tomorrow at 05:00 HKT, glance once — on the phone. Then stop checking — LOOP-C watches so you don't have to.
+9. (Retired in v3.0 — there is no watchdog anymore; slot kept so the numbering below stays valid.)
+10. Tomorrow, glance once — on the phone — and confirm the date line and the grid advanced on their own (both are computed from the clock; nothing runs on a schedule anymore, v3.0). Next Monday, confirm one more square filled in.
 
 ---
 
@@ -3017,7 +3075,13 @@ JS ≤ 60 KB · icons ≤ 150 KB). Per invariant 12, after Stage 0's commit thes
 added or tightened — log any relaxation in `decisions.md` with the original check quoted.
 Output: aligned ✅/❌ table, non-zero exit on any ❌.
 
-## Appendix B — Reference rotation implementation (use verbatim in `lib.mjs`)
+## Appendix B — Reference rotation implementation (retired v3.0; kept as history)
+
+**Retired in v3.0** along with the daily pipeline and the Journal content it rotated —
+`pickIndex`/`xmur3`/`mulberry32` and the rest of this rotation engine no longer exist in
+`lib.mjs`. `hktDateString`/`hktDayNumber`/`hktDateParts` (shown in the code block below) are
+the only functions here still shipped; they're kept because `weeksLived()` and the date line
+depend on them. Kept below as history, not current spec.
 
 ```js
 export function hktDateString(d = new Date()) {
@@ -3103,10 +3167,9 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v23";
+const CACHE = "mindset-v24";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs", "./weeks.js",
-  "./data/cards.json", "./data/daily.json",
   "./manifest.webmanifest", "./assets/favicon.svg",
   "./assets/fonts/fraunces-normal.woff2", "./assets/fonts/fraunces-italic.woff2",
   "./assets/fonts/ibm-plex-mono-400.woff2", "./assets/fonts/ibm-plex-mono-500.woff2",
@@ -3146,7 +3209,7 @@ self.addEventListener("fetch", (e) => {
 });
 ```
 
-Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request. Fable's audit sharpened the reasoning: Chromium-family browsers fetch tab favicons outside the page's service-worker `fetch` handler entirely, so network-first was never actually going to self-heal `favicon.svg` — the bump is the only reliable path. Bumped again to `"mindset-v7"` in v1.21 for the same reason: `favicon.svg`'s content changed again (lion mark → cat-photo mark) when the owner redirected mid-session, before v1.20's lion ever shipped. Bumped again to `"mindset-v8"` in v1.22: `weeks.js` (the new Weeks tab's module) was added to `ASSETS` so it's part of the offline shell from first install, same reasoning as every prior content-driven bump. Bumped again to `"mindset-v9"` in v1.23: `weeks.js`'s own content changed substantially (the combined-grid redesign) — same reasoning again. Bumped `"mindset-v10"`–`"mindset-v13"` across v1.24–v1.28 (each logged in its own changelog entry), and to `"mindset-v14"` in v1.29: the calm→dark theme retoken changed `styles.css`/`app.js`/`index.html` bytes app-wide. Bumped `"mindset-v15"`–`"mindset-v19"` across v1.30–v1.35 (each logged in its own changelog entry), and to `"mindset-v20"` in v1.36: the Mara tab was retired and `mara.js`/`data/mara.json` dropped out of `ASSETS` entirely, so old clients need the purge to stop serving the now-404ing files from cache. Bumped again to `"mindset-v21"` in v1.37: the Values tab was retired and `data/values.json` dropped out of `ASSETS`, same reasoning. Bumped again to `"mindset-v22"` in v1.38: the Kenya card was retired -- `app.js`/`lib.mjs`/`styles.css`/`data/cards.json` all changed bytes (no separate file dropped from `ASSETS` this time, since Kenya lived inside `cards.json`, not its own file). Bumped again to `"mindset-v23"` in v1.39: Anchor and the pre-09:00 focus mode were retired and Weeks merged into the single page -- `app.js`/`lib.mjs`/`styles.css`/`index.html`/`data/cards.json`/`data/daily.json` all changed bytes (no separate file dropped from `ASSETS` this time either). This edit also resynced the `ASSETS` array literal above with the real `sw.js`, which had drifted out of sync across several prior rounds (`weeks.js`, `manifest.webmanifest`, and the font files were live in the real file but missing here; `data/values.json` was gone from the real file since v1.37 but still listed here) -- harmless in practice, since the verify.mjs byte-identity check is explicitly modulo this array, but worth fixing now that this exact block was already open for the CACHE bump.
+Why network-first for everything: when online the user ALWAYS sees today's cards (the stale-cache class of PWA bugs cannot occur); when offline the cached shell + last-known data load instantly and `app.js` shows the `offline rotation` chip. The `res.ok` guard (added in v1.1) is what makes this actually true: v1.0's unconditional `c.put` would silently overwrite a good cached copy with a transient 404/500 (e.g. mid-deploy), which then gets served as the "offline" fallback — the exact bug this guard closes. At Stage 5, extend `ASSETS` with the font files, favicon, and manifest so the offline shell is genuinely complete on first install (the byte-identity check in Appendix A is modulo this array, so extending it here is expected and sanctioned). `CACHE` was bumped to `"mindset-v2"` in v1.2 (drop.js → figure.js changed the asset list) — bump it again any time `ASSETS`' *contents* meaningfully change, so old clients purge stale cached files rather than serving them alongside the new ones (`activate` deletes any cache key that isn't the current `CACHE` name). Bumped again to `"mindset-v6"` in v1.20: `favicon.svg` stayed on the list but its own bytes changed (the lion+heart mark), which the network-first `fetch` handler would eventually pick up on its own — the bump instead forces the new service worker's `install` step to fetch it fresh immediately via `addAll`, rather than leaving that to an incidental request. Fable's audit sharpened the reasoning: Chromium-family browsers fetch tab favicons outside the page's service-worker `fetch` handler entirely, so network-first was never actually going to self-heal `favicon.svg` — the bump is the only reliable path. Bumped again to `"mindset-v7"` in v1.21 for the same reason: `favicon.svg`'s content changed again (lion mark → cat-photo mark) when the owner redirected mid-session, before v1.20's lion ever shipped. Bumped again to `"mindset-v8"` in v1.22: `weeks.js` (the new Weeks tab's module) was added to `ASSETS` so it's part of the offline shell from first install, same reasoning as every prior content-driven bump. Bumped again to `"mindset-v9"` in v1.23: `weeks.js`'s own content changed substantially (the combined-grid redesign) — same reasoning again. Bumped `"mindset-v10"`–`"mindset-v13"` across v1.24–v1.28 (each logged in its own changelog entry), and to `"mindset-v14"` in v1.29: the calm→dark theme retoken changed `styles.css`/`app.js`/`index.html` bytes app-wide. Bumped `"mindset-v15"`–`"mindset-v19"` across v1.30–v1.35 (each logged in its own changelog entry), and to `"mindset-v20"` in v1.36: the Mara tab was retired and `mara.js`/`data/mara.json` dropped out of `ASSETS` entirely, so old clients need the purge to stop serving the now-404ing files from cache. Bumped again to `"mindset-v21"` in v1.37: the Values tab was retired and `data/values.json` dropped out of `ASSETS`, same reasoning. Bumped again to `"mindset-v22"` in v1.38: the Kenya card was retired -- `app.js`/`lib.mjs`/`styles.css`/`data/cards.json` all changed bytes (no separate file dropped from `ASSETS` this time, since Kenya lived inside `cards.json`, not its own file). Bumped again to `"mindset-v23"` in v1.39: Anchor and the pre-09:00 focus mode were retired and Weeks merged into the single page -- `app.js`/`lib.mjs`/`styles.css`/`index.html`/`data/cards.json`/`data/daily.json` all changed bytes (no separate file dropped from `ASSETS` this time either). This edit also resynced the `ASSETS` array literal above with the real `sw.js`, which had drifted out of sync across several prior rounds (`weeks.js`, `manifest.webmanifest`, and the font files were live in the real file but missing here; `data/values.json` was gone from the real file since v1.37 but still listed here) -- harmless in practice, since the verify.mjs byte-identity check is explicitly modulo this array, but worth fixing now that this exact block was already open for the CACHE bump. Bumped again to `"mindset-v24"` in v3.0: the Journal card and the entire daily pipeline were retired -- `./data/cards.json` and `./data/daily.json` dropped out of `ASSETS` entirely (the `data/` directory no longer exists), and `app.js`/`lib.mjs`/`styles.css`/`index.html` all changed bytes again for the same reason.
 
 ### C.3 Registration (last lines of `app.js`)
 
