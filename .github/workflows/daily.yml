@@ -39,7 +39,21 @@ jobs:
         # workflows' `on: push` triggers (GitHub's own loop-prevention) -- without this,
         # pages-deploy.yml would silently never redeploy the bot's daily commit, and the
         # live site would never actually pick up the new daily.json. Dispatch it directly.
+        # Retries below: a transient HTTP 500 from the dispatch API (run 35668702870,
+        # 2026-09-21) left the live site stale for a day even though the commit/push had
+        # already succeeded, so retry a few times before giving up.
         if: steps.commit.outputs.changed == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh workflow run pages-deploy.yml --ref main
+        run: |
+          for attempt in 1 2 3 4 5; do
+            if gh workflow run pages-deploy.yml --ref main; then
+              exit 0
+            fi
+            echo "attempt $attempt failed"
+            if [ "$attempt" -lt 5 ]; then
+              sleep $((5 * 2 ** (attempt - 1)))
+            fi
+          done
+          echo "all attempts failed"
+          exit 1
