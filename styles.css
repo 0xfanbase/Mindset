@@ -209,28 +209,42 @@ main {
   color: var(--muted);
 }
 
-/* Epigraph -- moved into the hero in v4.0 (it belongs with the statement, not after the grid).
-   Both lines share one treatment deliberately: one thought, ~2,000 years apart, not a
-   hierarchy, with each attribution picked out in --accent. Person colours are deliberately NOT
-   used here: those encode data identity, and prose about neither person shouldn't borrow it. */
+/* Epigraph -- hero statement (v4.0), rotating pool (v4.1). One line visible; two stacked
+   slots crossfade. Person colours stay off (data identity ≠ prose). Reduced-motion: no fade. */
 .epigraph {
   max-width: 340px;
   margin: 0 auto;
+  position: relative;
+  min-height: 4.5em; /* room for two-line paraphrases without layout jump */
 }
-.epigraph p {
+.epigraph-line {
   margin: 0;
   font-family: "Fraunces", Georgia, serif;
   font-style: italic;
   font-size: 14px;
   line-height: 1.5;
   color: var(--ink);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 700ms ease;
 }
-.epigraph p + p { margin-top: 8px; }
+.epigraph-line.is-active {
+  position: relative;
+  opacity: 1;
+  pointer-events: auto;
+}
 .epigraph-attr {
   display: block;
   margin-top: 2px;
   font-size: 12px;
   color: var(--accent);
+}
+@media (prefers-reduced-motion: reduce) {
+  .epigraph-line { transition: none; }
 }
 
 /* Both bars, always (item 3 is about the GRID; the comparison still belongs here). The
@@ -314,6 +328,13 @@ main {
   min-width: 0;
   max-width: 100%;
 }
+
+/* v4.1: Year is only four calendar rows — keep the 60svh floor for Life/Decade presence,
+   drop it on Year so the short card does not leave a tall empty column under the grid. */
+.weeks-root.is-year {
+  min-height: 0;
+}
+
 
 /* View switch (item 5): a tablist, because these three buttons switch what the one panel below
    shows. Roving tabindex + arrow keys are wired in weeks.js. */

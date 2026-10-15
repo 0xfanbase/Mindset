@@ -11,7 +11,7 @@ selected person's lived weeks are solid, the other appears only as a faint lead 
 hairline outline on their own current week, so the square that draws the eye is *now* — which
 fills a seventh at a time as the week goes by, with a slow halo breathing on the same 7-second
 cycle as the bottle in the header. Three views: **Life** (the whole 90 years), **Decade** (the
-current ten years, twice the size), **Year** (52 weeks as four rows of 13).
+current ten years, twice the size), **Year** (the current calendar year in Hong Kong time — 52 weeks as four rows of 13, not an age-year slice).
 
 One dark theme (v4.0 — the pink `blossom` theme and the Hong Kong theme clock that switched it
 were retired at the owner's request). The page background is the night sky; only the grid sits
@@ -46,7 +46,7 @@ month, never a day). `verify.mjs` pins the current values, so update its expecta
 same commit or the build will correctly fail.
 
 **Bump the service-worker cache** — any time `sw.js`'s `ASSETS` list, or the bytes of any file
-already on it, meaningfully change, bump `CACHE` (currently `mindset-v26`, bumped from `mindset-v25` for the Decade/Year canvas fix) so old
+already on it, meaningfully change, bump `CACHE` (currently `mindset-v27`, bumped from `mindset-v26` for calendar-year Year + epigraph rotation) so old
 installed clients purge stale cached files instead of serving them alongside the new ones.
 Keep `BUILD-PLAN.md` Appendix C.2's code block in sync with the real file.
 
