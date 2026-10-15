@@ -297,6 +297,8 @@ main {
 }
 .milestone-name { color: var(--ink); }
 .milestone-when { color: var(--muted); white-space: nowrap; }
+/* "this week" — the milestone that lands on the current age-week. */
+.milestone.is-now .milestone-when { color: var(--accent); }
 
 /* ---- Weeks (the grid) ---- runs edge to edge under the hero; only the grid itself sits on a
    card. min-height gives the centrepiece real presence before the canvas has sized itself. */
@@ -307,6 +309,10 @@ main {
   margin-top: 22px;
   min-height: 60vh;
   min-height: 60svh;
+  /* v4.0.1: stop Decade's 2x canvas from expanding the CSS Grid 1fr track (min-width:auto
+     content minimum) — that feedback loop blew pitch to millions of CSS px. */
+  min-width: 0;
+  max-width: 100%;
 }
 
 /* View switch (item 5): a tablist, because these three buttons switch what the one panel below
@@ -341,10 +347,14 @@ main {
   background: var(--surface);
   border-radius: 16px;
   box-shadow: 0 10px 28px var(--shadow);
+  min-width: 0;
+  max-width: 100%;
 }
 .weeks-frame {
   display: flex;
   align-items: flex-start;
+  min-width: 0;
+  max-width: 100%;
 }
 .weeks-gutter {
   display: flex;
@@ -471,6 +481,12 @@ footer {
     grid-template-columns: minmax(300px, 380px) 1fr;
     gap: 40px;
     align-items: start;
+  }
+  /* Grid items default min-width:auto (= content min). Without 0, a wide decade canvas
+     grows the 1fr column and fitPitch reads the grown width — the P0 explosion. */
+  main > #hero,
+  main > .weeks-root {
+    min-width: 0;
   }
   .hero {
     position: sticky;

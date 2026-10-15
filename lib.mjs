@@ -38,6 +38,19 @@ export const LIFE_WEEKS_YEARS = 90;
 export const LIFE_WEEKS_PER_ROW = 52;
 export const LIFE_WEEKS_TOTAL = LIFE_WEEKS_YEARS * LIFE_WEEKS_PER_ROW;
 
+// Grid cell pitch (v4.0.1). Pure function of a frozen container width — never of a metric the
+// canvas itself can inflate. weeks.js measures a stable box, then calls this; verify.mjs
+// imports it directly. MAX_PITCH is the hard ceiling that stops a layout feedback loop from
+// growing canvases to millions of CSS pixels (Decade zoom 2 × growing scroller width).
+export const MIN_PITCH = 4;
+export const MAX_PITCH = 64;
+export function pitchFor(containerW, cols, zoom) {
+  if (!(containerW > 0) || !Number.isFinite(containerW)) return MIN_PITCH;
+  const raw = (containerW / cols) * zoom;
+  if (!Number.isFinite(raw)) return MIN_PITCH;
+  return Math.min(MAX_PITCH, Math.max(MIN_PITCH, raw));
+}
+
 export const LIFE_PEOPLE = [
   { id: "J", birthMonthHKT: "1989-12" },
   { id: "B", birthMonthHKT: "1988-11" },
