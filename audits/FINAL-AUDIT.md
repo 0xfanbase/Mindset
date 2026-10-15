@@ -174,6 +174,14 @@ green. Also verified in a real browser (Playwright, repo served from disk, no de
 errors, no horizontal overflow, and the hero complete above the fold (bars' bottom edge at
 452px on 390×844, 465px on 320×568).
 
+
+**2026-10-15, v4.0.1 update:** P0 fix for Decade/Year canvas explosion (layout feedback:
+`fitPitch` × CSS Grid `min-width:auto` × ResizeObserver). `pitchFor`/`MIN_PITCH`/`MAX_PITCH`
+live in `lib.mjs`; `weeks.js` measures a stable frame-minus-gutter width; styles contain the
+grid track; two new stage1 checks gate the contract. SW cache `mindset-v25` → `mindset-v26`
+(icons added to `ASSETS`). Check count: **67 → 69** (2 added, 0 removed, 0 loosened).
+`verify.mjs all`: **69/69**, green.
+
 ## Acceptance checklist (BUILD-PLAN.md §12)
 
 **Machine-verifiable — all green (`verify.mjs all`, 59/59):**

@@ -85,7 +85,7 @@ function renderHero(id) {
     return;
   }
   for (const m of next) {
-    const li = el("li", "milestone");
+    const li = el("li", "milestone" + (m.weeksUntil === 0 ? " is-now" : ""));
     li.append(el("span", "milestone-name", m.label),
       el("span", "milestone-when", m.weeksUntil === 0 ? "this week" : `in ${commas(m.weeksUntil)} weeks`));
     hero.milestones.appendChild(li);

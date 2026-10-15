@@ -1,9 +1,10 @@
-const CACHE = "mindset-v25";
+const CACHE = "mindset-v26";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs", "./weeks.js",
   "./manifest.webmanifest", "./assets/favicon.svg",
   "./assets/fonts/fraunces-normal.woff2", "./assets/fonts/fraunces-italic.woff2",
   "./assets/fonts/ibm-plex-mono-400.woff2", "./assets/fonts/ibm-plex-mono-500.woff2",
+  "./assets/icons/icon-192.jpg", "./assets/icons/icon-512.jpg", "./assets/icons/apple-touch-icon.png",
 ];
 
 self.addEventListener("install", (e) => {

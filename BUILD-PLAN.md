@@ -2422,15 +2422,15 @@ logged in decisions.md.
 
 ## §1 — Mission & product summary
 
-A single-page, public, static website hosted on GitHub Pages (v3.0 — "Weeks is the site"). It
-is a life-in-weeks chart for J and B — one combined 90-year grid, one square per week, headed
-by a living "mind" — a small bottle of light, glowing and dimming on a slow breathing cycle, on
-repeat — and the current date, always Asia/Hong_Kong. Two themes: a soft pink daytime default
-and a warm-charcoal dark theme that owns 17:00–06:00 HKT (v1.29). Zero backend. Zero
-dependencies. Zero personal data (about the owner — see §2.1). There are no daily cards
-anymore: the Journal card and everything that fed it were retired in v3.0 (see the v3.0
-changelog entry above); the page is computed fresh from today's HKT date on every load and
-every resumed visit, and changes only when a human pushes to `main`.
+A single-page, public, static website hosted on GitHub Pages (v3.0 — "Weeks is the site";
+v4.0 — dark-only statement). It is a life-in-weeks chart for J and B — one 90-year grid, one
+square per week, headed by a living "mind" — a small bottle of light, glowing and dimming on a
+slow breathing cycle, on repeat — and the current date, always Asia/Hong_Kong. **One dark theme
+only** (v4.0 — the blossom daytime theme and the 17:00–06:00 HKT clock that switched it are
+retired). Zero backend. Zero dependencies. Zero personal data (about the owner — see §2.1).
+There are no daily cards anymore: the Journal card and everything that fed it were retired in
+v3.0 (see the v3.0 changelog entry above); the page is computed fresh from today's HKT date on
+every load and every resumed visit, and changes only when a human pushes to `main`.
 
 ---
 
@@ -2443,8 +2443,8 @@ every resumed visit, and changes only when a human pushes to `main`.
    attributions like `— after Seneca`, `— after Bill Perkins`, etc. (per §5) are intentional
    and required, not a PII violation — the site is public, and quoting/citing public thinkers
    was the design intent of the now-retired Anchor cards (v1.39) and remains the rule for any
-   future content that cites one. The pink theme is still called `blossom`
-   in code and UI, never a person's name. Enforcement is mechanical only where it can be
+   future content that cites one. (The retired pink theme was called `blossom` in code —
+   never a person's name; the theme itself is gone as of v4.0.) Enforcement is mechanical only where it can be
    (email-address pattern sweep excluding the git bot identity; obvious phone/financial-figure
    patterns); person/employer-of-the-owner PII is otherwise enforced by the writing rules (§5)
    never referencing the owner at all, plus the §13 human review — not by a script pretending
@@ -2458,9 +2458,10 @@ every resumed visit, and changes only when a human pushes to `main`.
 4. **Node ≥ 20 built-ins only** for scripts (global `fetch`, `node:fs`, `node:test` allowed). No `npm install` at any point. (v3.0: `scripts/generate-daily.mjs`, the one script here that ever used `fetch`, is retired along with the daily pipeline — nothing left in `scripts/` makes network calls.)
 5. **Static hosting truth:** everything must work on GitHub Pages served from `main` branch root. Include a `.nojekyll` file. All stages commit and push directly to `main` — the owner has authorized this for this repo; there is no feature-branch/PR step in this plan.
 6. **Performance budget:** total page weight ≤ 600 KB excluding fonts (raised from 350 KB in v1.32 — a logged invariant-12 exception, owner-authorized, to fit the 5-year Journal pool; see decisions.md); fonts ≤ 300 KB total; JS ≤ 65 KB total (raised from 60 KB in v1.34 — a logged invariant-12 exception, to fit the widened cross-seam no-repeat guarantee plus several bug fixes; see decisions.md); the figure animation must pause when the tab is hidden and must honour `prefers-reduced-motion`.
-7. **Accessibility floor:** WCAG AA contrast for all text token pairs (verified numerically in `verify.mjs`, including `(--muted,--bg)` and `(--accent,--bg)` — not just the on-`--surface` pairs — and gated at 4.5:1 for any pair used for normal-size text, 3:1 only where the token is genuinely large-text/UI-component use), visible keyboard focus, `aria` roles on the grid view tabs (`role="tablist"`/`tab`/`tabpanel`) and the person switch (`role="radiogroup"`/`radio`), tap targets ≥ 44px, semantic landmarks (`header`, `main`, `nav`, `footer`).
+7. **Accessibility floor:** WCAG AA contrast for all text token pairs (verified numerically in `verify.mjs`, including `(--muted,--bg)` and `(--accent,--bg)` — not just the on-`--surface` pairs — and gated at 4.5:1 for any pair used for normal-size text, 3:1 only where the token is genuinely large-text/UI-component use), visible keyboard focus, `aria` roles on the grid view tabs (`role="tablist"`/`tab`/`tabpanel`) and the person switch (`role="radiogroup"`/`radio`), tap targets ≥ 44px, semantic landmarks (`header`, `main`, `footer` — no `<nav>`; the
+   view switch is a `role="tablist"` inside the weeks region).
 8. **Timezone law:** every date shown or computed is **Asia/Hong_Kong**, derived via `Intl.DateTimeFormat` with an explicit `timeZone` — never a bare `new Date().toLocaleDateString()` and never the runner's local time. `app.js`/`figure.js` must not call locale-date APIs without an explicit `timeZone` (Stage 1 verify greps for this).
-9. **Search visibility:** `<meta name="robots" content="noindex">` (public but unlisted — note: this hides the Pages URL from search, but the GitHub repo itself, including `cards.json`, remains a public, indexable, code-searchable text file regardless. Don't rely on "unlisted" as a content-privacy mechanism).
+9. **Search visibility:** `<meta name="robots" content="noindex">` (public but unlisted — note: this hides the Pages URL from search, but the GitHub repo itself remains a public, indexable, code-searchable tree regardless. Don't rely on "unlisted" as a content-privacy mechanism).
 10. **Git hygiene:** no force-push, no history rewrites of already-pushed commits, no edits outside this repo, no global installs, conventional commit messages per stage as specified. `git pull --rebase origin main` (rebasing your own unpushed local commits onto another pushed commit) is explicitly permitted where noted — this is not the kind of history rewrite the ban refers to. (One owner-authorized exception is on record — the 2026-07-25 pushed-history PII purge; see `audits/decisions.md`, entries dated 2026-07-25 — logged there per the same convention invariant 12 uses for its own exceptions.)
 11. **Mobile-first law:** the phone is the PRIMARY client; desktop is the adaptation. Base CSS **is** the mobile layout; wider layouts are layered on exclusively via `min-width` media queries — **`max-width` media queries are banned** (mechanically verifiable). All URLs — assets, fetches, SW scope, manifest `start_url` — are **relative** (`./…`), never root-absolute. Viewport heights use `svh` (with a `vh` fallback line above it). Safe-area insets are respected. The page must be installable to the home screen (§4.7). The **hero — heading, person switch, number and both bars — is complete above the fold** on a 390×844 viewport (see §4.4) — the grid below it scrolls, the v4.0 re-scoping of the v3.0 guarantee (which pointed at the retired stat rows; see decisions.md) — this is still stricter than "mobile-first," it's "mobile-fits" for the part of the page the app opens on.
 12. **Verifier integrity ratchet.** After Stage 0's commit, `verify.mjs` checks and budget constants may only be added or tightened, never relaxed. Any relaxation requires a `decisions.md` entry quoting the original check text and the reason. `FINAL-AUDIT.md` must include a one-paragraph diff summary of `verify.mjs` versus its Stage 0 version. This exists because the same agent that hits a hard-to-satisfy check is the one who would otherwise be tempted to quietly soften it.
@@ -2481,7 +2482,7 @@ every resumed visit, and changes only when a human pushes to `main`.
 ├── sw.js                   # offline shell, network-first (Appendix C, verbatim)
 ├── assets/
 │   ├── fonts/              # self-hosted woff2 + OFL.txt licences
-│   ├── icons/              # icon-192.png, icon-512.png, apple-touch-icon.png (180)
+│   ├── icons/              # icon-192.jpg, icon-512.jpg, apple-touch-icon.png (180)
 │   └── favicon.svg
 ├── scripts/
 │   └── verify.mjs          # stage-gated verification harness (v3.0: generate-daily.mjs retired)
@@ -2630,19 +2631,16 @@ be read as still describing the mockup's own tab/card markup:
 └────────────────────────────────────┘
 ```
 
-On mobile, the header through the Weeks heading and both people's stat rows must fit one
-viewport height (`100svh`, `vh` fallback) without scrolling; the grid and epigraph below them
-are a deliberate, expected scroll, not an overflow fallback (v3.0 — Weeks is now the sole page
-content, so the one-screen rule covers only the part of Weeks the app opens on, not the full
-scrollable grid; before that, v1.39 had already re-scoped the same rule once, from the whole
-page down to just the Journal card, when Weeks first merged in below it). If a very small
-viewport or large system font forces the heading/stats themselves to overflow, allow the page
+On mobile, the header through the **hero** (heading, person switch, number, both bars —
+invariant 11 / v4.0) must fit one viewport height (`100svh`, `vh` fallback) without scrolling;
+the view switch and grid below are a deliberate, expected scroll, not an overflow fallback. If
+a very small viewport or large system font forces the hero itself to overflow, allow the page
 to scroll further rather than clipping content — never clip.
 
-**v1.4:** the figure moved out of `<main>` to be `<body>`'s first child, ahead of `<header>` —
-live feedback asked for it to sit at the true top of the page. It carries the safe-area-inset-top
-padding now instead of the header (the header's own top padding dropped to a small fixed value
-since it's no longer adjacent to the notch/status bar).
+**v1.4–v1.7 (historical path):** the figure briefly lived as `<body>`'s first child ahead of
+`<header>`, then the header was restructured into a 3-column grid with the figure centred
+between wordmark and a pad cell. **Current (v4.0):** `<mindset-figure>` sits inside
+`<header class>`'s middle column (`.figure-wrap`); safe-area-inset-top padding is on `header`.
 
 ### 4.5 Components
 
@@ -3111,7 +3109,7 @@ trigger is closest, plus the raw error — don't spend cycles deliberating the t
 3. Switch between J and B, then between Life, Decade and Year. Would its intended user smile? (There is one theme as of v4.0 — the cold-launch splash, the status bar and the page are all `#1C1F2A`, so no daytime/night mismatch remains. Confirm the iOS status bar text reads correctly over the dark chrome — §4.7.8's flagged on-device check.)
 4. **Airplane mode**, reopen from the icon: the shell loads instantly and the grid renders from the cached shell, computed from today's date (v3.0: nothing is fetched, so there is no offline chip and nothing to go stale). Turn network back on, pull to refresh — nothing should visibly change.
 5. Toggle OS **Reduce Motion** and confirm the figure renders a static frame and the grid appears instantly, unclipped, with no scanline. (The Values tab this step used to cover was retired in v1.37.)
-6. Tap J, then B: the other person's squares should fade, the bar should lift, and the canvas label should say who is highlighted. Zoom in twice, scroll the grid sideways, zoom back out. (v3.0: replaces the card-reading step — there are no cards.)
+6. Tap J, then B: the grid re-aims, the selected bar lifts, and the canvas label should say who is highlighted. Switch Life → Decade → Year → Life: Decade may scroll horizontally (intentional 2× pitch); Year shows 13×4; returning to Life must restore a normal-sized grid without a reload. (v4.0: views replaced +/- zoom; v3.0: no cards.)
 7. Skim `audits/CONTENT-REVIEW.md` (~15 min) — delete or reword anything you wouldn't sign, especially any card whose attribution feels like a guess rather than a known idea.
 8. Skim `audits/FINAL-AUDIT.md` "honest notes" + `decisions.md`.
 9. (Retired in v3.0 — there is no watchdog anymore; slot kept so the numbering below stays valid.)
@@ -3233,7 +3231,7 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v25";
+const CACHE = "mindset-v26";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs", "./weeks.js",
   "./manifest.webmanifest", "./assets/favicon.svg",

@@ -8,11 +8,11 @@
 import {
   hktDateString, weeksLived, weekProgress, displayWeek, commas,
   LIFE_WEEKS_TOTAL, LIFE_WEEKS_PER_ROW, LIFE_PEOPLE,
+  MIN_PITCH, MAX_PITCH, pitchFor,
 } from "./lib.mjs";
 
 const DPR_CAP = 2;
 const DOT_FRACTION = 0.7; // dot size as a fraction of the cell pitch; remainder is gap
-const MIN_PITCH = 4;
 const BAND_ALPHA = 0.35; // the other person's already-lived lead, readable but quiet
 const OTHER_MARK_ALPHA = 0.6; // the other person's own current-week outline
 const ROW_RULE_ALPHA = 0.35;
@@ -49,7 +49,8 @@ let built = false;
 let viewId = "life";
 let personId = "J";
 let lastDrawnDateHKT = null;
-let chart = null; // { canvas, ctx, scroller, gutter, marker, tabs }
+let lastContainerW = 0; // frozen width last used for pitch — ResizeObserver ignores self-caused noise
+let chart = null; // { canvas, ctx, scroller, gutter, marker, tabs, panel, frame, card }
 
 // The window of week indices this view shows. Decade/Year follow the selected person's own
 // current week; past the clamp they pin to the last full window rather than running off the
@@ -60,9 +61,19 @@ function windowFor(view, lived) {
   return Math.min(Math.floor(lived / span) * span, LIFE_WEEKS_TOTAL - span);
 }
 
-function fitPitch(view) {
-  const w = chart.scroller.clientWidth || chart.scroller.parentElement.clientWidth;
-  return Math.max(MIN_PITCH, (w / view.cols) * view.zoom);
+// Stable box: the frame's laid-out width minus the gutter. The frame is sized by the card /
+// page track (CSS min-width:0 on .weeks-root), not by the canvas inside the scroller.
+function measureContainerWidth() {
+  if (!chart) return 0;
+  const gutterW = chart.gutter ? chart.gutter.offsetWidth : 0;
+  if (chart.frame && chart.frame.clientWidth > 0) {
+    return Math.max(0, chart.frame.clientWidth - gutterW);
+  }
+  if (chart.card && chart.card.clientWidth > 0) {
+    return Math.max(0, chart.card.clientWidth - gutterW);
+  }
+  // Last resort only — prefer the stable boxes above.
+  return chart.scroller.clientWidth || 0;
 }
 
 function sizeCanvas(canvas, ctx, cssW, cssH) {
@@ -225,15 +236,24 @@ function paintGutter(view, geo) {
   }
 }
 
-// Defensive: a scroller reporting zero client width (container not yet laid out, or a
-// ResizeObserver firing mid-reflow) would draw at MIN_PITCH and stamp a wrong lastDrawnDateHKT,
-// which would make refreshIfStale() skip the real redraw once real width is available.
-function redrawAll(centerNow = false) {
-  if (!chart || chart.scroller.clientWidth === 0) return;
+// Snapshot a stable container width, then pitch from that freeze — never from a metric the
+// canvas itself can inflate. force=true for view/person/date changes; ResizeObserver passes
+// false so a self-caused frame blip (canvas CSS size changing) is ignored when width is unchanged.
+function redrawAll(centerNow = false, force = true) {
+  if (!chart) return;
+  const containerW = measureContainerWidth();
+  if (containerW === 0) return;
+  if (!force && containerW === lastContainerW) return;
   const view = VIEWS[viewId];
-  const geo = drawGrid(view, fitPitch(view));
+  const pitch = pitchFor(containerW, view.cols, view.zoom);
+  // Defensive: canvas CSS size must stay finite and within the capped pitch envelope.
+  const cssW = view.cols * pitch;
+  const cssH = (view.count / view.cols) * pitch;
+  if (!Number.isFinite(cssW) || !Number.isFinite(cssH) || cssW > view.cols * MAX_PITCH + 0.5) return;
+  const geo = drawGrid(view, pitch);
   paintGutter(view, geo);
   placeMarker(geo);
+  lastContainerW = containerW;
   lastDrawnDateHKT = hktDateString(new Date());
   if (centerNow && geo.showNow) {
     const x = ((geo.Pw - geo.start) % geo.cols) * geo.pitch;
@@ -339,12 +359,14 @@ function build() {
   card.appendChild(frame);
   root.appendChild(card);
 
-  chart = { canvas, ctx: canvas.getContext("2d"), scroller, gutter, marker, tabs, panel: card };
+  chart = { canvas, ctx: canvas.getContext("2d"), scroller, gutter, marker, tabs, panel: card, frame, card };
   syncTabs();
-  redrawAll();
+  redrawAll(false, true);
 
   if (window.ResizeObserver) {
-    new ResizeObserver(debounce(() => redrawAll(), 120)).observe(frame);
+    // Observe the frame (stable box). Ignore callbacks where measureContainerWidth is unchanged
+    // — those are almost always our own canvas CSS resize, not a real viewport change.
+    new ResizeObserver(debounce(() => redrawAll(false, false), 120)).observe(frame);
   }
 }
 

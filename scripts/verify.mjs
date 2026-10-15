@@ -746,6 +746,45 @@ function stage1() {
     assert.doesNotMatch(src, /ZOOM_MULT|setZoom|buildStatButton|stickyFocus/, "the zoom/stat/focus model was retired in v4.0");
   });
 
+  check("stage1", "lib.mjs: pitchFor contract — MAX_PITCH cap, decade zoom 2, stable-width (v4.0.1 canvas fix)", async () => {
+    // P0 2026-10-15: Decade/Year pitch was derived from scroller.clientWidth which the
+    // decade's own 2x canvas inflated via CSS Grid min-width:auto, then ResizeObserver
+    // re-fit — silent multi-million-px canvases. pitchFor(containerW, cols, zoom) is the
+    // pure contract (lives in lib.mjs with the other life-math); weeks.js must measure a
+    // stable box and hard-cap via MAX_PITCH. Tighten-only addition (invariant 12).
+    const lib = await import(`file://${abs("lib.mjs")}`);
+    assert.equal(typeof lib.pitchFor, "function", "pitchFor must be exported from lib.mjs");
+    assert.equal(typeof lib.MIN_PITCH, "number");
+    assert.equal(typeof lib.MAX_PITCH, "number");
+    assert.ok(lib.MAX_PITCH >= 32 && lib.MAX_PITCH <= 128, `MAX_PITCH ${lib.MAX_PITCH} outside sane 32..128`);
+    assert.ok(lib.MIN_PITCH >= 1 && lib.MIN_PITCH < lib.MAX_PITCH);
+    const src = read("weeks.js");
+    assert.match(src, /decade:\s*\{[^}]*zoom:\s*2/, "decade view must keep zoom: 2 (intentional 2x scroll)");
+    assert.match(src, /measureContainerWidth/, "stable-box measureContainerWidth must exist");
+    assert.match(src, /lastContainerW/, "ResizeObserver self-cause guard (lastContainerW) must exist");
+    assert.match(src, /pitchFor\(/, "weeks.js must call pitchFor");
+    assert.match(src, /MAX_PITCH/, "weeks.js must reference MAX_PITCH for the canvas CSS guard");
+    assert.equal(lib.pitchFor(520, 52, 1), 10);
+    assert.equal(lib.pitchFor(520, 52, 2), 20);
+    assert.equal(lib.pitchFor(130, 13, 1), 10);
+    assert.equal(lib.pitchFor(0, 52, 2), lib.MIN_PITCH);
+    assert.equal(lib.pitchFor(-1, 52, 2), lib.MIN_PITCH);
+    assert.equal(lib.pitchFor(Number.POSITIVE_INFINITY, 52, 2), lib.MIN_PITCH);
+    assert.equal(lib.pitchFor(1e9, 52, 2), lib.MAX_PITCH);
+    const capped = lib.pitchFor(1e9, 52, 2) * 52;
+    assert.ok(capped <= 52 * lib.MAX_PITCH + 0.5);
+    assert.ok(capped < 10000, `capped decade CSS width ${capped} still absurd`);
+  });
+
+  check("stage1", "styles.css: weeks grid track cannot grow with canvas (min-width:0 on .weeks-root / main children)", () => {
+    // Companion to the pitchFor contract: CSS Grid's default min-width:auto lets intrinsic
+    // canvas size expand the 1fr column. Gate the containment that stops that.
+    const css = read("styles.css");
+    assert.match(css, /\.weeks-root\s*\{[^}]*min-width:\s*0/s, ".weeks-root must set min-width: 0");
+    assert.match(css, /main\s*>\s*\.weeks-root[\s\S]*?min-width:\s*0/,
+      "desktop main > .weeks-root must set min-width: 0");
+  });
+
   check("stage1", "sw.js: every relative ASSETS entry exists on disk (addAll() rejects atomically on any 404)", () => {
     // v3.0 audit finding (N2): a nonexistent path in ASSETS passed 64/64 locally, yet
     // cache.addAll() fails the whole install on a single 404, which would silently break every
