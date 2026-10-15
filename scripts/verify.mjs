@@ -728,23 +728,28 @@ function stage1() {
     assert.equal(String(manifest.background_color).toUpperCase(), bg, `manifest background_color ${manifest.background_color} != --bg ${bg}`);
   });
 
-  check("stage1", "weeks.js: view model constants: three views (life/decade/year) with cols 52/52/13 and the year view count 52", () => {
-    // The three views replaced the +/- zoom in v4.0. Their column counts are the grid's whole
-    // shape -- 52 keeps a row a year, 13 turns the Year view into four quarters of 13 weeks --
-    // so a silent edit to either would change what the page means, not just how it looks.
+  check("stage1", "weeks.js: view model — life/decade life-weeks; year is HKT calendar (CALENDAR_YEAR_COLS/COUNT)", () => {
+    // v4.0: three views replaced +/- zoom. v4.1: Year is a shared HKT calendar year (13×4=52
+    // cells from Jan 1 HKT), not an age-year life slice — cols/count come from lib.mjs so the
+    // canvas and the math cannot drift. Life/Decade keep literal 52-col life-week grids.
     const src = read("weeks.js");
     const block = /const VIEWS = \{([\s\S]*?)\n\};/.exec(src);
     assert.ok(block, "could not find the VIEWS constant in weeks.js");
-    for (const [id, cols] of [["life", 52], ["decade", 52], ["year", 13]]) {
+    for (const [id, cols] of [["life", 52], ["decade", 52]]) {
       const row = new RegExp(`${id}:\\s*\\{[^}]*cols:\\s*(\\d+)`).exec(block[1]);
       assert.ok(row, `no ${id} view in VIEWS`);
       assert.equal(Number(row[1]), cols, `${id} view cols ${row[1]}, expected ${cols}`);
     }
-    const year = /year:\s*\{[^}]*count:\s*(\d+)/.exec(block[1]);
-    assert.ok(year, "no count on the year view");
-    assert.equal(Number(year[1]), 52, `year view count ${year[1]}, expected 52`);
-    assert.doesNotMatch(src, /ZOOM_MULT|setZoom|buildStatButton|stickyFocus/, "the zoom/stat/focus model was retired in v4.0");
+    assert.match(block[1], /year:\s*\{[^}]*cols:\s*CALENDAR_YEAR_COLS/, "year view must use CALENDAR_YEAR_COLS");
+    assert.match(block[1], /year:\s*\{[^}]*count:\s*CALENDAR_YEAR_COUNT/, "year view must use CALENDAR_YEAR_COUNT");
+    assert.match(src, /calendarYearState\(/, "Year draw path must call calendarYearState");
+    assert.match(src, /syncYearChrome/, "Year view must call syncYearChrome for .is-year chrome");
+    assert.match(read("styles.css"), /\.weeks-root\.is-year\s*\{[^}]*min-height:\s*0/s,
+      ".weeks-root.is-year must set min-height: 0 (no 60svh empty column under Year)");
+    assert.doesNotMatch(src, /YEAR_GUTTER|ZOOM_MULT|setZoom|buildStatButton|stickyFocus/,
+      "age-year YEAR_GUTTER and zoom/stat/focus model must stay retired");
   });
+
 
   check("stage1", "lib.mjs: pitchFor contract — MAX_PITCH cap, decade zoom 2, stable-width (v4.0.1 canvas fix)", async () => {
     // P0 2026-10-15: Decade/Year pitch was derived from scroller.clientWidth which the
@@ -774,6 +779,66 @@ function stage1() {
     const capped = lib.pitchFor(1e9, 52, 2) * 52;
     assert.ok(capped <= 52 * lib.MAX_PITCH + 0.5);
     assert.ok(capped < 10000, `capped decade CSS width ${capped} still absurd`);
+  });
+
+  check("stage1", "lib.mjs: calendarYearState — HKT year window, 52 cells, monotone index, Jan-origin (v4.1)", async () => {
+    // Year view is the current calendar year in Asia/Hong_Kong, shared by J and B. Always
+    // 52 cells (13×4) clipped from Jan 1 HKT; late-December spill past cell 51 is accepted.
+    const lib = await import(`file://${abs("lib.mjs")}`);
+    assert.equal(lib.CALENDAR_YEAR_COLS, 13);
+    assert.equal(lib.CALENDAR_YEAR_COUNT, 52);
+    assert.equal(typeof lib.calendarYearState, "function");
+    assert.equal(typeof lib.hktCalendarYear, "function");
+    // Mid-year: 2026-07-01 12:00 HKT = 2026-07-01T04:00:00Z
+    const mid = lib.calendarYearState(new Date("2026-07-01T04:00:00Z"));
+    assert.equal(mid.year, 2026);
+    assert.equal(mid.count, 52);
+    assert.equal(mid.cols, 13);
+    assert.ok(mid.currentIndex >= 25 && mid.currentIndex <= 27, `July index ${mid.currentIndex}`);
+    assert.ok(mid.fraction > 0 && mid.fraction <= 1);
+    assert.equal(mid.rowMonths.length, 4);
+    assert.equal(mid.rowMonths[0], "Jan");
+    // Jan 1 HKT 2026
+    const jan = lib.calendarYearState(new Date("2025-12-31T16:00:00Z")); // 2026-01-01 00:00 HKT
+    assert.equal(jan.year, 2026);
+    assert.equal(jan.currentIndex, 0);
+    // End of 2026 clamps to last cell
+    const late = lib.calendarYearState(new Date("2026-12-28T04:00:00Z"));
+    assert.equal(late.year, 2026);
+    assert.equal(late.currentIndex, 51);
+    // Monotone across the year (monthly steps)
+    let prev = -1;
+    for (let mo = 0; mo < 12; mo++) {
+      const s = lib.calendarYearState(new Date(Date.UTC(2026, mo, 15, 4)));
+      assert.equal(s.year, 2026);
+      assert.ok(s.currentIndex >= prev, `index regress ${prev} -> ${s.currentIndex} at month ${mo}`);
+      prev = s.currentIndex;
+    }
+  });
+
+  check("stage1", "app.js: EPIGRAPH pool 8–12 lines + rotator (dwell/fade/pause/reduced-motion) (v4.1)", () => {
+    const src = read("app.js");
+    const texts = [...src.matchAll(/text:\s*"((?:[^"\\]|\\.)*)"/g)];
+    const attrs = [...src.matchAll(/attr:\s*"((?:[^"\\]|\\.)*)"/g)];
+    assert.ok(texts.length >= 8 && texts.length <= 12,
+      `EPIGRAPH text count ${texts.length}, expected 8–12`);
+    assert.equal(texts.length, attrs.length, "each EPIGRAPH line needs matching attr");
+    for (const am of attrs) {
+      assert.ok(am[1].startsWith("— after "), `attr must be '— after …', got: ${am[1]}`);
+    }
+    assert.match(src, /EPIGRAPH_DWELL_MS\s*=\s*1[5-8]\d{3}/, "dwell ~15–18s");
+    assert.match(src, /EPIGRAPH_FADE_MS\s*=\s*700/, "crossfade ~700ms");
+    assert.match(src, /prefers-reduced-motion/, "reduced-motion branch required");
+    assert.match(src, /document\.hidden/, "pause when document.hidden");
+    assert.match(src, /initEpigraph/, "initEpigraph must exist");
+    assert.match(src, /epigraph-line/, "stacked .epigraph-line slots for crossfade");
+    const epiFn = /function initEpigraph[\s\S]*?\n\}\n\nfunction /.exec(src);
+    assert.ok(epiFn, "could not isolate initEpigraph function");
+    assert.doesNotMatch(epiFn[0], /aria-live/, "epigraph rotator must not set aria-live");
+    const css = read("styles.css");
+    assert.match(css, /\.epigraph-line/, "styles must define .epigraph-line");
+    assert.match(css, /prefers-reduced-motion:[^}]*\.epigraph-line/s,
+      "reduced-motion must disable epigraph transition");
   });
 
   check("stage1", "styles.css: weeks grid track cannot grow with canvas (min-width:0 on .weeks-root / main children)", () => {

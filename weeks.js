@@ -9,6 +9,7 @@ import {
   hktDateString, weeksLived, weekProgress, displayWeek, commas,
   LIFE_WEEKS_TOTAL, LIFE_WEEKS_PER_ROW, LIFE_PEOPLE,
   MIN_PITCH, MAX_PITCH, pitchFor,
+  calendarYearState, CALENDAR_YEAR_COLS, CALENDAR_YEAR_COUNT,
 } from "./lib.mjs";
 
 const DPR_CAP = 2;
@@ -23,10 +24,10 @@ const DECADE_TINT = "rgba(255,255,255,0.03)";
 const VIEWS = {
   life: { id: "life", label: "Life", cols: 52, count: LIFE_WEEKS_TOTAL, zoom: 1 },
   decade: { id: "decade", label: "Decade", cols: 52, count: 520, zoom: 2 },
-  year: { id: "year", label: "Year", cols: 13, count: 52, zoom: 1 },
+  // v4.1: HKT calendar year (shared), not an age-year life slice. 13×4 = 52 week cells.
+  year: { id: "year", label: "Year", cols: CALENDAR_YEAR_COLS, count: CALENDAR_YEAR_COUNT, zoom: 1 },
 };
 const VIEW_ORDER = ["life", "decade", "year"];
-const YEAR_GUTTER = ["wk 1", "wk 14", "wk 27", "wk 40"];
 
 function themeColor(name) {
   return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
@@ -52,11 +53,12 @@ let lastDrawnDateHKT = null;
 let lastContainerW = 0; // frozen width last used for pitch — ResizeObserver ignores self-caused noise
 let chart = null; // { canvas, ctx, scroller, gutter, marker, tabs, panel, frame, card }
 
-// The window of week indices this view shows. Decade/Year follow the selected person's own
-// current week; past the clamp they pin to the last full window rather than running off the
-// end of the grid (real, though unreachable before ~2079).
+// Life/Decade window of life-week indices. Year uses calendarYearState() instead (v4.1).
+// Decade follows the selected person's current week; past the clamp it pins to the last full
+// window (real, though unreachable before ~2079).
 function windowFor(view, lived) {
   if (view.id === "life") return 0;
+  if (view.id === "year") return 0; // unused for drawing — calendar origin is separate
   const span = view.count;
   return Math.min(Math.floor(lived / span) * span, LIFE_WEEKS_TOTAL - span);
 }
@@ -103,38 +105,78 @@ function ariaLabelFor(Jw, Bw) {
 function drawGrid(view, pitch) {
   const { canvas, ctx } = chart;
   const now = new Date();
+  const cols = view.cols;
+  const rows = view.count / cols;
+  sizeCanvas(canvas, ctx, cols * pitch, rows * pitch);
+  const dot = Math.max(1, pitch * DOT_FRACTION);
+  const offset = (pitch - dot) / 2;
+  const pColor = themeColor(personId === "J" ? "--person-j" : "--person-b");
+  const futureColor = themeColor("--week-future");
+
+  // --- Year view: shared HKT calendar year (v4.1) ---
+  // Past weeks this year → selected person's tint (lens only). Future → future colour.
+  // No lead band / other-person outline: both people share the same calendar "now".
+  if (view.id === "year") {
+    const cal = calendarYearState(now);
+    const start = 0;
+    const Pw = cal.currentIndex;
+    function xy(i) {
+      return [(i % cols) * pitch + offset, Math.floor(i / cols) * pitch + offset];
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = futureColor;
+    for (let i = Pw + 1; i < cal.count; i++) {
+      const [x, y] = xy(i);
+      ctx.fillRect(x, y, dot, dot);
+    }
+    ctx.fillStyle = pColor;
+    for (let i = 0; i < Pw; i++) {
+      const [x, y] = xy(i);
+      ctx.fillRect(x, y, dot, dot);
+    }
+    const showNow = true;
+    {
+      const [x, y] = xy(Pw);
+      ctx.fillStyle = futureColor;
+      ctx.fillRect(x, y, dot, dot);
+      const h = Math.max(1, dot * cal.fraction);
+      ctx.fillStyle = pColor;
+      ctx.fillRect(x, y + dot - h, dot, h);
+      ctx.strokeStyle = pColor;
+      ctx.lineWidth = 1;
+      ctx.strokeRect(x + 0.5, y + 0.5, Math.max(1, dot - 1), Math.max(1, dot - 1));
+      const row = Math.floor(Pw / cols);
+      ctx.fillStyle = hexToRgba(pColor, ROW_RULE_ALPHA);
+      ctx.fillRect(0, Math.round((row + 1) * pitch) - 0.5, cols * pitch, 1);
+    }
+    canvas.setAttribute("aria-label",
+      `Calendar year ${cal.year} in Hong Kong time, 52 weeks. Showing week ${Pw + 1} of 52. Colour lens: ${personId}.`);
+    return {
+      start, cols, rows, pitch, dot, offset, Pw, showNow, color: pColor,
+      mode: "year", year: cal.year, rowMonths: cal.rowMonths,
+    };
+  }
+
+  // --- Life / Decade: life-week grid ---
   const other = personId === "J" ? "B" : "J";
   const Pw = weeksLived(birthOf(personId), now);
   const Qw = weeksLived(birthOf(other), now);
   const prog = weekProgress(birthOf(personId), now);
   const start = windowFor(view, Pw);
-  const cols = view.cols;
-  const rows = view.count / cols;
-
-  sizeCanvas(canvas, ctx, cols * pitch, rows * pitch);
-  const dot = Math.max(1, pitch * DOT_FRACTION);
-  const offset = (pitch - dot) / 2;
-  const pColor = themeColor(personId === "J" ? "--person-j" : "--person-b");
   const qColor = themeColor(other === "J" ? "--person-j" : "--person-b");
-  const futureColor = themeColor("--week-future");
-  const inWindow = (w) => w >= start && w < start + view.count;
-  // The band only exists when the other person is AHEAD -- B is always older, so it shows for
-  // J and never for B. Structurally there is no "J-only lived" case, ever.
+  const inWindow = (week) => week >= start && week < start + view.count;
   const bandLo = Pw + 1, bandHi = Qw;
   const hasBand = Qw > Pw;
 
-  function xy(w) {
-    const i = w - start;
+  function xy(week) {
+    const i = week - start;
     return [(i % cols) * pitch + offset, Math.floor(i / cols) * pitch + offset];
   }
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // Structure (item 4): the current decade tinted, then decade rules, then the current row.
   if (view.id === "life" || view.id === "decade") {
     const decadeRow = Math.floor(Pw / (LIFE_WEEKS_PER_ROW * 10)) * 10 - start / cols;
-    // Life view only: in Decade view the window IS the current decade, so the tint would cover
-    // the whole panel and mean nothing (v4.0 audit nit 1).
     if (view.id === "life" && decadeRow >= 0 && decadeRow < rows) {
       ctx.fillStyle = DECADE_TINT;
       ctx.fillRect(0, decadeRow * pitch, cols * pitch, Math.min(10, rows - decadeRow) * pitch);
@@ -144,29 +186,27 @@ function drawGrid(view, pitch) {
   }
 
   ctx.fillStyle = futureColor;
-  for (let w = start; w < start + view.count; w++) {
-    if (w < Pw || w === Pw) continue;
-    if (hasBand && w >= bandLo && w < bandHi) continue;
-    const [x, y] = xy(w);
+  for (let week = start; week < start + view.count; week++) {
+    if (week < Pw || week === Pw) continue;
+    if (hasBand && week >= bandLo && week < bandHi) continue;
+    const [x, y] = xy(week);
     ctx.fillRect(x, y, dot, dot);
   }
 
   ctx.fillStyle = pColor;
-  for (let w = start; w < Math.min(Pw, start + view.count); w++) {
-    const [x, y] = xy(w);
+  for (let week = start; week < Math.min(Pw, start + view.count); week++) {
+    const [x, y] = xy(week);
     ctx.fillRect(x, y, dot, dot);
   }
 
   if (hasBand) {
     ctx.fillStyle = hexToRgba(qColor, BAND_ALPHA);
-    for (let w = Math.max(start, bandLo); w < Math.min(bandHi, start + view.count); w++) {
-      const [x, y] = xy(w);
+    for (let week = Math.max(start, bandLo); week < Math.min(bandHi, start + view.count); week++) {
+      const [x, y] = xy(week);
       ctx.fillRect(x, y, dot, dot);
     }
   }
 
-  // The now cell (item 2): a future-coloured square filled bottom-up by the fraction of the
-  // week already lived, then outlined. Bottom-up because the week fills the way a glass does.
   const showNow = !prog.complete && inWindow(Pw);
   if (showNow) {
     const [x, y] = xy(Pw);
@@ -178,7 +218,6 @@ function drawGrid(view, pitch) {
     ctx.strokeStyle = pColor;
     ctx.lineWidth = 1;
     ctx.strokeRect(x + 0.5, y + 0.5, Math.max(1, dot - 1), Math.max(1, dot - 1));
-    // The current row, underlined in the person's own colour.
     const row = Math.floor((Pw - start) / cols);
     ctx.fillStyle = hexToRgba(pColor, ROW_RULE_ALPHA);
     ctx.fillRect(0, Math.round((row + 1) * pitch) - 0.5, cols * pitch, 1);
@@ -194,7 +233,7 @@ function drawGrid(view, pitch) {
     weeksLived(birthOf("J"), now), weeksLived(birthOf("B"), now)
   ));
 
-  return { start, cols, rows, pitch, dot, offset, Pw, showNow, color: pColor };
+  return { start, cols, rows, pitch, dot, offset, Pw, showNow, color: pColor, mode: "life" };
 }
 
 // The halo is a DOM element, not canvas paint: one CSS @keyframes breathing at figure.js's own
@@ -212,9 +251,7 @@ function placeMarker(geo) {
   marker.style.height = `${geo.dot}px`;
 }
 
-// Gutter labels are the view's own scale (item 4): decade ages in Life, every age in Decade,
-// week-of-year markers in Year. The selected person's current row is labelled "now" in their
-// own colour -- the one place the gutter stops being a ruler and starts being a pointer.
+// Gutter: decade ages (Life), every age (Decade), month-at-row-start + "now" (Year calendar).
 function paintGutter(view, geo) {
   const { gutter } = chart;
   gutter.textContent = "";
@@ -223,12 +260,12 @@ function paintGutter(view, geo) {
   for (let r = 0; r < geo.rows; r++) {
     const slot = document.createElement("div");
     slot.className = "weeks-yr";
-    if (view.id === "year") {
-      slot.textContent = YEAR_GUTTER[r] || "";
-    } else if (r === nowRow) {
+    if (r === nowRow) {
       slot.textContent = "now";
       slot.classList.add("is-now");
       slot.style.color = themeColor(personId === "J" ? "--person-j" : "--person-b");
+    } else if (view.id === "year") {
+      slot.textContent = (geo.rowMonths && geo.rowMonths[r]) || "";
     } else if (view.id === "decade" || r % 10 === 0) {
       slot.textContent = String(geo.start / geo.cols + r);
     }
@@ -275,7 +312,13 @@ function setView(next) {
   if (!VIEWS[next] || next === viewId) return;
   viewId = next;
   syncTabs();
+  syncYearChrome();
   redrawAll(next === "decade");
+}
+
+function syncYearChrome() {
+  const root = document.getElementById("weeks-root");
+  if (root) root.classList.toggle("is-year", viewId === "year");
 }
 
 function buildViewSwitch(root) {
@@ -361,6 +404,7 @@ function build() {
 
   chart = { canvas, ctx: canvas.getContext("2d"), scroller, gutter, marker, tabs, panel: card, frame, card };
   syncTabs();
+  syncYearChrome();
   redrawAll(false, true);
 
   if (window.ResizeObserver) {

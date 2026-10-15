@@ -545,3 +545,23 @@
   header; §13 item 6 views not zoom). Frozen changelogs/Stage-0 untouched. Invariant 12:
   check count 67→69, both additions, no removals/relaxations.
 
+- **2026-10-15, v4.1 — Year = HKT calendar year; curated epigraph rotation.** Owner chose (B)
+  calendar year (HKT) and (D) curated ~8–12 quotes with smooth rotation, after the design/plan
+  pass. **Year meaning:** the grid is the **current calendar year in Asia/Hong_Kong** (the year
+  containing “today” HKT), not an age-year slice of either person's life. Layout: 13 columns ×
+  4 rows = **52 week cells** from 1 Jan HKT (ISO-ish week rows that keep Life/Decade's visual
+  language). Late-December days past cell 51 are clipped — accepted for a clean sheet rather
+  than a 53rd row. Gutter: short month name at each row start (Jan/Apr/Jul/Oct-ish) with
+  **`now`** on the current row in the selected person's colour (same pointer pattern as
+  Life/Decade). **Colouring rule (documented):** the calendar window is **shared** (same for J
+  and B). Past weeks this year fill in the **selected person's tint as a lens only**; future
+  weeks use `--week-future`; the current cell fills bottom-up by days into the calendar week.
+  No lead band / other-person outline on Year — both people share the same calendar “now”, so
+  a second outline would confuse. Life and Decade are unchanged (including Decade `zoom: 2` and
+  P0 pitch protection). **Epigraph:** pool expanded to **10** original paraphrases (8–12 band),
+  attribution `— after …` only, zero quotation-mark glyphs; one line at a time; dwell **16s**
+  (28s under `prefers-reduced-motion`); crossfade **700ms** (instant under reduced motion);
+  pause on hover/focus and when `document.hidden`; no `aria-live` on the rotator (don't spam
+  AT). Person-independent. `sw.js` CACHE `mindset-v26`→`mindset-v27`. Verify: view-model check
+  retargeted; +2 checks (calendarYearState; EPIGRAPH pool/rotator); count **69→71**.
+  **Year chrome:** `.weeks-root` keeps `min-height: 60svh` for Life/Decade presence; view=year toggles `.is-year` which sets `min-height: 0` so the short 4-row calendar card does not leave a tall empty column (live diagnosis post-P0 on mindset-v26).

@@ -224,3 +224,16 @@ which pointed at three unrelated channels elsewhere in the same page. A same-day
 bug in the daily pipeline (the Fresh pick flipping on re-run) was caught and fixed before
 shipping. The rotation algorithm (Appendix B, from the Claude Design prototype) was unit-tested
 for full-cycle uniqueness at all three real pool sizes.
+
+
+## 2026-10-15 — v4.1 calendar-year Year + epigraph rotation
+
+Invariant-12 ratchet update (additions only):
+
+- Retargeted: `weeks.js: view model constants: three views (life/decade/year) with cols 52/52/13 and the year view count 52` → `weeks.js: view model — life/decade life-weeks; year is HKT calendar (CALENDAR_YEAR_COLS/COUNT)` (same intent; Year now binds to `lib.mjs` constants + `calendarYearState`).
+- Added: `lib.mjs: calendarYearState — HKT year window, 52 cells, monotone index, Jan-origin (v4.1)`.
+- Added: `app.js: EPIGRAPH pool 8–12 lines + rotator (dwell/fade/pause/reduced-motion) (v4.1)`.
+
+Check count: **69 → 71** (2 added, 1 retargeted, 0 removed, 0 loosened).
+`verify.mjs all`: **71/71**, green.
+`sw.js` CACHE: `mindset-v26` → `mindset-v27` (app.js / weeks.js / lib.mjs / styles.css changed).

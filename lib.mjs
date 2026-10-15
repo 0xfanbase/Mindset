@@ -51,6 +51,40 @@ export function pitchFor(containerW, cols, zoom) {
   return Math.min(MAX_PITCH, Math.max(MIN_PITCH, raw));
 }
 
+// HKT calendar-year grid for the Year view (v4.1). Shared for J and B — the window is the
+// calendar, not an age-year slice. Cell i covers seven HKT days starting at Jan 1 + i*7.
+// Always 52 cells (13×4) to match Life/Decade visual culture; ~1–2 late-December days may
+// fall past cell 51 — accepted for a clean sheet (see audits/decisions.md).
+export const CALENDAR_YEAR_COLS = 13;
+export const CALENDAR_YEAR_COUNT = 52;
+
+export function hktCalendarYear(d = new Date()) {
+  return Number(hktDateString(d).slice(0, 4));
+}
+
+export function calendarYearOriginDay(year) {
+  return Math.floor(Date.UTC(year, 0, 1) / 86400000);
+}
+
+export function calendarYearState(now = new Date()) {
+  const year = hktCalendarYear(now);
+  const originDay = calendarYearOriginDay(year);
+  const today = hktDayNumber(now);
+  const count = CALENDAR_YEAR_COUNT;
+  const cols = CALENDAR_YEAR_COLS;
+  const delta = today - originDay;
+  const currentIndex = Math.max(0, Math.min(count - 1, Math.floor(delta / 7)));
+  const daysIntoWeek = ((delta % 7) + 7) % 7;
+  const fraction = (daysIntoWeek + 1) / 7;
+  const rowMonths = [];
+  for (let r = 0; r < count / cols; r++) {
+    const day = originDay + r * cols * 7;
+    const dt = new Date(day * 86400000);
+    rowMonths.push(new Intl.DateTimeFormat("en-GB", { timeZone: "UTC", month: "short" }).format(dt));
+  }
+  return { year, originDay, count, cols, currentIndex, daysIntoWeek, fraction, rowMonths };
+}
+
 export const LIFE_PEOPLE = [
   { id: "J", birthMonthHKT: "1989-12" },
   { id: "B", birthMonthHKT: "1988-11" },

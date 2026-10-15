@@ -7,15 +7,25 @@ import {
 } from "./lib.mjs";
 import { initWeeks, refreshWeeksIfStale, setWeeksPerson } from "./weeks.js";
 
-// The epigraph (fact, then reminder) -- one thought ~2,000 years apart, no hierarchy between
-// the two lines. Seneca's line is an ORIGINAL paraphrase, not a lifted translation: the
-// published rendering says "if you know how to USE it"; "spend" is this page's own vocabulary
-// (percent spent, squares = spent weeks). Attribution only, never an excerpt (invariant 2).
-// Moved here from weeks.js in v4.0 with the epigraph itself, which now sits in the hero.
+// Epigraph pool (v4.1) -- curated paraphrases, same calm voice, person-independent.
+// Attribution only ("— after …"), never excerpts; zero quotation-mark glyphs (invariant 2).
+// One line shows at a time; initEpigraph() rotates with crossfade (see styles.css).
 const EPIGRAPH = [
   { text: "An average human life is about four thousand weeks.", attr: "— after Oliver Burkeman" },
   { text: "Life is long, if you know how to spend it.", attr: "— after Seneca" },
+  { text: "It is not that we have a short time to live, but that we waste much of it.", attr: "— after Seneca" },
+  { text: "How we spend our days is how we spend our lives.", attr: "— after Annie Dillard" },
+  { text: "Begin at once to live, and count each separate day as a full life.", attr: "— after Seneca" },
+  { text: "The days are long, but the years are short.", attr: "— after Gretchen Rubin" },
+  { text: "Lost time is never found again.", attr: "— after Benjamin Franklin" },
+  { text: "You act like mortality is a rumour that applies to other people.", attr: "— after Seneca" },
+  { text: "We reach the future at sixty minutes an hour, no matter who we are.", attr: "— after C.S. Lewis" },
+  { text: "A person who dares to waste one hour of time has not discovered the value of life.", attr: "— after Charles Darwin" },
 ];
+
+const EPIGRAPH_DWELL_MS = 16000;
+const EPIGRAPH_DWELL_REDUCED_MS = 28000;
+const EPIGRAPH_FADE_MS = 700;
 
 const PEOPLE = LIFE_PEOPLE.map((p) => p.id);
 let selected = "J";
@@ -49,6 +59,72 @@ function syncFigureColor() {
 
 // Every number below comes from lib.mjs, never a literal -- the hero, the bars and the canvas
 // are three renderings of the same two functions.
+function fillEpigraphSlot(slot, line) {
+  slot.textContent = "";
+  slot.append(document.createTextNode(line.text + " "), el("span", "epigraph-attr", line.attr));
+}
+
+function initEpigraph(root, slotA, slotB) {
+  if (EPIGRAPH.length === 0) return;
+  let index = 0;
+  let front = slotA;
+  let back = slotB;
+  fillEpigraphSlot(front, EPIGRAPH[0]);
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+  let timer = null;
+  let fading = false;
+  let paused = false;
+
+  function dwell() {
+    return reduced.matches ? EPIGRAPH_DWELL_REDUCED_MS : EPIGRAPH_DWELL_MS;
+  }
+
+  function clearTimer() {
+    if (timer !== null) { clearTimeout(timer); timer = null; }
+  }
+
+  function schedule() {
+    clearTimer();
+    if (paused || document.hidden || EPIGRAPH.length < 2) return;
+    timer = setTimeout(advance, dwell());
+  }
+
+  function advance() {
+    if (fading || paused || document.hidden || EPIGRAPH.length < 2) return;
+    index = (index + 1) % EPIGRAPH.length;
+    const next = EPIGRAPH[index];
+    if (reduced.matches) {
+      fillEpigraphSlot(front, next);
+      schedule();
+      return;
+    }
+    fading = true;
+    fillEpigraphSlot(back, next);
+    back.classList.add("is-active");
+    back.removeAttribute("aria-hidden");
+    front.classList.remove("is-active");
+    front.setAttribute("aria-hidden", "true");
+    const prev = front;
+    front = back;
+    back = prev;
+    setTimeout(() => { fading = false; schedule(); }, EPIGRAPH_FADE_MS);
+  }
+
+  function syncPause() {
+    paused = root.matches(":hover") || root.contains(document.activeElement);
+    if (paused || document.hidden) clearTimer();
+    else schedule();
+  }
+
+  root.addEventListener("mouseenter", syncPause);
+  root.addEventListener("mouseleave", syncPause);
+  root.addEventListener("focusin", syncPause);
+  root.addEventListener("focusout", syncPause);
+  document.addEventListener("visibilitychange", syncPause);
+  reduced.addEventListener("change", () => { clearTimer(); schedule(); });
+  schedule();
+}
+
 function renderHero(id) {
   const now = new Date();
   const lived = weeksLived(birthOf(id), now);
@@ -145,12 +221,16 @@ function buildHero() {
   root.append(number, sub);
 
   const epigraph = el("div", "epigraph");
-  for (const line of EPIGRAPH) {
-    const p = el("p", null, `${line.text} `);
-    p.appendChild(el("span", "epigraph-attr", line.attr));
-    epigraph.appendChild(p);
-  }
+  epigraph.setAttribute("role", "note");
+  epigraph.setAttribute("aria-label", "Rotating reflections on time");
+  // Two stacked lines for crossfade; only the active one's text is in the accessibility tree
+  // via aria-hidden on the outgoing slot. No aria-live — rotations must not spam AT.
+  const slotA = el("p", "epigraph-line is-active");
+  const slotB = el("p", "epigraph-line");
+  slotB.setAttribute("aria-hidden", "true");
+  epigraph.append(slotA, slotB);
   root.appendChild(epigraph);
+  initEpigraph(epigraph, slotA, slotB);
 
   const bars = el("div", "bars");
   const barRows = PEOPLE.map((id) => {

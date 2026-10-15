@@ -1,4 +1,4 @@
-const CACHE = "mindset-v26";
+const CACHE = "mindset-v27";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs", "./weeks.js",
   "./manifest.webmanifest", "./assets/favicon.svg",
