@@ -565,3 +565,14 @@
   AT). Person-independent. `sw.js` CACHE `mindset-v26`→`mindset-v27`. Verify: view-model check
   retargeted; +2 checks (calendarYearState; EPIGRAPH pool/rotator); count **69→71**.
   **Year chrome:** `.weeks-root` keeps `min-height: 60svh` for Life/Decade presence; view=year toggles `.is-year` which sets `min-height: 0` so the short 4-row calendar card does not leave a tall empty column (live diagnosis post-P0 on mindset-v26).
+
+- **2026-10-15, ops — safari watercolor replaces cats as app/favicon/share icons.** Owner asked
+  to replace the cats composite with the household safari watercolor as the web logo / website
+  thumbnail. Source (local only, not committed): square center-crop of the landscape watercolor,
+  then `icon-192.jpg` / `icon-512.jpg` (JPEG, same manifest paths/types as v1.21) and
+  `apple-touch-icon.png` (180×180 PNG, iOS convention kept). `assets/favicon.svg` re-embeds a
+  128×128 JPEG of the same crop (rounded clipPath, unchanged href). Added `og:image` +
+  `twitter:image` → `./assets/icons/icon-512.jpg` (no prior OG image). Filenames stay generic
+  (`icon-*.jpg` / `apple-touch-icon.png`) — no new PII in paths or copy. Icons total under the
+  existing 150KB `assets/icons/` budget. `sw.js` CACHE `mindset-v27`→`mindset-v28`. No Year/quote
+  logic changes; verify icons-budget check unchanged (sums the directory).

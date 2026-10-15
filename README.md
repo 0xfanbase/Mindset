@@ -46,7 +46,7 @@ month, never a day). `verify.mjs` pins the current values, so update its expecta
 same commit or the build will correctly fail.
 
 **Bump the service-worker cache** — any time `sw.js`'s `ASSETS` list, or the bytes of any file
-already on it, meaningfully change, bump `CACHE` (currently `mindset-v27`, bumped from `mindset-v26` for calendar-year Year + epigraph rotation) so old
+already on it, meaningfully change, bump `CACHE` (currently `mindset-v28`, bumped from `mindset-v27` for safari watercolor logo icons) so old
 installed clients purge stale cached files instead of serving them alongside the new ones.
 Keep `BUILD-PLAN.md` Appendix C.2's code block in sync with the real file.
 

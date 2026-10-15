@@ -237,3 +237,9 @@ Invariant-12 ratchet update (additions only):
 Check count: **69 → 71** (2 added, 1 retargeted, 0 removed, 0 loosened).
 `verify.mjs all`: **71/71**, green.
 `sw.js` CACHE: `mindset-v26` → `mindset-v27` (app.js / weeks.js / lib.mjs / styles.css changed).
+
+## 2026-10-15 — safari watercolor icons (no verify count change)
+
+Static icon swap: cats composite → safari watercolor (icon-192/512.jpg, apple-touch-icon.png,
+favicon.svg embed). `og:image`/`twitter:image` added. CACHE `mindset-v27`→`mindset-v28`.
+Check count unchanged at **71/71**.
