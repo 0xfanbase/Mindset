@@ -1,4 +1,4 @@
-const CACHE = "mindset-v28";
+const CACHE = "mindset-v29";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs", "./weeks.js",
   "./manifest.webmanifest", "./assets/favicon.svg",
@@ -23,10 +23,14 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+  // Same-origin only: never intercept or cache cross-origin GETs (opaque/cors responses
+  // must not enter the app cache). Basic-type gate blocks opaque even if origin matched.
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;
   e.respondWith(
     fetch(e.request)
       .then((res) => {
-        if (res.ok) {
+        if (res.ok && res.type === "basic") {
           const copy = res.clone();
           e.waitUntil(caches.open(CACHE).then((c) => c.put(e.request, copy)));
           return res;

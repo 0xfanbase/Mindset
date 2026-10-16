@@ -576,3 +576,17 @@
   (`icon-*.jpg` / `apple-touch-icon.png`) — no new PII in paths or copy. Icons total under the
   existing 150KB `assets/icons/` budget. `sw.js` CACHE `mindset-v27`→`mindset-v28`. No Year/quote
   logic changes; verify icons-budget check unchanged (sums the directory).
+
+- **2026-10-16, security audit — CSP meta, referrer, SW same-origin cache gate (invariant 12).**
+  Owner asked for the same cyber attack-surface bar as Bitcoin-Engine-Room. Code fixes (MEDIUM):
+  (1) `index.html` CSP meta — GitHub Pages cannot set response headers on project sites; policy is
+  `default-src 'self'` with `script-src`/`style-src`/`font-src` `'self'`, `worker-src 'self'`
+  (service worker), `img-src 'self' data:` (favicon.svg JPEG data-URI), `object-src`/`frame-ancestors`
+  `'none'`, no `'unsafe-inline'`/`'unsafe-eval'` on scripts. (2) `referrer` meta `no-referrer`.
+  (3) `sw.js` same-origin origin check before `respondWith`, and `res.type === "basic"` before
+  `caches.put` — closes the prior "cache any OK GET" path for opaque/cross-origin responses.
+  CACHE bump `mindset-v28`→`mindset-v29`; Appendix C.2 resynced verbatim. Verifier: +4 stage1
+  checks (CSP, referrer, XSS-sink greps, SW gate); count **71→75**. LOW/ops items documented only
+  in `audits/SECURITY_AUDIT_2026-10-16.md` (no branch protection, Pages `ACA-O: *`, action SHA
+  pins, Dependabot off — zero npm deps). Birth months + initials remain intentional public product
+  data (invariant 1 / README), not a vulnerability.
