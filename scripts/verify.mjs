@@ -287,6 +287,40 @@ function stage1() {
   check("stage1", "robots noindex present", () => {
     assert.match(html(), /<meta\s+name=["']robots["']\s+content=["']noindex["']/);
   });
+  // Security audit 2026-10-16 (same bar as Bitcoin-Engine-Room): GitHub Pages project sites
+  // cannot set response CSP headers, so the meta CSP is the browser lockdown. Mindset has no
+  // CDN/third-party script, so script/style/font stay 'self'; worker-src 'self' for sw.js;
+  // img-src data: covers the favicon.svg JPEG data-URI embed.
+  check("stage1", "CSP meta present (default-src self; no unsafe-inline script; worker-src self)", () => {
+    const src = html();
+    assert.match(src, /http-equiv=["']Content-Security-Policy["']/i, "missing CSP meta");
+    assert.match(src, /default-src\s+'self'/, "CSP must default-src 'self'");
+    assert.match(src, /script-src\s+'self'/, "CSP must script-src 'self'");
+    assert.match(src, /worker-src\s+'self'/, "CSP must worker-src 'self' (service worker)");
+    assert.match(src, /object-src\s+'none'/, "CSP must object-src 'none'");
+    assert.match(src, /frame-ancestors\s+'none'/, "CSP must frame-ancestors 'none'");
+    assert.doesNotMatch(src, /script-src[^;]*'unsafe-inline'/, "CSP must not allow unsafe-inline scripts");
+    assert.doesNotMatch(src, /script-src[^;]*'unsafe-eval'/, "CSP must not allow unsafe-eval");
+  });
+  check("stage1", "referrer policy meta is no-referrer", () => {
+    assert.match(html(), /<meta\s+name=["']referrer["']\s+content=["']no-referrer["']/i);
+  });
+  check("stage1", "XSS sinks: no innerHTML/outerHTML/insertAdjacentHTML/document.write in shipped JS", () => {
+    const strip = (s) => s.replace(/\/\*[\s\S]*?\*\//g, "").replace(/\/\/[^\n]*/g, "");
+    const files = ["app.js", "weeks.js", "figure.js", "lib.mjs", "sw.js"].filter(exists);
+    const offenders = [];
+    const bad = /\b(innerHTML|outerHTML|insertAdjacentHTML|document\.write)\b/g;
+    for (const f of files) {
+      const src = strip(read(f));
+      for (const m of src.matchAll(bad)) offenders.push(`${f}: ${m[1]}`);
+    }
+    assert.equal(offenders.length, 0, `XSS sink(s) in shipped JS: ${offenders.join(" | ")}`);
+  });
+  check("stage1", "sw.js: same-origin + basic-type cache gate (no cross-origin cache put)", () => {
+    const src = read("sw.js");
+    assert.match(src, /url\.origin\s*!==\s*self\.location\.origin/, "SW must refuse non-same-origin fetches");
+    assert.match(src, /res\.type\s*===\s*["']basic["']/, "SW must only cache basic (same-origin) responses");
+  });
   check("stage1", "theme toggle retired (v4.0): no theme-toggle, no data-theme, no aria-pressed in index.html; exactly one role=tablist (the grid view switch) with 3 tabs", () => {
     // Retargeted from v1.39's "tab system retired" guard, which asserted tablist/tab/tabpanel
     // were ABSENT. v4.0 reintroduces exactly one tablist -- the Life/Decade/Year view switch,

@@ -243,3 +243,19 @@ Check count: **69 → 71** (2 added, 1 retargeted, 0 removed, 0 loosened).
 Static icon swap: cats composite → safari watercolor (icon-192/512.jpg, apple-touch-icon.png,
 favicon.svg embed). `og:image`/`twitter:image` added. CACHE `mindset-v27`→`mindset-v28`.
 Check count unchanged at **71/71**.
+
+## 2026-10-16 — security audit (CSP + SW same-origin gate)
+
+Invariant-12 ratchet update (additions only; same bar as Bitcoin-Engine-Room SECURITY_AUDIT_2026-10-16):
+
+- Added: `CSP meta present (default-src self; no unsafe-inline script; worker-src self)`.
+- Added: `referrer policy meta is no-referrer`.
+- Added: `XSS sinks: no innerHTML/outerHTML/insertAdjacentHTML/document.write in shipped JS`.
+- Added: `sw.js: same-origin + basic-type cache gate (no cross-origin cache put)`.
+
+Code: meta CSP + `Referrer-Policy: no-referrer` on `index.html`; `sw.js` refuses non-same-origin
+fetches and only `caches.put`s `res.type === "basic"`; CACHE `mindset-v28` → `mindset-v29`;
+Appendix C.2 resynced. Full findings table: `audits/SECURITY_AUDIT_2026-10-16.md`.
+
+Check count: **71 → 75** (4 added, 0 removed, 0 loosened).
+`verify.mjs all`: **75/75**, green.

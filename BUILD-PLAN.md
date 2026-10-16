@@ -3231,12 +3231,13 @@ Appendix B verbatim plus the `hktDateParts` addition above — use that file dir
 ### C.2 `sw.js` — network-first, cache fallback (amended: guard against caching failed responses)
 
 ```js
-const CACHE = "mindset-v28";
+const CACHE = "mindset-v29";
 const ASSETS = [
   "./", "./index.html", "./styles.css", "./app.js", "./figure.js", "./lib.mjs", "./weeks.js",
   "./manifest.webmanifest", "./assets/favicon.svg",
   "./assets/fonts/fraunces-normal.woff2", "./assets/fonts/fraunces-italic.woff2",
   "./assets/fonts/ibm-plex-mono-400.woff2", "./assets/fonts/ibm-plex-mono-500.woff2",
+  "./assets/icons/icon-192.jpg", "./assets/icons/icon-512.jpg", "./assets/icons/apple-touch-icon.png",
 ];
 
 self.addEventListener("install", (e) => {
@@ -3255,10 +3256,14 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+  // Same-origin only: never intercept or cache cross-origin GETs (opaque/cors responses
+  // must not enter the app cache). Basic-type gate blocks opaque even if origin matched.
+  const url = new URL(e.request.url);
+  if (url.origin !== self.location.origin) return;
   e.respondWith(
     fetch(e.request)
       .then((res) => {
-        if (res.ok) {
+        if (res.ok && res.type === "basic") {
           const copy = res.clone();
           e.waitUntil(caches.open(CACHE).then((c) => c.put(e.request, copy)));
           return res;
